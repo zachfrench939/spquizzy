@@ -22,10 +22,10 @@ const SHAPES = {
   15: ["cross", 0],
 };
 const SAUCE_CLIP = {
-  1: "inset(18% 24% 46% 24%)",
-  2: "inset(24% 0 24% 46%)",
-  4: "inset(46% 24% 0 24%)",
-  8: "inset(24% 46% 24% 0)",
+  1: "inset(0 31% 50% 31%)",
+  2: "inset(31% 0 31% 42%)",
+  4: "inset(42% 31% 0 31%)",
+  8: "inset(31% 42% 31% 0)",
 };
 
 function unrot(mask, rot) {

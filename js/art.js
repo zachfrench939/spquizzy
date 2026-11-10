@@ -389,7 +389,8 @@ export function iconSvg(id) {
 }
 
 export function toppingSvg(id) {
-  return pixelSvg(TOPPINGS[id] || TOPPINGS.tomato, id);
+  const name = TOPPINGS[id] ? id : "tomato";
+  return `<img class="sprite topping" src="/assets/toppings/${name}.webp" alt="" decoding="async">`;
 }
 
 export function arrowSvg(dir) {

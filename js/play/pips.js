@@ -1,7 +1,7 @@
 import { createKit } from "../playkit.js";
 import { generatePips, pipsSolved, regionStates, constraintLabel } from "../engines/pips.js";
 
-const COLORS = ["#f7c1b0", "#f6c945", "#c9e6c8", "#f6ecd1", "#f3c6d6", "#f0d2a6", "#d7e3a0", "#f7d7a8", "#e7b8a4", "#d5e4f2"];
+const COLORS = ["#f08a6a", "#f6c945", "#8fd19a", "#f6ecd1", "#f0a0b8", "#e0a45a", "#b7d36a", "#f0b27a", "#e08a72", "#9ec6e6"];
 const DOTS = {
   0: [],
   1: [4],
