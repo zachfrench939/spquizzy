@@ -1,6 +1,7 @@
 import { rotMask, traceFlow, sauceReaches } from "./engines/sauce.js";
 import { slidePiece } from "./engines/slip.js";
 import { sauceUrl, slipUrl, gateUrl, toppingUrl, pathFile, bowlUrl, numberUrl, faceUrl, regionUrl } from "./pieces.js";
+import { bindDominoDrag, nextRotation } from "./pips-drag.js";
 
 const TILE = "/assets/pipes";
 const SHAPES = {
@@ -77,6 +78,8 @@ function facePips(value) {
   const img = document.createElement("img");
   img.className = "pixel-art pip-face";
   img.alt = "";
+  img.draggable = false;
+  img.dataset.pip = String(value);
   img.src = faceUrl(value);
   return img;
 }
@@ -553,6 +556,8 @@ function mountPips(root, { interactive, solved, onSolved }) {
   const paint = () => {
     const grid = document.createElement("div");
     grid.className = "pips-board is-art";
+    grid.dataset.cols = String(cols);
+    grid.dataset.rows = "2";
     grid.style.setProperty("--cols", cols);
     grid.style.setProperty("--cell", "56px");
     for (let cell = 0; cell < 4; cell++) {
@@ -560,6 +565,7 @@ function mountPips(root, { interactive, solved, onSolved }) {
       button.type = "button";
       button.className = "region-cell is-art";
       button.dataset.cell = String(cell);
+      button.dataset.owner = owners[cell] == null ? "" : String(owners[cell]);
       button.style.backgroundImage = `url("${regionUrl(regionIds[cell])}")`;
       const region = regions[regionIds[cell]];
       const ok = regionOk(region);
@@ -607,68 +613,122 @@ function mountPips(root, { interactive, solved, onSolved }) {
       if (regionOk(regions[0])) note(root, "That’s it");
       return;
     }
-    root.querySelectorAll("[data-domino]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const id = Number(button.dataset.domino);
-        if (selected === id) flipped = !flipped;
-        else {
-          selected = id;
-          flipped = false;
-        }
-        anchor = null;
-        paint();
-      });
-    });
-    root.querySelectorAll("[data-cell]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const cell = Number(button.dataset.cell);
-        if (owners[cell] != null) {
-          const id = owners[cell];
-          owners.forEach((owner, index) => {
-            if (owner === id) {
-              owners[index] = null;
-              values[index] = null;
-            }
-          });
-          selected = id;
-          flipped = false;
-          anchor = null;
-          paint();
-          return;
-        }
-        if (selected == null) {
-          note(root, "Pick a domino first.");
-          return;
-        }
-        if (anchor == null) {
-          anchor = cell;
-          paint();
-          return;
-        }
-        const neighbour = Math.abs(Math.floor(anchor / cols) - Math.floor(cell / cols)) + Math.abs((anchor % cols) - (cell % cols)) === 1;
-        if (!neighbour || owners[cell] != null) {
-          anchor = cell;
-          paint();
-          return;
-        }
-        const tile = dominoes.find((item) => item.id === selected);
-        values[anchor] = flipped ? tile.b : tile.a;
-        values[cell] = flipped ? tile.a : tile.b;
-        owners[anchor] = tile.id;
-        owners[cell] = tile.id;
-        selected = null;
-        flipped = false;
-        anchor = null;
-        paint();
-      });
-    });
-    const pink = regionOk(regions[0]);
-    if (pink && !done) {
+    const top = regionOk(regions[0]);
+    const bottom = regionOk(regions[1]);
+    if ((top || bottom) && !done) {
       done = true;
       cheer(root, onSolved);
-    } else if (pink === false) note(root, "That area is full, but it does not add to 3.");
-    else if (pink == null) note(root, "Place 1 and 2 on Add to 3.");
+    } else if (top === false || bottom === false) note(root, "That area is full, but it does not add to 3.");
+    else note(root, "Drag 1 and 2 onto Add to 3.");
   };
+  const clearId = (id) => {
+    owners.forEach((owner, index) => {
+      if (owner === id) {
+        owners[index] = null;
+        values[index] = null;
+      }
+    });
+  };
+  bindDominoDrag(root, {
+    enabled: () => interactive && !done,
+    onTapTray(id) {
+      if (selected === id) flipped = !flipped;
+      else {
+        selected = id;
+        flipped = false;
+      }
+      anchor = null;
+      paint();
+    },
+    onTapPlaced(id) {
+      const cells = [];
+      owners.forEach((owner, index) => {
+        if (owner === id) cells.push(index);
+      });
+      cells.sort((a, b) => a - b);
+      if (cells.length !== 2) return;
+      const [c0, c1] = cells;
+      const next = nextRotation(c0, c1, values[c0], values[c1], cols, 2, (cell) => owners[cell] != null && owners[cell] !== id);
+      clearId(id);
+      next.cells.forEach((cell, index) => {
+        owners[cell] = id;
+        values[cell] = next.values[index];
+      });
+      selected = null;
+      anchor = null;
+      paint();
+    },
+    onPlace(id, a, b, head, tail) {
+      clearId(id);
+      values[a] = head;
+      values[b] = tail;
+      owners[a] = id;
+      owners[b] = id;
+      selected = null;
+      flipped = false;
+      anchor = null;
+      paint();
+    },
+    onReturn(id) {
+      clearId(id);
+      selected = id;
+      flipped = false;
+      anchor = null;
+      paint();
+    },
+    onCancel: paint,
+  });
+  root.addEventListener("click", (event) => {
+    if (!interactive || done || event.detail !== 0) return;
+    const dominoBtn = event.target.closest("[data-domino]");
+    if (dominoBtn) {
+      const id = Number(dominoBtn.dataset.domino);
+      if (selected === id) flipped = !flipped;
+      else {
+        selected = id;
+        flipped = false;
+      }
+      anchor = null;
+      paint();
+      return;
+    }
+    const cellBtn = event.target.closest("[data-cell]");
+    if (!cellBtn) return;
+    const cell = Number(cellBtn.dataset.cell);
+    if (owners[cell] != null) {
+      const id = owners[cell];
+      clearId(id);
+      selected = id;
+      flipped = false;
+      anchor = null;
+      paint();
+      return;
+    }
+    if (selected == null) {
+      note(root, "Pick a domino first.");
+      return;
+    }
+    if (anchor == null) {
+      anchor = cell;
+      paint();
+      return;
+    }
+    const neighbour = Math.abs(Math.floor(anchor / cols) - Math.floor(cell / cols)) + Math.abs((anchor % cols) - (cell % cols)) === 1;
+    if (!neighbour || owners[cell] != null) {
+      anchor = cell;
+      paint();
+      return;
+    }
+    const tile = dominoes.find((item) => item.id === selected);
+    values[anchor] = flipped ? tile.b : tile.a;
+    values[cell] = flipped ? tile.a : tile.b;
+    owners[anchor] = tile.id;
+    owners[cell] = tile.id;
+    selected = null;
+    flipped = false;
+    anchor = null;
+    paint();
+  });
   paint();
 }
 

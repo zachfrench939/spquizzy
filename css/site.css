@@ -2387,7 +2387,24 @@ body.is-doc .doc .how-stage { margin: 12px 0 18px; }
 .ravioli-joined .half.is-art + .half.is-art { margin-left: -18px; }
 .word-list.is-art { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; }
 .half-grid.is-art { gap: 10px; }
+.pips-board, .tray-row { touch-action: none; }
 .pips-board.is-art { width: calc(var(--cell) * var(--cols)); max-width: 100%; gap: 2px; }
+.domino-btn.is-source, .region-cell.is-source .face { opacity: 0; }
+.domino-ghost {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  touch-action: none;
+  box-sizing: border-box;
+}
+.domino-ghost img { width: 50%; height: 100%; object-fit: contain; display: block; }
+.domino-ghost.is-v { flex-direction: column; }
+.domino-ghost.is-v img { width: 100%; height: 50%; }
+.domino-ghost.is-returning { transition: left 180ms ease, top 180ms ease, width 180ms ease, height 180ms ease; }
+html.is-pips-drag, html.is-pips-drag body { overflow: hidden; }
 .region-cell.is-art {
   width: var(--cell);
   height: var(--cell);

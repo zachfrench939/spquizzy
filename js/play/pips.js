@@ -1,6 +1,7 @@
 import { createKit } from "../playkit.js";
 import { generatePips, pipsSolved, regionStates, constraintLabel } from "../engines/pips.js";
 import { faceUrl, regionUrl, fitCells } from "../pieces.js";
+import { bindDominoDrag, nextRotation } from "../pips-drag.js";
 
 const COLORS = ["#f08a6a", "#f6c945", "#8fd19a", "#f6ecd1", "#f0a0b8", "#e0a45a", "#b7d36a", "#f0b27a", "#e08a72", "#9ec6e6"];
 const DOTS = {
@@ -85,6 +86,8 @@ function face(value) {
   const img = document.createElement("img");
   img.className = "pixel-art pip-face";
   img.alt = "";
+  img.draggable = false;
+  img.dataset.pip = String(value);
   img.src = faceUrl(value);
   return img;
 }
@@ -95,6 +98,8 @@ function render() {
   const cell = fitCells(puzzle.cols, board.parentElement?.clientWidth || 320, 128);
   const grid = document.createElement("div");
   grid.className = "pips-board is-art";
+  grid.dataset.cols = String(puzzle.cols);
+  grid.dataset.rows = String(puzzle.rows);
   grid.style.setProperty("--cols", puzzle.cols);
   grid.style.setProperty("--cell", `${cell}px`);
   const states = regionStates(puzzle, values);
@@ -110,6 +115,7 @@ function render() {
     cell.dataset.cell = String(i);
     const regionId = puzzle.regionIds[i];
     cell.classList.add("is-art");
+    cell.dataset.owner = owners[i] == null ? "" : String(owners[i]);
     cell.style.backgroundImage = `url("${regionUrl(regionId)}")`;
     const state = states[regionId];
     if (state.filled) cell.classList.add(state.ok ? "is-good" : "is-bad");
@@ -154,6 +160,63 @@ function render() {
   kit.note(left ? `${left} dominoes left. ${ready} of ${puzzle.regions.length} areas are correct.` : "Check every colored area.");
 }
 
+function cellsOf(id) {
+  const cells = [];
+  owners.forEach((owner, index) => {
+    if (owner === id) cells.push(index);
+  });
+  cells.sort((a, b) => a - b);
+  return cells;
+}
+
+function samePair(id, a, b, head, tail) {
+  return values[a] === head && values[b] === tail && owners[a] === id && owners[b] === id && cellsOf(id).length === 2;
+}
+
+function clearDomino(id) {
+  owners.forEach((owner, index) => {
+    if (owner === id) {
+      owners[index] = null;
+      values[index] = null;
+    }
+  });
+}
+
+function commit(id, a, b, head, tail) {
+  if (samePair(id, a, b, head, tail)) {
+    render();
+    return;
+  }
+  clearDomino(id);
+  values[a] = head;
+  values[b] = tail;
+  owners[a] = id;
+  owners[b] = id;
+  selected = null;
+  flipped = false;
+  anchor = null;
+  kit.remember(snapshot());
+  kit.addMove();
+  render();
+  if (pipsSolved(puzzle, values)) kit.win();
+}
+
+function rotate(id) {
+  const cells = cellsOf(id);
+  if (cells.length !== 2) return;
+  const [c0, c1] = cells;
+  const next = nextRotation(
+    c0,
+    c1,
+    values[c0],
+    values[c1],
+    puzzle.cols,
+    puzzle.rows,
+    (cell) => owners[cell] != null && owners[cell] !== id
+  );
+  commit(id, next.cells[0], next.cells[1], next.values[0], next.values[1]);
+}
+
 function lift(cell) {
   const id = owners[cell];
   if (id == null) return;
@@ -186,8 +249,32 @@ function place(a, b) {
   if (pipsSolved(puzzle, values)) kit.win();
 }
 
+bindDominoDrag(board, {
+  enabled: () => !kit.won,
+  onTapTray(id) {
+    if (selected === id) flipped = !flipped;
+    else {
+      selected = id;
+      flipped = false;
+    }
+    anchor = null;
+    render();
+  },
+  onTapPlaced: rotate,
+  onPlace: commit,
+  onReturn(id) {
+    clearDomino(id);
+    selected = id;
+    flipped = false;
+    anchor = null;
+    kit.remember(snapshot());
+    render();
+  },
+  onCancel: render,
+});
+
 board.addEventListener("click", (event) => {
-  if (kit.won) return;
+  if (kit.won || event.detail !== 0) return;
   const dominoBtn = event.target.closest("[data-domino]");
   if (dominoBtn) {
     const id = Number(dominoBtn.dataset.domino);

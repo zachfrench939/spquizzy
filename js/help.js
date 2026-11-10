@@ -42,9 +42,9 @@ export const TUTORIALS = {
   pips: {
     goal: "Place every domino so each coloured area follows its label.",
     steps: [
-      ["Place a domino.", "Tap a domino, then tap two squares that share a side. The first square gets the first half. Tap the domino again to swap the halves if you need to."],
+      ["Place a domino.", "Drag a domino from the tray onto the board. It snaps to the nearest two squares that share a side. Tap a placed domino to turn it, or drag it off the board to put it back. With a keyboard, press a domino, then press two squares."],
       ["Read the label.", "“Add to 3” means the dots in that colour add up to 3. “All same” means every half in that colour shows the same number. “Over” and “Under” mean the total is above or below the number."],
-      ["Green is right, red is wrong.", "A green edge means that area is complete and correct. A red edge means it is full but the label failed — lift the domino and try again."],
+      ["Green is right, red is wrong.", "A green edge means that area is complete and correct. A red edge means it is full but the label failed — drag that domino off and try again."],
     ],
   },
 };
