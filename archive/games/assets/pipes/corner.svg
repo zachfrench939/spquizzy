@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="mcorner" gradientUnits="userSpaceOnUse" x1="0" y1="27" x2="0" y2="73">
+      <stop offset="0" stop-color="#4a5562"/>
+      <stop offset="0.16" stop-color="#f7fafc"/>
+      <stop offset="0.42" stop-color="#d0d7e0"/>
+      <stop offset="0.7" stop-color="#8e9aab"/>
+      <stop offset="1" stop-color="#3c4654"/>
+    </linearGradient>
+    <linearGradient id="mcornerv" gradientUnits="userSpaceOnUse" x1="27" y1="0" x2="73" y2="0">
+      <stop offset="0" stop-color="#4a5562"/>
+      <stop offset="0.16" stop-color="#f7fafc"/>
+      <stop offset="0.42" stop-color="#d0d7e0"/>
+      <stop offset="0.7" stop-color="#8e9aab"/>
+      <stop offset="1" stop-color="#3c4654"/>
+    </linearGradient>
+  </defs>
+  <path d="M-1 50 H50" stroke="url(#mcorner)" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
+  <path d="M50 50 V101" stroke="url(#mcornerv)" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
+</svg>

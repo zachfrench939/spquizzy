@@ -1,0 +1,537 @@
+import { CONTACT_EMAIL, PRIMARY_GAME } from "./config.js";
+import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
+import { stepsHtml, TUTORIALS } from "./help.js";
+import { mountTutorial } from "./tutorial.js";
+import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
+import { track } from "./analytics.js";
+import { shareResult } from "./share.js";
+import { iconSvg, wombatSvg, pastaBurstHtml, trophySvg } from "./art.js";
+import { submitAndRank, rankMessage } from "./scores.js";
+import { renderArchive } from "./archive.js";
+
+const LOADERS = {
+  sauce: () => import("./play/sauce.js"),
+  slip: () => import("./play/slip.js"),
+  twirl: () => import("./play/twirl.js"),
+  bowls: () => import("./play/bowls.js"),
+  ravioli: () => import("./play/ravioli.js"),
+  pips: () => import("./play/pips.js"),
+};
+
+function currentFile() {
+  const last = location.pathname.split("/").filter(Boolean).pop() || "index.html";
+  return last.includes(".") ? last : "index.html";
+}
+
+function gameHref(game) {
+  return game.href;
+}
+
+function statusFor(gameId, today) {
+  const stats = loadStats(gameId);
+  const day = stats.wins[today] || {};
+  const solved = DIFFICULTIES.filter((diff) => day[diff]?.won);
+  if (solved.length) return "Solved";
+  const busy = DIFFICULTIES.some((diff) => {
+    const run = loadRun(gameId, diff, today);
+    return run && !run.won && run.moves > 0;
+  });
+  return busy ? "Playing" : "Ready";
+}
+
+function wickLine() {
+  return `<p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>`;
+}
+
+function withFoot(html) {
+  return `${html}<footer class="site-foot">${wickLine()}</footer>`;
+}
+
+function adSlot(slot) {
+  return `<div class="ad-slot" data-ad-slot="${slot}"><a class="skip-ad" href="#after-${slot}">Skip advertisement</a><span>Advertisement</span></div><span id="after-${slot}" tabindex="-1"></span>`;
+}
+
+function navGames(today, activeId) {
+  return GAMES.map((game) => {
+    const active = game.id === activeId ? " is-active" : "";
+    return `<a class="nav-game${active}" href="${gameHref(game)}">
+      <span class="nav-icon">${iconSvg(game.id)}</span>
+      <span class="nav-copy"><strong>${game.name}</strong><em>${game.blurb}</em><small>${statusFor(game.id, today)}</small></span>
+    </a>`;
+  }).join("");
+}
+
+function howLinks() {
+  const pages = [
+    ["sauce-pipes", "Sauce Pipes rules"],
+    ["pasta-pips", "Pasta Pips rules"],
+    ["ravioli", "Ravioli rules"],
+    ["slip", "Slip rules"],
+    ["twirl", "Twirl rules"],
+    ["even-bowls", "Even Bowls rules"],
+  ];
+  return pages.map(([slug, label]) => `<a href="/how-to-play/${slug}/">${label}</a>`).join("");
+}
+
+function shell({ activeId, page }) {
+  const today = todayString();
+  const file = currentFile();
+  const games = navGames(today, activeId);
+  const link = (href, label) => `<a href="${href}"${file === href ? ' aria-current="page"' : ""}>${label}</a>`;
+  return `
+    <a class="skip" href="#stage">Skip to games</a>
+    <header class="topbar">
+      <button type="button" class="menu-btn" id="menu-open" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" fill="currentColor"/></svg></button>
+      <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">SPIQUIZZY</a>
+      <nav class="header-nav" aria-label="Main">
+        ${link("/games/", "All games")}
+        ${link("/archive/", "Archive")}
+        ${link("/how-to-play/", "How to play")}
+        ${link("/about/", "About")}
+      </nav>
+      <span class="top-spacer" aria-hidden="true"></span>
+    </header>
+    <div class="frame">
+      <aside class="sidebar">
+        <p class="side-kicker">${formatLong(today)}</p>
+        <nav class="side-games" aria-label="Games">${games}</nav>
+        <nav class="side-links" aria-label="More">
+          ${link("/games/", "All games")}
+          ${link("/archive/", "Archive")}
+          ${link("/about/", "About")}
+          ${link("/privacy/", "Privacy")}
+          ${link("/cookies/", "Cookies")}
+          ${link("/terms/", "Terms")}
+          ${howLinks()}
+        </nav>
+      </aside>
+      <div class="backdrop" id="backdrop" hidden></div>
+      <aside class="drawer" id="drawer" inert aria-hidden="true" aria-label="Menu">
+        <div class="drawer-head">
+          <strong><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">Spiquizzy</strong>
+          <button type="button" id="menu-close" aria-label="Close menu">Close</button>
+        </div>
+        <nav class="side-games">${games}</nav>
+        <nav class="side-links">
+          ${link("/games/", "All games")}
+          ${link("/archive/", "Archive")}
+          ${link("/about/", "About")}
+          ${link("/privacy/", "Privacy")}
+          ${link("/cookies/", "Cookies")}
+          ${link("/terms/", "Terms")}
+          ${link("/how-to-play/", "How to play")}
+        </nav>
+        ${wickLine()}
+      </aside>
+      <main class="stage" id="stage"></main>
+    </div>`;
+}
+
+function bindDrawer() {
+  const drawer = document.querySelector("#drawer");
+  const backdrop = document.querySelector("#backdrop");
+  const open = document.querySelector("#menu-open");
+  const close = document.querySelector("#menu-close");
+  const set = (on) => {
+    drawer.classList.toggle("is-open", on);
+    drawer.inert = !on;
+    drawer.setAttribute("aria-hidden", on ? "false" : "true");
+    backdrop.hidden = !on;
+    open.setAttribute("aria-expanded", on ? "true" : "false");
+  };
+  open.addEventListener("click", () => set(true));
+  close.addEventListener("click", () => set(false));
+  backdrop.addEventListener("click", () => set(false));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") set(false);
+  });
+}
+
+function mountChrome(activeId, { home = false } = {}) {
+  document.body.classList.toggle("is-home", home);
+  document.body.classList.toggle("is-play", !home && Boolean(activeId));
+  const app = document.querySelector("#app");
+  app.innerHTML = shell({ activeId });
+  bindDrawer();
+}
+
+const iconBtn = (label, extra = "") =>
+  `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+
+function sheetClose(id) {
+  return `<button type="button" id="${id}" class="sheet-x" aria-label="Close">${iconBtn("Close")}</button>`;
+}
+
+function resultsSheet(game, run) {
+  const next = nextGame(game);
+  const word = plural(game.noun, run?.moves || 0);
+  const streak = loadStats(game.id).streak || 0;
+  return `
+    <dialog id="win" class="sheet">
+      ${sheetClose("win-close")}
+      <div class="mascot mascot-sm">${wombatSvg("win")}</div>
+      <div class="pasta-burst" id="win-burst" aria-hidden="true">${pastaBurstHtml()}</div>
+      <h2 id="win-title">SOLVED!</h2>
+      <p id="win-time" class="win-time">${formatTime(run?.seconds || 0)}</p>
+      <p class="trophy-row"><span class="trophy">${trophySvg()}</span><span id="rank-line" class="rank-line">Checking today's times…</span></p>
+      <ul class="done-stats" id="win-stats">
+        <li>${run?.moves || 0} ${word}</li>
+        ${streak > 0 ? `<li>Streak ${streak}</li>` : ""}
+      </ul>
+      <p id="win-detail">${game.cheer}</p>
+      <div class="sheet-actions">
+        <button type="button" id="share" class="btn btn-basil">Share</button>
+        <button type="button" id="win-share" class="sr-only">Share</button>
+        <a id="win-next" class="btn btn-tomato" href="${next.href}">Next: ${next.name}</a>
+      </div>
+      ${wickLine()}
+      ${adSlot("results_rectangle")}
+    </dialog>`;
+}
+
+function helpSheet(game) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
+  return `
+    <dialog id="how" class="sheet how-sheet" aria-modal="true" aria-labelledby="how-title" aria-describedby="how-goal">
+      <div class="how-scroll">
+        <div class="how-head">
+          <img class="how-wombat" src="/assets/wombat/thinking.webp" width="238" height="329" alt="Wombat thinking">
+          <h2 id="how-title">How to play</h2>
+          ${sheetClose("how-close")}
+        </div>
+        <p id="how-goal" class="how-goal">${goal}</p>
+        <div id="how-stage" class="how-stage" tabindex="0" aria-label="Try it"></div>
+        ${stepsHtml(game.id)}
+      </div>
+      <footer class="how-foot">
+        <button type="button" id="how-done" class="btn btn-play">Play</button>
+        <a class="how-more" href="/how-to-play/${game.slug}/">Full rules</a>
+      </footer>
+    </dialog>`;
+}
+
+function paintStaticTutorials(scope) {
+  scope.querySelectorAll("[data-tutorial]").forEach((el) => {
+    mountTutorial(el, el.dataset.tutorial, { interactive: false, solved: el.dataset.solved === "1" });
+  });
+}
+
+function diffButtons(pressed) {
+  return DIFFICULTIES.map((name) => {
+    const label = name.charAt(0).toUpperCase() + name.slice(1);
+    return `<button type="button" data-diff="${name}" aria-pressed="${name === pressed ? "true" : "false"}">${label}</button>`;
+  }).join("");
+}
+
+function gameStage(game, diff) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
+  return `
+    <article class="play">
+      <header class="game-header">
+        <a class="icon-btn" href="/" aria-label="Back to all games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-8 7 8 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <div class="game-title"><img src="/logo-mark.png" width="28" height="28" alt="">${game.name}</div>
+        <p id="timer" class="timer">0:00</p>
+        <button type="button" id="how-open" class="icon-btn" aria-label="How to play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 10v6M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      </header>
+      <div class="diffs play-diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
+      <p class="rule-bar" id="rule">${goal}</p>
+      <p id="stat-line" class="sr-only">Ready</p>
+      <button type="button" id="pause" class="sr-only" aria-pressed="false">Pause</button>
+      <p id="when" class="sr-only"></p>
+      <p id="solved-flag" class="solved-flag" hidden>Solved</p>
+      <p id="archive-note" class="archive-note" hidden></p>
+      <div class="note-row"><p id="note" class="note"></p><div class="react" id="react" hidden></div></div>
+      <div class="board-slot"><div id="board" class="board"></div></div>
+      <div class="pause-screen"><p>Paused</p><button type="button" id="resume" class="btn btn-play">Resume</button></div>
+      <div class="action-bar toolbar">
+        <button type="button" id="undo" class="pill pill-undo" disabled>Undo</button>
+        <button type="button" id="reset" class="pill pill-reset">Reset</button>
+        <button type="button" id="hint" class="pill pill-hint">Hint</button>
+      </div>
+    </article>
+    <p id="live" class="sr-only" aria-live="polite"></p>
+      <footer class="site-foot">${wickLine()}</footer>
+    ${helpSheet(game)}
+    <dialog id="settings" class="sheet">
+      ${sheetClose("settings-close")}
+      <h2>Settings</h2>
+      <p class="goal">Difficulty changes today's board.</p>
+      <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
+    </dialog>
+    ${resultsSheet(game, { moves: 0, seconds: 0 })}
+    <div id="toast" class="toast" hidden></div>`;
+}
+
+function puzzleDate() {
+  const params = new URLSearchParams(location.search);
+  const today = todayString();
+  const requested = params.get("date");
+  if (isValidDate(requested) && compareDates(requested, today) <= 0) return requested;
+  return today;
+}
+
+function initialDiff(gameId) {
+  const requested = new URLSearchParams(location.search).get("diff");
+  if (DIFFICULTIES.includes(requested)) return requested;
+  const stored = getStorage().getItem(diffKey(gameId));
+  return DIFFICULTIES.includes(stored) ? stored : "easy";
+}
+
+function countdownText() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const minutes = Math.max(1, Math.round((next - now) / 60000));
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours <= 0) return `A new puzzle in ${rest} minutes.`;
+  return `A new puzzle in ${hours} hours ${rest} minutes.`;
+}
+
+function nextGame(game) {
+  const index = GAMES.findIndex((item) => item.id === game.id);
+  return GAMES[(index + 1) % GAMES.length];
+}
+
+function doneStage(game, run, diff) {
+  const choices = DIFFICULTIES.map((name) => {
+    const label = name.charAt(0).toUpperCase() + name.slice(1);
+    return `<button type="button" data-diff="${name}" aria-pressed="${name === diff ? "true" : "false"}">${label}</button>`;
+  }).join("");
+  const next = nextGame(game);
+  const word = plural(game.noun, run.moves || 0);
+  return `
+    <section class="done">
+      <div class="mascot mascot-win">${wombatSvg("win")}</div>
+      <div class="pasta-burst" aria-hidden="true">${pastaBurstHtml()}</div>
+      <p class="done-kicker">${game.cheer}</p>
+      <h1 class="game-name">You solved today's puzzle</h1>
+      <p class="goal">${game.name}. ${game.goal}</p>
+      <ul class="done-stats">
+        <li>${run.moves} ${word}</li>
+        <li>${formatTime(run.seconds || 0)}</li>
+      </ul>
+      <p id="rank-line" class="rank-line">Checking today's times…</p>
+      <p class="countdown">${countdownText()}</p>
+      <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
+      <a class="btn btn-tomato" href="${next.href}">Next game: ${next.name}</a>
+      <button type="button" class="tool" id="play-again">Play this one again</button>
+    </section>`;
+}
+
+function introStage(game, { diff, cta, date }) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
+  return `
+    <header class="game-header">
+      <a class="icon-btn" href="/" aria-label="Back to all games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-8 7 8 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <div class="game-title"><img src="/logo-mark.png" width="28" height="28" alt="">Spiquizzy</div>
+      <span></span>
+      <a class="icon-btn" href="/how-to-play/${game.slug}/" aria-label="How to play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 10v6M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></a>
+    </header>
+    <section class="splash ${game.cart}">
+      <div class="splash-body">
+        <div class="splash-preview"><img src="/assets/covers/${game.id}-board.png" alt=""></div>
+        <h1 class="game-name">${game.name}</h1>
+        <p class="goal">${goal}</p>
+        <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
+        <button type="button" class="btn btn-play" id="start-game">${cta}</button>
+        <p class="byline">${formatLong(date)} · Puzzle ${puzzleNumber(date)}</p>
+      </div>
+      ${adSlot("game_below_banner")}
+    </section>
+    ${helpSheet(game)}`;
+}
+
+function paintRank(game, diff, run) {
+  const line = document.querySelector("#rank-line");
+  if (!line) return;
+  submitAndRank({
+    slug: game.slug,
+    difficulty: diff,
+    date: puzzleDate(),
+    seconds: run.seconds || 0,
+    moves: run.moves || 0,
+  }).then((rank) => {
+    if (!line.isConnected) return;
+    const text = rankMessage(rank, run.seconds);
+    if (!text) {
+      line.hidden = true;
+      return;
+    }
+    line.textContent = text;
+  });
+}
+
+export function openHome() {
+  const today = todayString();
+  const main = gameById(PRIMARY_GAME);
+  document.title = "Spiquizzy · Daily pasta puzzles";
+  mountChrome(null, { home: true });
+  const cards = GAMES.filter((game) => game.id !== main.id).map((game) => catalogCard(game, today)).join("");
+  const goal = TUTORIALS[main.id]?.goal || main.goal;
+  document.querySelector("#stage").innerHTML = `
+    <section class="home-page">
+      <header class="hero-hub">
+        <img class="wombat-hero" src="/assets/wombat/idle.webp" width="238" height="329" alt="The Spiquizzy wombat, smiling">
+        <h1 class="hero-line">Today’s pasta puzzles</h1>
+        <p class="hero-when">${formatLong(today)} · Puzzle ${puzzleNumber(today)}</p>
+      </header>
+      <article class="feature-card">
+        <a class="feature-cover" href="${main.href}"><picture><source media="(max-width: 800px)" srcset="/assets/covers/sauce-board-mobile.png"><img src="/assets/covers/sauce-board.png" alt="Sauce Pipes board, pipes and sauce"></picture></a>
+        <div class="feature-body">
+          <p class="kicker">Today’s main game</p>
+          <h2 class="game-name">${main.name}</h2>
+          <p class="goal">${goal}</p>
+          <a class="btn btn-play" href="${main.href}">Play</a>
+        </div>
+      </article>
+      <h2 class="hub-title">All games</h2>
+      <div class="game-grid home-grid">${cards}</div>
+    </section>
+    <footer class="site-footer">
+      ${wickLine()}
+      <nav class="legal" aria-label="More on Spiquizzy">
+        <a href="/about/">About</a>
+        <a href="/archive/">Archive</a>
+        <a href="/how-to-play/">How to play</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/cookies/">Cookies</a>
+        <a href="/terms/">Terms</a>
+      </nav>
+    </footer>`;
+}
+
+function catalogCard(game, today) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
+  const state = statusFor(game.id, today);
+  const played = state === "Ready" ? "Ready" : "Played";
+  return `<article class="game-card">
+    <a class="cover" href="${game.href}"><img src="/assets/covers/${game.id}.png" alt=""></a>
+    <div class="body">
+      <h3><a href="${game.href}">${game.name}</a></h3>
+      <p>${goal}</p>
+      <p class="meta">${played}</p>
+      <a class="btn btn-play" href="${game.href}">Play</a>
+    </div>
+  </article>`;
+}
+
+export async function openGame(gameId) {
+  const game = gameById(gameId) || gameById(PRIMARY_GAME);
+  document.title = `${game.name} · Spiquizzy`;
+  mountChrome(game.id);
+  let diff = initialDiff(game.id);
+  const stage = document.querySelector("#stage");
+
+  function showEntry() {
+    const run = loadRun(game.id, diff, puzzleDate());
+    if (run?.won) {
+      stage.innerHTML = withFoot(`${introStage(game, { diff, cta: "Play again", date: puzzleDate() })}${resultsSheet(game, run)}<div id="toast" class="toast" hidden></div>`);
+      paintStaticTutorials(stage);
+      const dialog = document.querySelector("#win");
+      dialog?.showModal();
+      document.querySelector("#win-close")?.addEventListener("click", () => dialog.close());
+      document.querySelector("#start-game")?.addEventListener("click", () => {
+        clearRun(game.id, diff, puzzleDate());
+        location.reload();
+      });
+      stage.querySelectorAll("[data-diff]").forEach((button) => {
+        button.addEventListener("click", () => {
+          diff = button.dataset.diff;
+          showEntry();
+        });
+      });
+      document.querySelector("#play-again")?.addEventListener("click", () => {
+        clearRun(game.id, diff, puzzleDate());
+        location.reload();
+      });
+      document.querySelector("#share")?.addEventListener("click", async () => {
+        const status = await shareResult({
+          title: game.name,
+          date: puzzleDate(),
+          diff,
+          noun: game.noun,
+          moves: run.moves,
+          par: run.par,
+          seconds: run.seconds,
+          rank: document.querySelector("#rank-line")?.textContent || "",
+        });
+        const toast = document.querySelector("#toast");
+        if (toast && status !== "cancel") {
+          toast.hidden = false;
+          toast.textContent = status === "failed" ? "Could not copy" : status === "shared" ? "Shared" : "Copied results";
+        }
+      });
+      paintRank(game, diff, run);
+      return;
+    }
+    const cta = run && run.moves > 0 ? "Continue" : "Play";
+    stage.innerHTML = withFoot(introStage(game, { diff, cta, date: puzzleDate() }));
+    paintStaticTutorials(stage);
+    stage.querySelectorAll("[data-diff]").forEach((button) => {
+      button.addEventListener("click", () => {
+        diff = button.dataset.diff;
+        showEntry();
+      });
+    });
+    document.querySelector("#start-game").addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      const url = new URL(location.href);
+      url.searchParams.set("diff", diff);
+      history.replaceState(null, "", url);
+      getStorage().setItem(diffKey(game.id), diff);
+      stage.innerHTML = gameStage(game, diff);
+      const how = document.querySelector("#how");
+      const first = how && !getStorage().getItem(`spquizzy.how.v2:${game.id}`);
+      if (first) document.body.dataset.howFirst = "1";
+      const mod = await LOADERS[game.id]();
+      if (typeof mod.mount === "function") mod.mount();
+      mountTutorial(document.querySelector("#how-stage"), game.id, { interactive: true });
+      track("play");
+      if (first) {
+        document.querySelector("#how-done").textContent = "Play";
+        how.showModal();
+        document.querySelector("#how-stage")?.focus();
+      }
+      delete document.body.dataset.howFirst;
+    });
+  }
+
+  showEntry();
+}
+
+export function openDirectory() {
+  document.title = "All games · Spiquizzy";
+  mountChrome(null);
+  const today = todayString();
+  document.querySelector("#stage").innerHTML = `
+    <section class="home-page">
+      <h1 class="hero-line">All games</h1>
+      <p class="hero-when">Six plates, same every day.</p>
+      <div class="game-grid home-grid">${GAMES.map((game) => catalogCard(game, today)).join("")}</div>
+    </section>
+    <footer class="site-footer">${wickLine()}</footer>`;
+}
+
+export function openArchive() {
+  document.title = "Archive of free daily puzzles | Spiquizzy";
+  const copy = document.querySelector("#static-copy");
+  const html = copy?.innerHTML || `<h1 class="game-name">Archive</h1><p class="lede">Past plates, still warm. Easy, Medium and Hard light up when that difficulty is cleared on this device.</p>`;
+  mountChrome(null);
+  document.querySelector("#stage").innerHTML = withFoot(`
+    <article class="page-intro">${html}</article>
+    <form class="jump"><label for="jump">Jump to a date</label><input id="jump" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" autocomplete="off" spellcheck="false"></form>
+    <div id="shelves"></div>`);
+  renderArchive(document.querySelector("#shelves"), document.querySelector("#jump"));
+}
+
+export function openAbout() {
+  document.title = "About Spiquizzy, free daily puzzle games";
+  const copy = document.querySelector("#static-copy");
+  const html = copy?.innerHTML || `<h1 class="game-name">About</h1><p class="lede">Spiquizzy is six daily pasta puzzles and one wombat who takes sauce seriously.</p>`;
+  mountChrome(null);
+  document.querySelector("#stage").innerHTML = withFoot(`<article class="page-intro about">${html}</article>`);
+  document.querySelectorAll("[data-contact]").forEach((el) => {
+    el.textContent = CONTACT_EMAIL;
+    if (el.tagName === "A") el.href = `mailto:${CONTACT_EMAIL}`;
+  });
+}
