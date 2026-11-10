@@ -157,7 +157,7 @@ function render() {
   board.append(grid, tray);
   const left = remaining().length;
   const ready = states.filter((region) => region.ok).length;
-  kit.note(left ? `${left} dominoes left. ${ready} of ${puzzle.regions.length} areas are correct.` : "Check every colored area.");
+  kit.note(left ? `${left} dominoes left. ${ready} of ${puzzle.regions.length} areas are correct.` : "Check every coloured area.");
 }
 
 function cellsOf(id) {

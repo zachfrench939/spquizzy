@@ -376,7 +376,7 @@ export function openHome() {
         <p class="hero-when">${formatLong(today)} · Puzzle ${puzzleNumber(today)}</p>
       </header>
       <article class="feature-card">
-        <a class="feature-cover" href="${main.href}"><img src="/assets/covers/sauce-board.png" alt="Sauce Pipes board, pipes and sauce"></a>
+        <a class="feature-cover" href="${main.href}"><picture><source media="(max-width: 800px)" srcset="/assets/covers/sauce-board-mobile.png"><img src="/assets/covers/sauce-board.png" alt="Sauce Pipes board, pipes and sauce"></picture></a>
         <div class="feature-body">
           <p class="kicker">Today’s main game</p>
           <h2 class="game-name">${main.name}</h2>

@@ -1917,8 +1917,8 @@ body.is-home {
 .piece.ball .eye.r { right: 12%; }
 .piece.ball .mouth { top: 64%; border-bottom-width: 3px; left: 26%; right: 26%; }
 
-body.is-play .play { flex: 0 1 auto; }
-body.is-play .board-slot { flex: 0 0 auto; }
+body.is-play .play { flex: 0 0 auto; min-height: auto; }
+body.is-play .board-slot { flex: 0 0 auto; overflow: visible; }
 body.is-play .rule-bar { display: none; }
 .play .icon-btn {
   color: #1e2a2a;
@@ -2414,7 +2414,32 @@ html.is-pips-drag, html.is-pips-drag body { overflow: hidden; }
   border: 0;
   border-radius: 0 !important;
 }
-.face.is-art { background: transparent !important; border: 0 !important; box-shadow: none !important; width: 72%; height: 72%; }
+.face.is-art {
+  display: block;
+  inset: 0;
+  left: 0;
+  right: auto;
+  top: 0;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.region-cell.is-art.link-e .face.is-art,
+.region-cell.is-art.link-w .face.is-art,
+.region-cell.is-art.link-n .face.is-art,
+.region-cell.is-art.link-s .face.is-art {
+  left: 0;
+  right: auto;
+  top: 0;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+}
+.region-cell.is-art.link-e .face.is-art { width: calc(100% + 2px); }
+.region-cell.is-art.link-s .face.is-art { height: calc(100% + 2px); }
 .pip-face { width: 100%; height: 100%; display: block; }
 .domino-btn.is-art {
   background: transparent !important;
@@ -2587,9 +2612,15 @@ body.is-play .stage { padding-top: 0; }
 @media (min-width: 1040px) {
   .home-grid { grid-template-columns: 1fr 1fr 1fr; }
 }
+.feature-cover picture { display: block; width: 100%; height: 100%; }
 @media (max-width: 800px) {
   .feature-cover { height: 132px; }
-  .feature-cover img, .splash-preview img {
+  .feature-cover img {
+    object-fit: cover;
+    object-position: center;
+    background: #18222c;
+  }
+  .splash-preview img {
     object-fit: contain;
     object-position: center;
     background: #18222c;
@@ -2600,7 +2631,12 @@ body.is-play .stage { padding-top: 0; }
   .hero-hub { gap: 2px; }
   .hero-line { font-size: 22px; line-height: 1.15; }
   .feature-card { margin-top: 8px; }
-  .feature-cover { height: 96px; }
   .feature-body { padding: 8px 14px 10px; gap: 4px; }
   .feature-body .game-name, .feature-body h2 { font-size: 24px; }
+  .domino-btn.is-art .pip-face { width: 36px; height: 36px; }
+  .tray-row { gap: 6px; margin-top: 4px; padding: 4px 0 0; }
+  .pips-layout { gap: 6px; }
+  body.is-play .rule-bar { padding: 2px 8px; }
+  body.is-play .play { gap: 2px; }
+  body.is-play .site-foot { margin-top: 8px; padding-bottom: 8px; }
 }
