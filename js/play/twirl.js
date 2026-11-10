@@ -72,8 +72,8 @@ function render() {
     poly.setAttribute("fill", "none");
     poly.setAttribute("stroke", COLORS[item.i % COLORS.length]);
     poly.setAttribute("stroke-width", item.preview ? "0.34" : "0.42");
-    poly.setAttribute("stroke-linecap", "square");
-    poly.setAttribute("stroke-linejoin", "miter");
+    poly.setAttribute("stroke-linecap", "round");
+    poly.setAttribute("stroke-linejoin", "round");
     poly.setAttribute("opacity", item.preview ? "0.75" : "1");
     svg.append(poly);
   }
@@ -117,8 +117,8 @@ function paintLinks() {
     poly.setAttribute("fill", "none");
     poly.setAttribute("stroke", COLORS[item.i % COLORS.length]);
     poly.setAttribute("stroke-width", item.preview ? "0.34" : "0.42");
-    poly.setAttribute("stroke-linecap", "square");
-    poly.setAttribute("stroke-linejoin", "miter");
+    poly.setAttribute("stroke-linecap", "round");
+    poly.setAttribute("stroke-linejoin", "round");
     poly.setAttribute("opacity", item.preview ? "0.75" : "1");
     svg.append(poly);
   }

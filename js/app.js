@@ -44,7 +44,7 @@ function navGames(today, activeId) {
     const active = game.id === activeId ? " is-active" : "";
     return `<a class="nav-game${active}" href="${gameHref(game)}">
       <span class="nav-icon">${iconSvg(game.id)}</span>
-      <span class="nav-copy"><strong>${game.name}</strong><small>${statusFor(game.id, today)}</small></span>
+      <span class="nav-copy"><strong>${game.name}</strong><em>${game.blurb}</em><small>${statusFor(game.id, today)}</small></span>
     </a>`;
   }).join("");
 }
@@ -69,7 +69,6 @@ function shell({ activeId, page }) {
           ${link("archive.html", "Archive")}
           ${link("about.html", "About")}
         </nav>
-        <div id="side-ad"></div>
       </aside>
       <div class="backdrop" id="backdrop" hidden></div>
       <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Menu">
@@ -120,7 +119,6 @@ function gameStage(game) {
         <div>
           <p id="when" class="when"></p>
           <h1 class="game-name">${game.name}</h1>
-          <p class="goal">${game.goal}</p>
         </div>
         <button type="button" id="how-open" class="help-btn" aria-label="How to play">?</button>
       </div>
@@ -135,9 +133,9 @@ function gameStage(game) {
       </div>
       <p id="solved-flag" class="solved-flag" hidden>Solved</p>
       <p id="archive-note" class="archive-note" hidden></p>
+      <p class="rule-bar" id="rule">${game.goal}</p>
       <p id="note" class="note"></p>
       <div id="board" class="board"></div>
-      ${adSlot("below-board", "ad-below")}
       <div class="tool-row">
         <button type="button" id="reset" class="tool">Reset</button>
         <button type="button" id="share" class="tool" disabled>Share</button>
@@ -154,7 +152,6 @@ function gameStage(game) {
       <div class="burst" id="win-burst" aria-hidden="true"></div>
       <h2 id="win-title">Plated</h2>
       <p id="win-detail"></p>
-      ${adSlot("result", "ad-result")}
       <div class="actions">
         <button type="button" id="win-share" class="btn btn-basil">Share</button>
         <button type="button" id="win-close" class="btn">Close</button>
@@ -230,6 +227,7 @@ function introStage(game, { landing, diff, cta }) {
       <p class="goal">${game.goal}</p>
       <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
       <button type="button" class="btn btn-tomato" id="start-game">${cta}</button>
+      <button type="button" class="tool more-games" id="more-games">Other games</button>
       ${landing ? "" : adSlot("intro", "ad-intro")}
     </section>`;
 }
@@ -266,6 +264,9 @@ export async function openGame(gameId) {
         showEntry();
       });
     });
+    document.querySelector("#more-games")?.addEventListener("click", () => {
+      document.querySelector("#menu-open")?.click();
+    });
     document.querySelector("#start-game").addEventListener("click", async (event) => {
       event.currentTarget.disabled = true;
       const url = new URL(location.href);
@@ -273,8 +274,6 @@ export async function openGame(gameId) {
       history.replaceState(null, "", url);
       getStorage().setItem(diffKey(game.id), diff);
       stage.innerHTML = gameStage(game);
-      const side = document.querySelector("#side-ad");
-      if (side) side.innerHTML = adSlot("sidebar", "ad-side");
       const mod = await LOADERS[game.id]();
       if (typeof mod.mount === "function") mod.mount();
       const how = document.querySelector("#how");

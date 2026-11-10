@@ -3,18 +3,20 @@ function step(n, title, text, picture) {
 }
 
 const pipe = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
-  <rect x="1" y="1" width="26" height="26" rx="3" fill="#fff8e6" stroke="#1e2a2a" stroke-width="2"/>
-  <rect x="10" y="0" width="8" height="16" fill="#e0a82e"/>
-  <rect x="10" y="10" width="16" height="8" fill="#e0a82e"/>
-  <rect x="45" y="1" width="26" height="26" rx="3" fill="#fff8e6" stroke="#1e2a2a" stroke-width="2"/>
-  <rect x="54" y="0" width="8" height="16" fill="#e23b2f"/>
-  <rect x="54" y="10" width="18" height="8" fill="#e23b2f"/>
+  <rect x="1" y="1" width="26" height="26" rx="6" fill="#fff"/>
+  <rect x="11" y="2" width="6" height="14" rx="3" fill="#e0a82e"/>
+  <rect x="11" y="11" width="14" height="6" rx="3" fill="#e0a82e"/>
+  <rect x="45" y="1" width="26" height="26" rx="6" fill="#fff"/>
+  <rect x="55" y="2" width="6" height="14" rx="3" fill="#e23b2f"/>
+  <rect x="55" y="11" width="14" height="6" rx="3" fill="#e23b2f"/>
 </svg>`;
 
-const slip = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
-  <rect x="1" y="4" width="22" height="18" rx="2" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2"/>
-  <circle cx="46" cy="14" r="8" fill="#f6c945" stroke="#1e2a2a" stroke-width="2"/>
-  <path d="M62 8 L70 14 L62 20 Z" fill="#2f8f4e"/>
+const slip = `<svg class="how-fig" viewBox="0 0 120 28" aria-hidden="true">
+  <rect x="1" y="4" width="22" height="18" rx="4" fill="#f08a6a"/>
+  <circle cx="40" cy="14" r="8" fill="#f6c945" stroke="#e0a82e" stroke-width="2"/>
+  <rect x="58" y="2" width="18" height="18" rx="4" fill="#fff" stroke="#e4ddd0"/>
+  <path d="M63 15h8M67 11l4 4-4 4" fill="none" stroke="#1e2a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M92 6 L100 14 L92 22 Z" fill="#2f8f4e"/>
 </svg>`;
 
 const twirl = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
@@ -24,57 +26,57 @@ const twirl = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
 </svg>`;
 
 const bowls = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
-  <rect x="4" y="2" width="16" height="14" rx="2" fill="#f6c945" stroke="#1e2a2a" stroke-width="2"/>
-  <text x="12" y="13" text-anchor="middle" font-size="9" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">4</text>
-  <path d="M2 18 h22 v4 a10 8 0 0 1 -22 0 z" fill="#fff8e6" stroke="#1e2a2a" stroke-width="2"/>
-  <path d="M40 18 h22 v4 a10 8 0 0 1 -22 0 z" fill="#fff8e6" stroke="#1e2a2a" stroke-width="2"/>
+  <rect x="6" y="1" width="14" height="12" rx="4" fill="#f6c945"/>
+  <text x="13" y="10" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">4</text>
+  <rect x="2" y="16" width="24" height="10" rx="5" fill="#fff"/>
+  <rect x="40" y="16" width="24" height="10" rx="5" fill="#fff"/>
 </svg>`;
 
 const words = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
-  <rect x="2" y="4" width="30" height="20" rx="3" fill="#f6c945" stroke="#1e2a2a" stroke-width="2"/>
-  <rect x="40" y="4" width="30" height="20" rx="3" fill="#fff8e6" stroke="#1e2a2a" stroke-width="2"/>
+  <rect x="2" y="4" width="30" height="20" rx="6" fill="#f6c945"/>
+  <rect x="40" y="4" width="30" height="20" rx="6" fill="#fff"/>
   <text x="17" y="18" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">SUN</text>
   <text x="55" y="18" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">FLOWER</text>
 </svg>`;
 
 const domino = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
-  <rect x="4" y="2" width="40" height="24" rx="3" fill="#f6c945" stroke="#1e2a2a" stroke-width="2"/>
-  <circle cx="14" cy="14" r="2.5" fill="#1e2a2a"/>
-  <circle cx="32" cy="9" r="2.5" fill="#1e2a2a"/>
-  <circle cx="32" cy="19" r="2.5" fill="#1e2a2a"/>
-  <rect x="50" y="2" width="18" height="24" rx="3" fill="#f7c1b0" stroke="#1e2a2a" stroke-width="2"/>
-  <text x="59" y="17" text-anchor="middle" font-size="7" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">3</text>
+  <rect x="4" y="2" width="40" height="24" rx="6" fill="#f6c945"/>
+  <circle cx="14" cy="14" r="2.4" fill="#1e2a2a"/>
+  <circle cx="32" cy="9" r="2.4" fill="#1e2a2a"/>
+  <circle cx="32" cy="19" r="2.4" fill="#1e2a2a"/>
+  <rect x="50" y="2" width="18" height="24" rx="6" fill="#f7c1b0"/>
+  <text x="59" y="17" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">8</text>
 </svg>`;
 
 export const HELP = {
   sauce: `<ol class="how-steps">
-    ${step(1, "Tap a pipe", "Each tap turns that pipe once.", pipe)}
-    ${step(2, "Follow the red", "Red means the sauce is flowing out of the pot.", "")}
-    ${step(3, "Reach the plate", "Keep turning until the red sauce touches the plate.", "")}
+    ${step(1, "Tap a pipe", "One tap turns that pipe a quarter turn. Keep tapping to keep turning.", pipe)}
+    ${step(2, "Follow the red", "Red sauce leaves the pot and fills every open pipe it can reach.", "")}
+    ${step(3, "Reach the plate", "You win when the red sauce touches the plate.", "")}
   </ol>`,
   slip: `<ol class="how-steps">
-    ${step(1, "Drag a tray", "Drag it left, right, up, or down.", slip)}
-    ${step(2, "It stops at the next tray", "One drag is one move, however far it slides.", "")}
-    ${step(3, "Free the meatball", "Get the yellow ball onto the green arrow.", "")}
+    ${step(1, "Tap a block", "The yellow ball starts selected. Tap another block if you want to move that one.", slip)}
+    ${step(2, "Tap an arrow", "Each tap slides the selected block one square, when that square is empty.", "")}
+    ${step(3, "Use the green arrow", "Put the yellow ball on the green arrow.", "")}
   </ol>`,
   twirl: `<ol class="how-steps">
-    ${step(1, "Match the pictures", "Press one picture and drag to its twin.", twirl)}
-    ${step(2, "Do not cross", "A path cannot go through another path.", "")}
-    ${step(3, "Cover the board", "Every square needs to be part of a path.", "")}
+    ${step(1, "Match the pictures", "Press a picture and drag to the same picture.", twirl)}
+    ${step(2, "Stay on empty squares", "The line cannot cross another line or another picture.", "")}
+    ${step(3, "Cover every square", "You win when every square is part of a line.", "")}
   </ol>`,
   bowls: `<ol class="how-steps">
-    ${step(1, "Tap a number", "Then tap a bowl to drop it in.", bowls)}
-    ${step(2, "Watch the totals", "The number under each bowl is its sum.", "")}
-    ${step(3, "Make them match", "Use every number. Every bowl needs the same total.", "")}
+    ${step(1, "Tap a number", "It lifts off the counter.", bowls)}
+    ${step(2, "Tap a bowl", "The number drops in. The total under that bowl changes.", "")}
+    ${step(3, "Make the totals match", "Use every number. Each bowl must show the same total.", "")}
   </ol>`,
   ravioli: `<ol class="how-steps">
     ${step(1, "Tap one half", "Then tap the half that finishes the word.", words)}
-    ${step(2, "A real word locks", "Sun and flower make sunflower.", "")}
-    ${step(3, "A wrong pair shakes", "It does not lock. Try another half.", "")}
+    ${step(2, "A real word stays", "Sun and flower make sunflower, and that pair locks.", "")}
+    ${step(3, "A wrong pair shakes", "It does not lock. Try a different half.", "")}
   </ol>`,
   pips: `<ol class="how-steps">
-    ${step(1, "Pick up a domino", "Tap it, then tap two squares that touch.", domino)}
-    ${step(2, "Read the color", "Add to 8 means the dots in that color add up to 8. All same means every dot matches.", "")}
-    ${step(3, "Fill the board", "Green means that color is correct. Red means it is full but wrong.", "")}
+    ${step(1, "Pick up a domino", "Tap it, then tap two squares that share a side.", domino)}
+    ${step(2, "Read the label", "Add to 8 means the dots in that color add up to 8. All same means every dot in that color matches.", "")}
+    ${step(3, "Fill the board", "A green edge means that color is right. A red edge means it is full but wrong.", "")}
   </ol>`,
 };

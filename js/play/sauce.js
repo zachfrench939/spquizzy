@@ -30,12 +30,32 @@ function snapshot() {
   return { rots: tiles.map((tile) => tile.rot) };
 }
 
+function showHint() {
+  if (kit.moves > 0) return false;
+  try {
+    return !localStorage.getItem("spquizzy.hint.v1:sauce");
+  } catch {
+    return false;
+  }
+}
+
+function clearHint() {
+  try {
+    localStorage.setItem("spquizzy.hint.v1:sauce", "1");
+  } catch {
+    /* storage can be blocked */
+  }
+}
+
 function render(flash = -1) {
   const flow = traceFlow(tiles, puzzle.rows, puzzle.cols, puzzle.pot);
   board.style.setProperty("--n", puzzle.rows);
   board.className = "board pipe-grid";
   board.style.setProperty("--n", String(puzzle.rows));
   board.replaceChildren();
+  const open = sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate);
+  const hint = showHint() && !open;
+  let hinted = false;
   tiles.forEach((tile, index) => {
     const mask = rotMask(tile.mask, tile.rot);
     const btn = document.createElement("button");
@@ -64,15 +84,21 @@ function render(flash = -1) {
       btn.append(glyph);
     }
     if (index === flash) btn.classList.add("pop");
+    if (hint && !tile.fixed && !hinted) {
+      btn.classList.add("is-hint");
+      hinted = true;
+    }
     btn.addEventListener("click", () => turn(index));
     board.append(btn);
   });
-  const open = sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate);
-  kit.note(open ? "The sauce reached the plate." : "Red shows where the sauce can flow.");
+  if (open) kit.note("The sauce reached the plate.");
+  else if (hint) kit.note("Tap the pulsing pipe. Each tap turns it.");
+  else kit.note("Red shows where the sauce can flow.");
 }
 
 function turn(index) {
   if (kit.won || tiles[index].fixed) return;
+  if (showHint()) clearHint();
   tiles = rotateTile(tiles, index);
   kit.remember(snapshot());
   kit.addMove();

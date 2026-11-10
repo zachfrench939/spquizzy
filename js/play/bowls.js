@@ -26,15 +26,36 @@ function start() {
   render();
 }
 
+function showHint() {
+  if (kit.moves > 0) return false;
+  try {
+    return !localStorage.getItem("spquizzy.hint.v1:bowls");
+  } catch {
+    return false;
+  }
+}
+
+function clearHint() {
+  try {
+    localStorage.setItem("spquizzy.hint.v1:bowls", "1");
+  } catch {
+    /* storage can be blocked */
+  }
+}
+
 function render() {
   board.className = "board";
   board.replaceChildren();
+  const rule = document.querySelector("#rule");
+  if (rule) rule.textContent = `Make each bowl add up to ${puzzle.target}.`;
   const row = document.createElement("div");
   row.className = "bowl-row";
   row.style.setProperty("--bowls", puzzle.bowls);
   const { sums, counts } = bowlSums(puzzle.numbers, assignment, puzzle.bowls);
   const placed = assignment.every((b) => b >= 0);
   const even = placed && sums.every((s) => s === sums[0]) && counts.every((c) => c > 0);
+  const hint = showHint();
+  const firstFree = assignment.findIndex((place) => place < 0);
   for (let b = 0; b < puzzle.bowls; b++) {
     const bowl = document.createElement("div");
     bowl.className = `bowl${even ? " is-even" : ""}`;
@@ -44,39 +65,42 @@ function render() {
     const bin = document.createElement("button");
     bin.type = "button";
     bin.className = "bowl-bin";
+    if (hint && selected >= 0) bin.classList.add("is-hint");
     bin.dataset.bowl = String(b);
     bin.setAttribute("aria-label", `${name.textContent}, total ${sums[b]}`);
     assignment.forEach((place, i) => {
       if (place !== b) return;
-      bin.append(tileButton(i));
+      bin.append(tileButton(i, false));
     });
     const sum = document.createElement("p");
     sum.className = "bowl-sum";
-    sum.textContent = String(sums[b]);
+    sum.textContent = `Total ${sums[b]}`;
     bowl.append(name, bin, sum);
     row.append(bowl);
   }
   const pool = document.createElement("div");
   pool.className = "pool";
   const label = document.createElement("p");
-  label.textContent = "On the counter";
+  label.textContent = "Numbers left";
   const tiles = document.createElement("div");
   tiles.className = "pool-tiles";
   tiles.dataset.pool = "1";
   assignment.forEach((place, i) => {
-    if (place < 0) tiles.append(tileButton(i));
+    if (place < 0) tiles.append(tileButton(i, hint && selected < 0 && i === firstFree));
   });
   pool.append(label, tiles);
   board.append(row, pool);
   if (even) kit.note("The totals match.");
-  else if (placed) kit.note("Those totals do not match yet.");
+  else if (placed) kit.note("Those totals do not match yet. Tap a number to move it.");
+  else if (hint && selected < 0) kit.note("Tap the pulsing number.");
+  else if (selected >= 0) kit.note("Now tap a bowl.");
   else kit.note("Tap a number, then tap a bowl.");
 }
 
-function tileButton(i) {
+function tileButton(i, hint) {
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = `num${i === selected ? " is-selected" : ""}`;
+  btn.className = `num${i === selected ? " is-selected" : ""}${hint ? " is-hint" : ""}`;
   btn.dataset.num = String(i);
   btn.textContent = String(puzzle.numbers[i]);
   btn.setAttribute("aria-pressed", i === selected ? "true" : "false");
@@ -102,6 +126,7 @@ board.addEventListener("click", (event) => {
     if (assignment[selected] === b) return;
     assignment[selected] = b;
     selected = -1;
+    if (showHint()) clearHint();
     kit.remember(snapshot());
     kit.addMove();
     render();

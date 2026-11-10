@@ -2,7 +2,7 @@ import { createKit } from "../playkit.js";
 import { generateSlip, slidePiece, ballOnExit, clonePieces } from "../engines/slip.js";
 import { arrowSvg } from "../art.js";
 
-const COLORS = ["#e23b2f", "#f08b78", "#c0392b", "#e7c07a", "#f3d2b5", "#b85c38", "#8c2f39", "#d98a4b"];
+const COLORS = ["#f08a6a", "#7eb6d6", "#8fbf8a", "#d7a0c4", "#f2c14e", "#c4b49a", "#e07a4c", "#9aa5b1"];
 const kit = createKit("slip");
 const board = document.querySelector("#board");
 let puzzle = null;
@@ -42,11 +42,32 @@ function start() {
   if (valid(saved?.state?.pieces)) {
     pieces = pieces.map((p, i) => ({ ...p, r: saved.state.pieces[i].r, c: saved.state.pieces[i].c }));
   }
-  selected = 0;
+  selected = canMove(0) ? 0 : Math.max(0, pieces.findIndex((_, i) => canMove(i)));
   kit.setPar(puzzle.par);
   kit.begin(saved);
   kit.remember(snapshot());
   render();
+}
+
+function canMove(index) {
+  return ["N", "E", "S", "W"].some((dir) => slidePiece(pieces, puzzle.rows, puzzle.cols, index, dir, 1));
+}
+
+function showHint() {
+  if (kit.moves > 0) return false;
+  try {
+    return !localStorage.getItem("spquizzy.hint.v1:slip");
+  } catch {
+    return false;
+  }
+}
+
+function clearHint() {
+  try {
+    localStorage.setItem("spquizzy.hint.v1:slip", "1");
+  } catch {
+    /* storage can be blocked */
+  }
 }
 
 function render() {
@@ -60,42 +81,58 @@ function render() {
   grid.style.setProperty("--rows", puzzle.rows);
   for (let r = 0; r < puzzle.rows; r++) {
     for (let c = 0; c < puzzle.cols; c++) {
-      const slot = document.createElement("button");
-      slot.type = "button";
+      const slot = document.createElement("div");
       slot.className = "slot";
-      slot.dataset.r = String(r);
-      slot.dataset.c = String(c);
       if (r === puzzle.exit.r && c === puzzle.exit.c) {
         slot.classList.add("is-exit");
         slot.innerHTML = arrowSvg(puzzle.exit.dir);
-        slot.setAttribute("aria-label", "Exit");
-      } else slot.setAttribute("aria-label", `Empty square row ${r + 1} column ${c + 1}`);
+        slot.setAttribute("aria-label", "Green arrow. Put the yellow ball here.");
+      }
       grid.append(slot);
     }
   }
+  const hint = showHint();
+  const hintIndex = hint ? selected : -1;
   pieces.forEach((p, i) => {
     const el = document.createElement("button");
     el.type = "button";
-    el.className = `piece${p.ball ? " ball" : ""}${i === selected ? " is-selected" : ""}`;
+    el.className = `piece${p.ball ? " ball" : ""}${i === selected ? " is-selected" : ""}${i === hintIndex ? " is-hint" : ""}`;
     el.dataset.piece = String(i);
     el.style.setProperty("--c", p.c + 1);
     el.style.setProperty("--r", p.r + 1);
     el.style.setProperty("--w", p.w);
     el.style.setProperty("--h", p.h);
     el.innerHTML = `<span class="body" style="--fill:${p.ball ? "#f6c945" : COLORS[(i - 1) % COLORS.length]}"></span>`;
-    el.setAttribute("aria-label", p.ball ? "Meatball" : `Lasagne tray ${i}`);
+    el.setAttribute("aria-label", p.ball ? "Yellow ball" : `Block ${i}`);
+    el.setAttribute("aria-pressed", i === selected ? "true" : "false");
     grid.append(el);
   });
-  root.append(grid);
+  const pad = document.createElement("div");
+  pad.className = `move-pad${hint ? " is-hint" : ""}`;
+  pad.setAttribute("role", "group");
+  pad.setAttribute("aria-label", "Slide the selected block one square");
+  pad.innerHTML = `
+    <button type="button" data-dir="N" aria-label="Up">↑</button>
+    <button type="button" data-dir="W" aria-label="Left">←</button>
+    <button type="button" data-dir="E" aria-label="Right">→</button>
+    <button type="button" data-dir="S" aria-label="Down">↓</button>`;
+  root.append(grid, pad);
   board.append(root);
   const out = ballOnExit(pieces, puzzle.exit);
-  kit.note(out ? "The meatball is on the arrow." : "Drag a tray toward an empty square.");
+  if (out) kit.note("The yellow ball is on the green arrow.");
+  else if (hint && pieces[selected]?.ball) kit.note("The yellow ball is selected. Tap an arrow to slide it one square.");
+  else if (hint) kit.note("This block can move. Tap an arrow to slide it one square.");
+  else kit.note("Tap a block, then an arrow.");
 }
 
 function tryMove(index, dir, maxSteps) {
   if (kit.won) return false;
   const moved = slidePiece(pieces, puzzle.rows, puzzle.cols, index, dir, maxSteps);
-  if (!moved) return false;
+  if (!moved) {
+    kit.note("That way is blocked. Try another arrow, or tap a different block.");
+    return false;
+  }
+  if (showHint()) clearHint();
   pieces = moved.pieces;
   selected = index;
   kit.remember(snapshot());
@@ -103,17 +140,6 @@ function tryMove(index, dir, maxSteps) {
   render();
   if (ballOnExit(pieces, puzzle.exit)) kit.win();
   return true;
-}
-
-function stepSize() {
-  const a = board.querySelector('[data-r="0"][data-c="0"]');
-  const b = board.querySelector('[data-r="0"][data-c="1"]');
-  const c = board.querySelector('[data-r="1"][data-c="0"]');
-  const ar = a.getBoundingClientRect();
-  return {
-    x: b.getBoundingClientRect().x - ar.x,
-    y: c.getBoundingClientRect().y - ar.y,
-  };
 }
 
 board.addEventListener("pointerdown", (event) => {
@@ -134,32 +160,23 @@ window.addEventListener("pointerup", (event) => {
   const dy = event.clientY - drag.y;
   const id = drag.id;
   drag = null;
-  if (Math.hypot(dx, dy) < 12) return;
+  if (Math.hypot(dx, dy) < 18) return;
   suppressUntil = performance.now() + 350;
-  const step = stepSize();
-  if (Math.abs(dx) > Math.abs(dy)) tryMove(id, dx > 0 ? "E" : "W", Math.max(1, Math.round(Math.abs(dx) / step.x)));
-  else tryMove(id, dy > 0 ? "S" : "N", Math.max(1, Math.round(Math.abs(dy) / step.y)));
+  if (Math.abs(dx) > Math.abs(dy)) tryMove(id, dx > 0 ? "E" : "W", 1);
+  else tryMove(id, dy > 0 ? "S" : "N", 1);
 });
 
 board.addEventListener("click", (event) => {
-  if (performance.now() < suppressUntil) return;
-  const piece = event.target.closest("[data-piece]");
-  if (piece) {
-    selected = Number(piece.dataset.piece);
-    render();
+  const dir = event.target.closest("[data-dir]");
+  if (dir && selected != null) {
+    tryMove(selected, dir.dataset.dir, 1);
     return;
   }
-  const slot = event.target.closest("[data-r]");
-  if (!slot || selected == null) return;
-  const tr = Number(slot.dataset.r);
-  const tc = Number(slot.dataset.c);
-  const p = pieces[selected];
-  const vert = tr >= p.r && tr < p.r + p.h;
-  const horiz = tc >= p.c && tc < p.c + p.w;
-  if (vert && tc >= p.c + p.w) tryMove(selected, "E", tc - (p.c + p.w) + 1);
-  else if (vert && tc < p.c) tryMove(selected, "W", p.c - tc);
-  else if (horiz && tr >= p.r + p.h) tryMove(selected, "S", tr - (p.r + p.h) + 1);
-  else if (horiz && tr < p.r) tryMove(selected, "N", p.r - tr);
+  if (performance.now() < suppressUntil) return;
+  const piece = event.target.closest("[data-piece]");
+  if (!piece) return;
+  selected = Number(piece.dataset.piece);
+  render();
 });
 
 window.addEventListener("keydown", (event) => {
