@@ -1773,6 +1773,12 @@ body.is-home {
 .hub-copy strong { font-size: 11px; line-height: 1.5; }
 .hub-copy em { display: block; margin-top: 4px; }
 .play .half, .play .domino-btn, .play .region-cell, .play .face { color: #1e2a2a; }
+.play .half {
+  background:
+    linear-gradient(rgba(255, 248, 234, 0.78), rgba(255, 248, 234, 0.78)),
+    url("/assets/food/ravioli.webp") center/cover no-repeat;
+  font-weight: 800;
+}
 #how h2 { font-family: var(--body); font-size: 22px; font-weight: 800; line-height: 1.2; color: #1e2a2a; }
 .sheet-actions { display: grid; gap: 10px; margin-top: 8px; }
 .win-time { font-family: var(--display); font-size: 18px; text-align: center; margin: 4px 0; }
