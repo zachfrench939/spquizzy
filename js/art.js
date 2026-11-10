@@ -223,25 +223,105 @@ const WOMBAT_FACES = {
   win: `<path d="M26 24c1.8 2 5 2 6.6 0M54 24c1.8 2 5 2 6.6 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M36 44c2.6 4 13 4 16 0" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2" stroke-linejoin="round"/>`,
 };
 
+const WOMBAT_PIXEL = {
+  idle: [
+    "......KKKKKKKKKKKK......",
+    "....KKBBBBBBBBBBBBKK....",
+    "...KBBBBBBBBBBBBBBBBK...",
+    "..KBBBBBBBBBBBBBBBBBBK..",
+    "..KBBYYKBBBBBBKKYYBBK...",
+    "..KBKKYKBBBBBBKKKYBBK...",
+    "..KBBBBBBBBBBBBBBBBBK...",
+    "...KBBBBNNNNNNNBBBBK....",
+    "...KBBBBNRRRRRNBBBBK....",
+    "....KKBBBBBBBBBBBBKK....",
+    "......KBBBBBBBBBBK......",
+    ".....KBBBBBBBBBBBBK.....",
+    ".....KBBBKKKKKKBBBK.....",
+    "......KKK......KKK......",
+    ".....KBBK......KBBK.....",
+    ".....KKKK......KKKK.....",
+  ],
+  happy: [
+    "......KKKKKKKKKKKK......",
+    "....KKBBBBBBBBBBBBKK....",
+    "...KBBBBBBBBBBBBBBBBK...",
+    "..KBBBBBBBBBBBBBBBBBBK..",
+    "..KBBYYKBBBBBBKKYYBBK...",
+    "..KBKKYKBBBBBBKKKYBBK...",
+    "..KBBBBBBBBBBBBBBBBBK...",
+    "...KBBBBNNNNNNNBBBBK....",
+    "...KBBBBRRRRRRRBBBBK....",
+    "....KKBBBBBBBBBBBBKK....",
+    "......KBBBBBBBBBBK......",
+    ".....KBBBBBBBBBBBBK.....",
+    ".....KBBBKKKKKKBBBK.....",
+    "......KKK......KKK......",
+    ".....KBBK......KBBK.....",
+    ".....KKKK......KKKK.....",
+  ],
+  cheer: [
+    "..K....................K",
+    ".KBK......KKKKKK......KB",
+    "..KK....KKBBBBBBKK....KK",
+    ".......KBBBBBBBBBBK.....",
+    "......KBBBYYKKBBYYBBK...",
+    "......KBBKKYKKBKKYBBK...",
+    "......KBBBBBBBBBBBBBK...",
+    ".......KBBBNNNNNBBBK....",
+    ".......KBBBRRRRRRBBK....",
+    "........KKBBBBBBBBKK....",
+    "..........KBBBBBBK......",
+    ".........KBBBBBBBBK.....",
+    ".........KBBKKKKBBK.....",
+    "..........KK....KK......",
+    ".........KBK....KBK.....",
+    ".........KKK....KKK.....",
+  ],
+};
+
 export function wombatSvg(mood = "ready", label = "Wombat mascot") {
-  if (!WOMBAT_FACES[mood]) {
+  const map = { ready: "idle", think: "happy", win: "cheer", idle: "idle", happy: "happy", cheer: "cheer" };
+  if (!map[mood]) {
     label = typeof mood === "string" && mood ? mood : label;
     mood = "ready";
   }
-  const body = `
-    <ellipse cx="16" cy="40" rx="6" ry="5" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2.2"/>
-    <ellipse cx="72" cy="40" rx="6" ry="5" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2.2"/>
-    <rect x="18" y="38" width="52" height="24" rx="12" fill="#7a6a5e" stroke="#1e2a2a" stroke-width="2.4"/>
-    <rect x="10" y="16" width="68" height="26" rx="11" fill="#8b7b6e" stroke="#1e2a2a" stroke-width="2.4"/>
-    <ellipse cx="44" cy="33" rx="13" ry="8" fill="#c98978" stroke="#1e2a2a" stroke-width="2.2"/>
-    <ellipse cx="39" cy="33" rx="1.5" ry="2.1" fill="#1e2a2a"/>
-    <ellipse cx="49" cy="33" rx="1.5" ry="2.1" fill="#1e2a2a"/>
-    ${WOMBAT_FACES[mood]}
-    <rect x="24" y="58" width="14" height="8" rx="3" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2"/>
-    <rect x="50" y="58" width="14" height="8" rx="3" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2"/>
-    <path d="M27 64v4M31 64v4M35 64v4M53 64v4M57 64v4M61 64v4" fill="none" stroke="#1e2a2a" stroke-width="1.5" stroke-linecap="round"/>
-  `;
-  return cleanSvg(body, label || "Wombat mascot", "0 0 88 72");
+  return pixelSvg(WOMBAT_PIXEL[map[mood] || "idle"], label || "Wombat mascot");
+}
+
+const MEATBALL = [
+  "..KKKKKKKKKK..",
+  ".KBBBBBBBBBBK.",
+  ".KBYYBBBBBYYK.",
+  ".KBKYBBBBKYBK.",
+  ".KBBBBBBBBBBK.",
+  ".KBBBKKKKBBBK.",
+  ".KBBBBBBBBBBK.",
+  ".KYBBBBBBBBBK.",
+  ".KBBBBBBBBBBK.",
+  "..KKKKKKKKKK..",
+];
+
+export function meatballSprite() {
+  return pixelSvg(MEATBALL, "Meatball");
+}
+
+export function trophySvg() {
+  return pixelSvg(
+    [
+      "....YYYYYYYY....",
+      "...YKKYYYYKKY...",
+      "...YKYYYYYYKY...",
+      "....KYYYYYYK....",
+      ".....KKYYKK.....",
+      "......KYYK......",
+      ".....KKYYKK.....",
+      "....KKYYYYKK....",
+      "...KKYYYYYYKK...",
+      "..KKKKKKKKKKKK..",
+    ],
+    "Trophy",
+  );
 }
 
 export function pastaBurstHtml() {
@@ -294,19 +374,21 @@ const CLEAN_TOPPINGS = {
   ravioli: `<rect x="8" y="8" width="16" height="16" rx="3" fill="#f6c945" stroke="#e0a82e" stroke-width="1.6"/>`,
 };
 
+const ARROWS = {
+  E: ["..G", ".GG", "GGG", ".GG", "..G"],
+  W: ["G..", "GG.", "GGG", "GG.", "G.."],
+  N: ["G.G", "GGG", ".G.", ".G.", ".G."],
+  S: [".G.", ".G.", ".G.", "GGG", "G.G"],
+};
+
 export function iconSvg(id) {
-  return cleanSvg(CLEAN_ICONS[id] || CLEAN_ICONS.sauce);
+  return pixelSvg(ICONS[id] || ICONS.sauce, "");
 }
 
 export function toppingSvg(id) {
-  return cleanSvg(CLEAN_TOPPINGS[id] || CLEAN_TOPPINGS.tomato, id);
+  return pixelSvg(TOPPINGS[id] || TOPPINGS.tomato, id);
 }
 
 export function arrowSvg(dir) {
-  const rot = { E: 0, S: 90, W: 180, N: -90 }[dir] ?? 0;
-  return cleanSvg(
-    `<g transform="rotate(${rot} 12 12)"><path d="M4 7h9.5L20 12l-6.5 5H4l5-5z" fill="#2f8f4e" stroke="#1e2a2a" stroke-width="1.7" stroke-linejoin="round"/></g>`,
-    "Green arrow",
-    "0 0 24 24",
-  );
+  return pixelSvg(ARROWS[dir] || ARROWS.E, "Green exit gate");
 }

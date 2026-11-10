@@ -2,7 +2,7 @@ import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
 import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber, buildShare, copyText } from "./core.js";
-import { iconSvg, wombatSvg, pastaBurstHtml } from "./art.js";
+import { iconSvg, wombatSvg, pastaBurstHtml, trophySvg } from "./art.js";
 import { clipHtml, restartClip } from "./clips.js";
 import { submitAndRank, rankMessage } from "./scores.js";
 import { renderArchive } from "./archive.js";
@@ -134,7 +134,7 @@ function resultsSheet(game, run) {
       <div class="pasta-burst" id="win-burst" aria-hidden="true">${pastaBurstHtml()}</div>
       <h2 id="win-title">${game.win}</h2>
       <p id="win-time" class="win-time">${formatTime(run?.seconds || 0)}</p>
-      <p id="rank-line" class="rank-line">Checking today's times…</p>
+      <p class="trophy-row"><span class="trophy">${trophySvg()}</span><span id="rank-line" class="rank-line">Checking today's times…</span></p>
       <ul class="done-stats" id="win-stats">
         <li>${run?.moves || 0} ${word}</li>
         <li>${formatTime(run?.seconds || 0)}</li>

@@ -1,6 +1,6 @@
 import { createKit } from "../playkit.js";
 import { generateSlip, slidePiece, ballOnExit, clonePieces } from "../engines/slip.js";
-import { arrowSvg } from "../art.js";
+import { arrowSvg, meatballSprite } from "../art.js";
 
 const FILLS = ["#e23b2f", "#e07a4c", "#c4483a", "#f08a6a", "#d4562e"];
 const kit = createKit("slip");
@@ -74,7 +74,7 @@ function clearHint() {
 
 function face(p, i) {
   if (p.ball) {
-    return `<span class="body meat"><span class="gloss"></span><span class="eye l"></span><span class="eye r"></span><span class="mouth"></span></span>`;
+    return `<span class="body meat">${meatballSprite()}</span>`;
   }
   if (p.w > 1 && p.h > 1) {
     return `<span class="body ravi"><span class="gloss"></span><span class="crimp"></span></span>`;

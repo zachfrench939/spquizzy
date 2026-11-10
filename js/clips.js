@@ -1,4 +1,4 @@
-const hand = `<svg class="clip-hand" viewBox="0 0 32 32" aria-hidden="true"><path d="M11 15c0-3 2-5 4-2l1 3V9c0-2 3-3 4-1v6l2-3c1-2 4-1 4 1l-1 9c-1 4-4 7-9 7h-1c-4 0-7-3-7-7z" fill="#fff8e6" stroke="#1e2a2a" stroke-width="2" stroke-linejoin="round"/></svg>`;
+const hand = `<svg class="clip-hand" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect width="8" height="8" fill="#1e2a2a"/><rect x="1" y="1" width="5" height="5" fill="#fff8e6"/><rect x="3" y="3" width="2" height="2" fill="#e23b2f"/></svg>`;
 
 const CLIPS = {
   sauce: `<div class="clip clip-sauce">

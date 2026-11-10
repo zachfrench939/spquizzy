@@ -1531,6 +1531,111 @@ dialog.sheet::backdrop { background: rgba(30, 42, 42, 0.45); }
 @keyframes sheet-up { from { transform: translateY(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 .sheet-x { position: absolute; top: 10px; right: 10px; z-index: 2; }
 .sheet h2, .how-head { padding-right: 48px; }
+
+/* Pixel arcade skin. Layout stays; every painted edge is stepped. */
+img, svg, .pixel, .clip-hand {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  shape-rendering: crispEdges;
+}
+body {
+  background: #101820;
+}
+body::before, body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+body::before {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.28) 100%);
+}
+body::after {
+  background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0, 0, 0, 0.06) 3px 4px);
+  mix-blend-mode: multiply;
+}
+.stage, .play, .splash, .sidebar, .home-hub { position: relative; z-index: 1; }
+.home-hub, .sidebar, .side-links a, .hero-when, .hub-title { color: #f6ecd1; }
+.hub-card, .feature-card, .splash, .sheet, .rule-bar { color: #1e2a2a; }
+.feature-card .game-name, .feature-card .goal, .feature-card .byline, .feature-card .kicker,
+.hub-card strong, .hub-card em, .hub-card .hub-meta { color: #1e2a2a; }
+.feature-card .game-name { font-size: 14px; line-height: 1.6; }
+.play { color: #f6ecd1; }
+.play .rule-bar, .play .pipe-cell, .play .num, .play .bowl-name, .play .bowl-sum { color: #1e2a2a; }
+.hud, .play-title, .when, .note { color: #f6ecd1; }
+.sidebar .nav-copy, .sidebar .nav-copy em, .sidebar .nav-copy strong { color: #f6ecd1; }
+.sidebar .nav-copy small { color: #8fbf8a; }
+dialog h2, .sheet h2 { font-size: 12px; line-height: 1.6; }
+.glyph-plate, .glyph-plate::before, .glyph-plate::after, .pip { border-radius: 0 !important; }
+.btn, .pill, .diffs button, .icon-btn, .help-btn, #timer, .win-time, .done-stats, .play-title,
+.splash .game-name, .feature-card .game-name, .hub-copy strong, .pixel-logo, .brand, dialog h2 {
+  font-family: var(--display);
+}
+.btn, .pill, .diffs button { font-size: 10px; line-height: 1.4; letter-spacing: 0; text-transform: uppercase; }
+.rule-bar, .goal, .note, .byline, .hub-copy em, .lede, .how-step p, .nav-copy em {
+  font-family: var(--body);
+}
+button, .btn, .pill, .icon-btn, .help-btn, .hub-card, .feature-card, .pipe-cell, .slot, .piece .body,
+.bowl-bin, .num, .half, .domino-btn, .region-cell, .face, dialog, .splash-icon, .rule-bar, .ad-slot,
+.clip, .nav-game .nav-icon, .intro-icon, .diffs, .gate, .exit-gate .glow, .bit-sauce, .bit-ball, .bit-noodle, .bit-leaf,
+.demo-bowl, .demo-pot, .demo-pipe, .demo-plate, .demo-num, .demo-half, .demo-word, .demo-domino, .demo-region, .dot {
+  border-radius: 0 !important;
+}
+.btn, .pill, .icon-btn, .help-btn, .hub-card, .feature-card {
+  box-shadow: 4px 4px 0 #0b1016;
+  border-width: 4px;
+}
+.btn:hover, .pill:hover, .icon-btn:hover, .hub-card:hover, .feature-card:hover {
+  box-shadow: 4px 4px 0 #0b1016, 0 0 0 2px #f6c945;
+}
+.btn:active, .pill:active, .icon-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #0b1016;
+}
+#start-game { animation: insert-coin 0.9s steps(2, end) infinite; }
+@keyframes insert-coin {
+  50% { background: #f6c945; color: #1e2a2a; }
+}
+.pipe-cell.pop, .piece.pop, .num.pop { animation: pop 180ms steps(3, end); }
+@keyframes pop { 50% { transform: translateY(-3px); } }
+.board.is-shake { animation: shake 180ms steps(2, end); }
+.arm, .hub { border-radius: 0 !important; }
+.arm.on, .hub.on {
+  background-color: #e23b2f;
+  background-image: repeating-linear-gradient(#e23b2f 0 4px, #ffd0c4 4px 8px);
+  animation: sauce-px 0.45s steps(2, end) infinite;
+}
+.arm.e.on, .arm.w.on, .hub.on {
+  background-image: repeating-linear-gradient(90deg, #e23b2f 0 4px, #ffd0c4 4px 8px);
+}
+@keyframes sauce-px { to { background-position: 0 8px; } }
+.arm.e.on, .arm.w.on { animation-name: sauce-px-h; }
+@keyframes sauce-px-h { to { background-position: 8px 0; } }
+.piece .body.meat { background: transparent !important; box-shadow: none; border: 0; }
+.piece .body.meat svg { width: 100%; height: 100%; }
+.piece.ball.pop svg { animation: roll 240ms steps(4, end); }
+@keyframes roll { to { transform: rotate(90deg); } }
+.piece .body.lasagna, .piece .body.ravi, .piece .body.tube {
+  background-image: repeating-linear-gradient(#c4483a 0 6px, #f6c945 6px 8px, #fff8e6 8px 10px);
+}
+.bowl-bin { border-radius: 0 !important; }
+.pip { border-radius: 0 !important; width: 18%; height: 18%; }
+.trophy { width: 36px; height: 28px; display: inline-block; }
+.trophy-row { display: flex; gap: 8px; align-items: center; justify-content: center; }
+.trophy-row .rank-line { margin: 0; text-align: left; }
+.clip-hand { width: 16px; height: 16px; }
+.clip-sauce .demo-pipe, .clip-sauce .demo-sauce, .clip-sauce .clip-hand,
+.clip-slip .demo-tray, .clip-slip .demo-ball, .clip-slip .clip-hand,
+.clip-twirl .demo-line, .clip-twirl .clip-hand,
+.clip-bowls .demo-num, .clip-bowls .clip-hand,
+.clip-ravioli .demo-half, .clip-ravioli .demo-word, .clip-ravioli .clip-hand,
+.clip-pips .demo-domino, .clip-pips .clip-hand {
+  animation-timing-function: steps(6, end);
+}
+.pasta-burst .bit { animation-timing-function: steps(4, end); }
+.feature-card { background: #fff1c8; }
+.hub-card { border-width: 4px; }
 .sheet-actions { display: grid; gap: 10px; margin-top: 8px; }
 .win-time { font-family: var(--display); font-size: 18px; text-align: center; margin: 4px 0; }
 .feature-card { text-decoration: none; color: inherit; cursor: pointer; }

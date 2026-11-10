@@ -2,7 +2,7 @@ function step(n, title, text, picture) {
   return `<li class="how-step"><span class="how-n">${n}</span><div><strong>${title}</strong><p>${text}</p>${picture}</div></li>`;
 }
 
-const pipe = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
+const pipe = `<svg class="how-fig" shape-rendering="crispEdges" viewBox="0 0 72 28" aria-hidden="true">
   <rect x="1" y="1" width="26" height="26" rx="6" fill="#fff"/>
   <rect x="11" y="2" width="6" height="14" rx="3" fill="#e0a82e"/>
   <rect x="11" y="11" width="14" height="6" rx="3" fill="#e0a82e"/>
@@ -11,7 +11,7 @@ const pipe = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
   <rect x="55" y="11" width="14" height="6" rx="3" fill="#e23b2f"/>
 </svg>`;
 
-const slip = `<svg class="how-fig" viewBox="0 0 120 28" aria-hidden="true">
+const slip = `<svg class="how-fig" shape-rendering="crispEdges" viewBox="0 0 120 28" aria-hidden="true">
   <rect x="1" y="4" width="22" height="18" rx="4" fill="#f08a6a"/>
   <circle cx="40" cy="14" r="8" fill="#f0b429" stroke="#1e2a2a" stroke-width="2"/>
   <circle cx="37" cy="12" r="1.4" fill="#1e2a2a"/>
@@ -22,27 +22,27 @@ const slip = `<svg class="how-fig" viewBox="0 0 120 28" aria-hidden="true">
   <path d="M96 14h10M102 10l4 4-4 4" fill="none" stroke="#1e6b38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
-const twirl = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
+const twirl = `<svg class="how-fig" shape-rendering="crispEdges" viewBox="0 0 72 28" aria-hidden="true">
   <circle cx="10" cy="14" r="7" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2"/>
   <rect x="16" y="11" width="40" height="6" fill="#e23b2f"/>
   <circle cx="62" cy="14" r="7" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2"/>
 </svg>`;
 
-const bowls = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
+const bowls = `<svg class="how-fig" shape-rendering="crispEdges" viewBox="0 0 72 28" aria-hidden="true">
   <rect x="6" y="1" width="14" height="12" rx="4" fill="#f6c945"/>
   <text x="13" y="10" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">4</text>
   <rect x="2" y="16" width="24" height="10" rx="5" fill="#fff"/>
   <rect x="40" y="16" width="24" height="10" rx="5" fill="#fff"/>
 </svg>`;
 
-const words = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
+const words = `<svg class="how-fig" shape-rendering="crispEdges" viewBox="0 0 72 28" aria-hidden="true">
   <rect x="2" y="4" width="30" height="20" rx="6" fill="#f6c945"/>
   <rect x="40" y="4" width="30" height="20" rx="6" fill="#fff"/>
   <text x="17" y="18" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">SUN</text>
   <text x="55" y="18" text-anchor="middle" font-size="8" font-family="Nunito, sans-serif" font-weight="800" fill="#1e2a2a">FLOWER</text>
 </svg>`;
 
-const domino = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
+const domino = `<svg class="how-fig" shape-rendering="crispEdges" viewBox="0 0 72 28" aria-hidden="true">
   <rect x="4" y="2" width="40" height="24" rx="6" fill="#f6c945"/>
   <circle cx="14" cy="14" r="2.4" fill="#1e2a2a"/>
   <circle cx="32" cy="9" r="2.4" fill="#1e2a2a"/>
