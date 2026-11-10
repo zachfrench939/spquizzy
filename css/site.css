@@ -252,13 +252,13 @@ h1, h2, h3, p { margin: 0; }
 .arm, .hub { position: absolute; background: var(--pasta-deep); display: none; z-index: 1; }
 .arm.show, .hub.show { display: block; }
 .arm.on, .hub.on { background: var(--tomato); }
-.arm.n, .arm.s { width: 26%; left: 37%; height: 58%; }
+.arm.n, .arm.s { width: 34%; left: 33%; height: 62%; }
 .arm.n { top: 0; }
 .arm.s { bottom: 0; }
-.arm.e, .arm.w { height: 26%; top: 37%; width: 58%; }
+.arm.e, .arm.w { height: 34%; top: 33%; width: 62%; }
 .arm.e { right: 0; }
 .arm.w { left: 0; }
-.hub { width: 26%; height: 26%; left: 37%; top: 37%; }
+.hub { width: 34%; height: 34%; left: 33%; top: 33%; }
 .arm.leak::after {
   content: "";
   position: absolute;
@@ -1149,8 +1149,8 @@ body.is-home .stage { width: min(980px, 100%); padding: 8px 16px 32px; }
 .hub-card.ink { background: #d5e6f4; }
 .hub-icon {
   grid-row: span 2;
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
   padding: 6px;
   background: var(--paper);
   border: 3px solid var(--charcoal);
@@ -1487,8 +1487,8 @@ body.is-play .stage {
 .splash-back { align-self: flex-start; }
 .splash-body { width: min(420px, 100%); display: grid; justify-items: center; gap: 10px; }
 .splash-icon {
-  width: 88px;
-  height: 88px;
+  width: 112px;
+  height: 112px;
   padding: 12px;
   background: var(--paper);
   border: 3px solid var(--charcoal);
