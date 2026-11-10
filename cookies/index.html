@@ -3,50 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cookies | Spiquizzy</title>
+  <title>Cookies — Spiquizzy</title>
+  <link rel="canonical" href="https://spiquizzy.com/cookies/">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <meta name="description" content="Spiquizzy sets no cookies. This page lists the localStorage keys the games use.">
-  <link rel="canonical" href="https://spiquizzy.com/cookies/">
-  <meta name="theme-color" content="#1E2A2A">
-  <link rel="stylesheet" href="/css/site.css">
+  <meta name="theme-color" content="#FBBF36">
+  <link rel="stylesheet" href="/css/drop.css">
 </head>
-<body class="is-doc">
-  <header class="topbar">
-    <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">SPIQUIZZY</a>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/"><img class="logo" src="/assets/drop/logo-red.png" width="36" height="36" alt=""> <span class="wordmark">Spiquizzy</span></a>
   </header>
   <main class="doc">
-    <h1>Cookies</h1>
-    <p>Last updated 10 November 2026.</p>
-    <p>Spiquizzy does not set any cookies. A future advertising cookie from Google AdSense would be set only after you agree, through a Google-certified consent banner. Questions: <a data-contact href="mailto:contact@spiquizzy.com">contact@spiquizzy.com</a>.</p>
-    <h2>localStorage on this device</h2>
-    <table>
-      <thead><tr><th>Key</th><th>Purpose</th></tr></thead>
-      <tbody>
-        <tr><td><code>spquizzy.stats.v1:&lt;game&gt;</code></td><td>Streak and which days you have cleared.</td></tr>
-        <tr><td><code>spquizzy.run.v1:&lt;game&gt;:&lt;difficulty&gt;:&lt;date&gt;</code></td><td>The board you are in the middle of, or the result if you have finished it.</td></tr>
-        <tr><td><code>spquizzy.diff.v1:&lt;game&gt;</code></td><td>The difficulty you last chose.</td></tr>
-        <tr><td><code>spquizzy.how.v2:&lt;game&gt;</code></td><td>Whether you have already seen How to play.</td></tr>
-        <tr><td><code>spquizzy.hint.v1:sauce</code></td><td>Whether the first Sauce Pipes hint has been used.</td></tr>
-        <tr><td><code>spquizzy.hint.v1:slip</code></td><td>Whether the first Slip hint has been used.</td></tr>
-        <tr><td><code>spquizzy.hint.v1:bowls</code></td><td>Whether the first Even Bowls hint has been used.</td></tr>
-        <tr><td><code>spquizzy.score.v1:&lt;game&gt;:&lt;difficulty&gt;:&lt;date&gt;</code></td><td>A flag so today's anonymous score is only sent once.</td></tr>
-      </tbody>
-    </table>
-    <p>See also the <a href="/privacy/">privacy page</a>.</p>
+  
+<h1>Cookies</h1>
+<p>Last updated 11 November 2026.</p>
+<p>The game does not set a cookie. Sign-in, if you use it, keeps a session token in localStorage. Optional analytics run only after Accept, and they do not use a cookie.</p>
+<h2>localStorage</h2>
+<ul>
+<li><code>spquizzy.consent</code> — Accept or Reject.</li>
+<li><code>spquizzy.drop.run</code> — today’s official run, so a refresh can resume.</li>
+<li><code>spquizzy.drop.bank</code> — guest bank and day history.</li>
+<li><code>spquizzy.drop.howto</code> — you have closed How to play.</li>
+<li><code>spquizzy.drop.settings</code> — sound and reduce motion.</li>
+<li><code>spquizzy.drop.session</code> — sign-in token, if you asked for one.</li>
+</ul>
+<p>Clear local data lives in <a href="/settings/">Settings</a>. See also <a href="/privacy/">Privacy</a>.</p>
+
   </main>
-  <p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>
-  <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
-  <script type="module" src="/js/analytics.js"></script>
-  <script type="module">
-    import { CONTACT_EMAIL } from "/js/config.js";
-    document.querySelectorAll("[data-contact]").forEach((el) => {
-      el.textContent = CONTACT_EMAIL;
-      if (el.tagName === "A") el.href = "mailto:" + CONTACT_EMAIL;
-    });
+  <aside class="consent" id="consent">
+    <p>Optional analytics stay off until you agree. Reject is the same size as Accept.</p>
+    <div class="pair"><button class="reject" type="button" id="consent-no">Reject</button><button class="accept" type="button" id="consent-yes">Accept</button></div>
+  </aside>
+  <script>
+    const key = "spquizzy.consent";
+    const bar = document.querySelector("#consent");
+    if (localStorage.getItem(key)) bar.hidden = true;
+    document.querySelector("#consent-yes").onclick = () => { localStorage.setItem(key, "accept"); bar.hidden = true; };
+    document.querySelector("#consent-no").onclick = () => { localStorage.setItem(key, "reject"); bar.hidden = true; };
   </script>
+  <script type="module" src="/js/analytics.js"></script>
 </body>
 </html>
