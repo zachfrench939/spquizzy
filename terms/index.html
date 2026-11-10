@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms of use | Spiquizzy</title>
+  <meta name="description" content="Free to play, as is, under the law of England and Wales. Not affiliated with The New York Times.">
+  <link rel="canonical" href="https://spiquizzy.com/terms/">
+  <meta name="theme-color" content="#1E2A2A">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="is-doc">
+  <header class="topbar">
+    <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.svg" alt="">SPIQUIZZY</a>
+  </header>
+  <main class="doc">
+    <h1>Terms of use</h1>
+    <p>Last updated 10 November 2026.</p>
+    <p>Spiquizzy is free to play. It is provided as is, without a promise that a puzzle, a score or the site will always be available.</p>
+    <p>Do not cheat, and do not scrape the site or the daily boards.</p>
+    <p>The games, the words, the art and the text belong to Spiquizzy.</p>
+    <p>Spiquizzy is not affiliated with The New York Times. These puzzles are not Times puzzles, and this site does not publish Times answers.</p>
+    <p>These terms are governed by the law of England and Wales.</p>
+    <p>Questions: <a data-contact href="mailto:contact@spiquizzy.com">contact@spiquizzy.com</a>.</p>
+  </main>
+  <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
+  <script type="module" src="/js/analytics.js"></script>
+  <script type="module">
+    import { CONTACT_EMAIL } from "/js/config.js";
+    document.querySelectorAll("[data-contact]").forEach((el) => {
+      el.textContent = CONTACT_EMAIL;
+      if (el.tagName === "A") el.href = "mailto:" + CONTACT_EMAIL;
+    });
+  </script>
+</body>
+</html>

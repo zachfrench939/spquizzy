@@ -3,7 +3,7 @@ import { loadStats, todayString, shiftDate, formatShort, puzzleNumber, isValidDa
 
 export function renderArchive(root, jump) {
   const today = todayString();
-  if (jump) jump.max = today;
+  if (jump && jump.type === "date") jump.max = today;
   const stats = Object.fromEntries(GAMES.map((game) => [game.id, loadStats(game.id)]));
 
 function shelf(date) {
@@ -33,7 +33,8 @@ function shelf(date) {
     const marks = document.createElement("span");
     marks.className = "marks";
     const day = stats[game.id].wins[date] || {};
-    marks.innerHTML = DIFFICULTIES.map((diff) => `<i class="${day[diff]?.won ? "on" : ""}">${diff[0].toUpperCase()}</i>`).join("");
+    const names = { easy: "Easy", medium: "Medium", hard: "Hard" };
+    marks.innerHTML = DIFFICULTIES.map((diff) => `<i class="${day[diff]?.won ? "on" : ""}">${names[diff]}</i>`).join("");
     label.append(name, marks);
     link.append(label);
     carts.append(link);
@@ -51,8 +52,15 @@ function add(date) {
 
 for (let i = 0; i < 28; i++) add(shiftDate(today, -i));
 
+function fromUk(value) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(value || "").trim());
+  if (!match) return "";
+  const iso = `${match[3]}-${match[2]}-${match[1]}`;
+  return isValidDate(iso) ? iso : "";
+}
+
 jump?.addEventListener("change", () => {
-  const date = jump.value;
+  const date = jump.type === "date" ? jump.value : fromUk(jump.value);
   if (!isValidDate(date) || compareDates(date, today) > 0) return;
   if (!shown.has(date)) {
     root.prepend(shelf(date));

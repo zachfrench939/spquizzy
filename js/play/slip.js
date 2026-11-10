@@ -138,10 +138,10 @@ function build() {
   pad.setAttribute("role", "group");
   pad.setAttribute("aria-label", "Slide the selected block one square");
   pad.innerHTML = `
-    <button type="button" data-dir="N" aria-label="Up">↑</button>
-    <button type="button" data-dir="W" aria-label="Left">←</button>
-    <button type="button" data-dir="E" aria-label="Right">→</button>
-    <button type="button" data-dir="S" aria-label="Down">↓</button>`;
+    <button type="button" data-dir="N" aria-label="Up">⌃</button>
+    <button type="button" data-dir="W" aria-label="Left">〈</button>
+    <button type="button" data-dir="E" aria-label="Right">〉</button>
+    <button type="button" data-dir="S" aria-label="Down">⌄</button>`;
   const gate = document.createElement("div");
   gate.className = `exit-gate dir-${puzzle.exit.dir}`;
   gate.innerHTML = `<span class="glow">${arrowSvg(puzzle.exit.dir)}</span>`;

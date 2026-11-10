@@ -10,6 +10,9 @@
  */
 export const PRIMARY_GAME = "sauce";
 
+/** Public contact address. Swap this one string when the real inbox is ready. */
+export const CONTACT_EMAIL = "contact@spiquizzy.com";
+
 export const ADSENSE_CLIENT = "";
 
 /** Public Supabase project. The key is a publishable browser key, insert-only. */

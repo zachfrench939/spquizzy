@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy | Spiquizzy</title>
+  <meta name="description" content="How Spiquizzy handles analytics, scores and data stored on your device.">
+  <link rel="canonical" href="https://spiquizzy.com/privacy/">
+  <meta name="theme-color" content="#1E2A2A">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="is-doc">
+  <header class="topbar">
+    <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.svg" alt="">SPIQUIZZY</a>
+  </header>
+  <main class="doc">
+    <h1>Privacy</h1>
+    <p>Last updated 10 November 2026.</p>
+    <p>Spiquizzy runs this site. You can write to us at <a data-contact href="mailto:contact@spiquizzy.com">contact@spiquizzy.com</a>.</p>
+    <h2>What we collect</h2>
+    <p>Cookieless analytics, stored in our own Supabase database: the page path, the referrer hostname, UTM tags, a device type (mobile, tablet or desktop), and whether the event was a view, a play, a solve or a share. We do not store IP addresses, account IDs or cookies for this, and we skip it when your browser sends Do Not Track.</p>
+    <p>Anonymous daily scores: the game, the difficulty, the date, your time and your move count. There is no name attached.</p>
+    <p>This device keeps progress and settings in localStorage. The <a href="/cookies/">cookie page</a> lists every key.</p>
+    <p>In future, advertising cookies from Google AdSense would be set only after you consent.</p>
+    <h2>Why</h2>
+    <p>To run the games, to rank times, and to see which pages are used so we can improve the site.</p>
+    <h2>Who else is involved</h2>
+    <ul>
+      <li>GitHub Pages hosts the site.</li>
+      <li>Supabase stores the analytics rows and the anonymous scores.</li>
+      <li>Later, Google AdSense and its partners may serve ads. Their list is at <a href="https://policies.google.com/technologies/partner-sites">policies.google.com/technologies/partner-sites</a>.</li>
+    </ul>
+    <h2>How long we keep it</h2>
+    <p>Analytics and scores are kept for up to 24 months. localStorage stays on your device until you clear it.</p>
+    <h2>Your rights</h2>
+    <p>Under UK GDPR you can ask for a copy of personal data we hold, ask us to erase it, object to how we use it, and ask us to correct it or to restrict it. Email <a data-contact href="mailto:contact@spiquizzy.com">contact@spiquizzy.com</a>. We do not use this data to make automated decisions about you.</p>
+    <h2>Complaints</h2>
+    <p>You can complain to the Information Commissioner's Office: <a href="https://ico.org.uk/make-a-complaint/">ico.org.uk/make-a-complaint</a>.</p>
+    <h2>Children</h2>
+    <p>We collect no personal data from players, and we do no tracking without consent, in line with the ICO Children's Code.</p>
+  </main>
+  <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
+  <script type="module" src="/js/analytics.js"></script>
+  <script type="module">
+    import { CONTACT_EMAIL } from "/js/config.js";
+    document.querySelectorAll("[data-contact]").forEach((el) => {
+      el.textContent = CONTACT_EMAIL;
+      if (el.tagName === "A") el.href = "mailto:" + CONTACT_EMAIL;
+    });
+  </script>
+</body>
+</html>

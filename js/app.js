@@ -1,4 +1,4 @@
-import { PRIMARY_GAME } from "./config.js";
+import { CONTACT_EMAIL, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
 import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
@@ -84,12 +84,15 @@ function shell({ activeId, page }) {
           ${link("/games/", "All games")}
           ${link("/archive/", "Archive")}
           ${link("/about/", "About")}
+          ${link("/privacy/", "Privacy")}
+          ${link("/cookies/", "Cookies")}
+          ${link("/terms/", "Terms")}
           ${howLinks()}
         </nav>
         ${activeId ? adSlot("game_desktop_sidebar") : ""}
       </aside>
       <div class="backdrop" id="backdrop" hidden></div>
-      <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Menu">
+      <aside class="drawer" id="drawer" inert aria-hidden="true" aria-label="Menu">
         <div class="drawer-head">
           <strong>Spiquizzy</strong>
           <button type="button" id="menu-close" aria-label="Close menu">Close</button>
@@ -99,6 +102,9 @@ function shell({ activeId, page }) {
           ${link("/games/", "All games")}
           ${link("/archive/", "Archive")}
           ${link("/about/", "About")}
+          ${link("/privacy/", "Privacy")}
+          ${link("/cookies/", "Cookies")}
+          ${link("/terms/", "Terms")}
           ${howLinks()}
         </nav>
       </aside>
@@ -113,6 +119,7 @@ function bindDrawer() {
   const close = document.querySelector("#menu-close");
   const set = (on) => {
     drawer.classList.toggle("is-open", on);
+    drawer.inert = !on;
     drawer.setAttribute("aria-hidden", on ? "false" : "true");
     backdrop.hidden = !on;
     open.setAttribute("aria-expanded", on ? "true" : "false");
@@ -469,8 +476,8 @@ export function openDirectory() {
             <p class="goal">${game.goal}</p>
           </div>
         </div>
-        <p class="card-meta"><span>${statusFor(game.id, today)}</span><span class="streak">Streak ${loadStats(game.id).streak || 0}</span></p>
-        <a class="btn btn-tomato" href="${game.href}">Play</a>
+        <p class="card-meta"><span>${statusFor(game.id, today)}</span>${(loadStats(game.id).streak || 0) > 0 ? `<span class="streak">Streak ${loadStats(game.id).streak}</span>` : ""}</p>
+        <a class="btn btn-play" href="${game.href}">Play</a>
       </article>`).join("")}
     </section>`;
 }
@@ -478,11 +485,11 @@ export function openDirectory() {
 export function openArchive() {
   document.title = "Archive of free daily puzzles | Spiquizzy";
   const copy = document.querySelector("#static-copy");
-  const html = copy?.innerHTML || `<h1 class="game-name">Archive</h1><p class="lede">Past plates, still warm. E, M, and H light up when that difficulty is cleared on this device.</p>`;
+  const html = copy?.innerHTML || `<h1 class="game-name">Archive</h1><p class="lede">Past plates, still warm. Easy, Medium and Hard light up when that difficulty is cleared on this device.</p>`;
   mountChrome(null);
   document.querySelector("#stage").innerHTML = `
     <article class="page-intro">${html}</article>
-    <form class="jump"><label for="jump">Jump to a date</label><input id="jump" type="date"></form>
+    <form class="jump"><label for="jump">Jump to a date</label><input id="jump" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" autocomplete="off" spellcheck="false"></form>
     <div id="shelves"></div>`;
   renderArchive(document.querySelector("#shelves"), document.querySelector("#jump"));
 }
@@ -493,4 +500,8 @@ export function openAbout() {
   const html = copy?.innerHTML || `<h1 class="game-name">About</h1><p class="lede">Spiquizzy is six daily pasta puzzles and one wombat who takes sauce seriously.</p>`;
   mountChrome(null);
   document.querySelector("#stage").innerHTML = `<article class="page-intro about">${html}</article>`;
+  document.querySelectorAll("[data-contact]").forEach((el) => {
+    el.textContent = CONTACT_EMAIL;
+    if (el.tagName === "A") el.href = `mailto:${CONTACT_EMAIL}`;
+  });
 }
