@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archive · Spquizzy</title>
+  <meta name="description" content="Play past Spquizzy puzzles. Every daily board is still on the shelf.">
+  <meta name="theme-color" content="#1E2A2A">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip" href="#shelves">Skip to the shelves</a>
+  <header class="topbar">
+    <a class="brand" href="index.html">SPQUIZZY</a>
+    <nav>
+      <a href="index.html">Games</a>
+    </nav>
+  </header>
+  <main class="wrap-wide">
+    <h1 class="title-block" aria-label="Archive">
+      <span class="tiles"><span>A</span><span>R</span><span>C</span><span>H</span><span>I</span><span>V</span><span>E</span></span>
+    </h1>
+    <p class="lede">Past plates, still warm. Pick a cartridge. E, M, and H light up when that difficulty is already cleared on this device.</p>
+    <form class="jump">
+      <label for="jump">Jump to a date</label>
+      <input id="jump" type="date">
+    </form>
+    <div id="shelves"></div>
+  </main>
+  <footer class="site-foot">
+    <div class="foot-inner">
+      <nav class="foot-links" aria-label="Footer">
+        <a href="index.html">Games</a>
+        <a href="sauce-pipes.html">Sauce Pipes</a>
+        <a href="slip.html">Slip</a>
+        <a href="twirl.html">Twirl</a>
+        <a href="even-bowls.html">Even Bowls</a>
+        <a href="ravioli.html">Ravioli</a>
+        <a href="pasta-pips.html">Pasta Pips</a>
+      </nav>
+      <p class="fine">Older than a month? Use the date jump. Add <code>?date=YYYY-MM-DD</code> to any game if you already know the day.</p>
+    </div>
+    <div class="ground"><div class="mini-wombat" data-art="wombat-mini"></div></div>
+  </footer>
+  <script type="module" src="js/archive.js"></script>
+</body>
+</html>

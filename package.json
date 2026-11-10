@@ -1,0 +1,8 @@
+{
+  "name": "spquizzy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/games.test.mjs"
+  }
+}
