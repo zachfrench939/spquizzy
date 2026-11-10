@@ -1,6 +1,6 @@
 import { createKit } from "../playkit.js";
 import { generateSlip, slidePiece, ballOnExit, clonePieces } from "../engines/slip.js";
-import { arrowSvg } from "../art.js";
+import { slipUrl, gateUrl, fitCells } from "../pieces.js";
 
 const kit = createKit("slip");
 const board = document.querySelector("#board");
@@ -71,11 +71,8 @@ function clearHint() {
   }
 }
 
-function face(p, i) {
-  if (p.ball) return `<span class="body meat"><img class="sprite" alt="" src="/assets/food/meatball.webp"></span>`;
-  if (p.w > 1 && p.h > 1) return `<span class="body ravi"><img class="sprite" alt="" src="/assets/food/ravioli.webp"></span>`;
-  if (p.h > p.w || p.w > p.h) return `<span class="body tube"><img class="sprite" alt="" src="/assets/food/penne.webp"></span>`;
-  return `<span class="body lasagna"><img class="sprite" alt="" src="/assets/food/lasagna.webp"></span>`;
+function face(p) {
+  return `<span class="body art-piece"><img class="pixel-art" alt="" src="${slipUrl(p)}"></span>`;
 }
 
 function paintPiece(el, p, i) {
@@ -107,10 +104,12 @@ function build() {
   board.replaceChildren();
   const root = document.createElement("div");
   root.className = "slip-board";
+  const cell = fitCells(puzzle.cols, (board.parentElement?.clientWidth || 320) - 48, 128);
   const frame = document.createElement("div");
-  frame.className = "slip-frame";
+  frame.className = "slip-frame is-art";
   frame.style.setProperty("--cols", puzzle.cols);
   frame.style.setProperty("--rows", puzzle.rows);
+  frame.style.setProperty("--cell", `${cell}px`);
   frame.style.setProperty("--er", puzzle.exit.r);
   frame.style.setProperty("--ec", puzzle.exit.c);
   const grid = document.createElement("div");
@@ -120,7 +119,7 @@ function build() {
   for (let r = 0; r < puzzle.rows; r++) {
     for (let c = 0; c < puzzle.cols; c++) {
       const slot = document.createElement("div");
-      slot.className = "slot";
+      slot.className = "slot is-art";
       grid.append(slot);
     }
   }
@@ -143,8 +142,8 @@ function build() {
     <button type="button" data-dir="E" aria-label="Right">〉</button>
     <button type="button" data-dir="S" aria-label="Down">⌄</button>`;
   const gate = document.createElement("div");
-  gate.className = `exit-gate dir-${puzzle.exit.dir}`;
-  gate.innerHTML = `<span class="glow">${arrowSvg(puzzle.exit.dir)}</span>`;
+  gate.className = `exit-gate is-art dir-${puzzle.exit.dir}`;
+  gate.innerHTML = `<img class="pixel-art" alt="" src="${gateUrl(puzzle.exit.dir)}">`;
   gate.setAttribute("aria-label", "Green exit gate");
   frame.append(grid, gate);
   root.append(frame, pad);

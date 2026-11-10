@@ -1,5 +1,6 @@
 import { createKit } from "../playkit.js";
 import { generateBowls, bowlsSolved, bowlSums } from "../engines/bowls.js";
+import { bowlUrl, numberUrl, fitCells } from "../pieces.js";
 
 const NAMES = ["Left", "Right", "Middle"];
 const kit = createKit("bowls");
@@ -48,9 +49,11 @@ function render() {
   board.replaceChildren();
   const rule = document.querySelector("#rule");
   if (rule) rule.textContent = `Make each bowl add up to ${puzzle.target}.`;
+  const bowlPx = fitCells(puzzle.bowls, (board.parentElement?.clientWidth || 320) - 16, 256);
   const row = document.createElement("div");
-  row.className = "bowl-row";
+  row.className = "bowl-row is-art";
   row.style.setProperty("--bowls", puzzle.bowls);
+  row.style.setProperty("--bowl", `${bowlPx}px`);
   const { sums, counts } = bowlSums(puzzle.numbers, assignment, puzzle.bowls);
   const placed = assignment.every((b) => b >= 0);
   const even = placed && sums.every((s) => s === sums[0]) && counts.every((c) => c > 0);
@@ -64,14 +67,21 @@ function render() {
     name.textContent = puzzle.bowls === 2 ? NAMES[b] : `Bowl ${b + 1}`;
     const bin = document.createElement("button");
     bin.type = "button";
-    bin.className = "bowl-bin";
+    bin.className = "bowl-bin is-art";
     if (hint && selected >= 0) bin.classList.add("is-hint");
     bin.dataset.bowl = String(b);
     bin.setAttribute("aria-label", `${name.textContent}, total ${sums[b]}`);
+    const art = document.createElement("img");
+    art.className = "pixel-art bowl-pic";
+    art.alt = "";
+    art.src = bowlUrl(counts[b]);
+    const chips = document.createElement("span");
+    chips.className = "bowl-chips";
     assignment.forEach((place, i) => {
       if (place !== b) return;
-      bin.append(tileButton(i, false));
+      chips.append(tileButton(i, false));
     });
+    bin.append(art, chips);
     const sum = document.createElement("p");
     sum.className = "bowl-sum";
     sum.textContent = `Total ${sums[b]}`;
@@ -99,9 +109,14 @@ function render() {
 function tileButton(i, hint) {
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = `num${i === selected ? " is-selected" : ""}${hint ? " is-hint" : ""}`;
+  btn.className = `num is-art${i === selected ? " is-selected" : ""}${hint ? " is-hint" : ""}`;
   btn.dataset.num = String(i);
-  btn.textContent = String(puzzle.numbers[i]);
+  btn.textContent = "";
+  const art = document.createElement("img");
+  art.className = "pixel-art";
+  art.alt = String(puzzle.numbers[i]);
+  art.src = numberUrl(puzzle.numbers[i]);
+  btn.append(art);
   btn.setAttribute("aria-pressed", i === selected ? "true" : "false");
   return btn;
 }

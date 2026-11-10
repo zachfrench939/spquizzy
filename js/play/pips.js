@@ -1,5 +1,6 @@
 import { createKit } from "../playkit.js";
 import { generatePips, pipsSolved, regionStates, constraintLabel } from "../engines/pips.js";
+import { faceUrl, regionUrl, fitCells } from "../pieces.js";
 
 const COLORS = ["#f08a6a", "#f6c945", "#8fd19a", "#f6ecd1", "#f0a0b8", "#e0a45a", "#b7d36a", "#f0b27a", "#e08a72", "#9ec6e6"];
 const DOTS = {
@@ -81,22 +82,21 @@ function start() {
 }
 
 function face(value) {
-  const wrap = document.createElement("span");
-  wrap.className = "mini";
-  for (let i = 0; i < 9; i++) {
-    const dot = document.createElement("i");
-    dot.className = `pip${(DOTS[value] || []).includes(i) ? " on" : ""}`;
-    wrap.append(dot);
-  }
-  return wrap;
+  const img = document.createElement("img");
+  img.className = "pixel-art pip-face";
+  img.alt = "";
+  img.src = faceUrl(value);
+  return img;
 }
 
 function render() {
   board.className = "board pips-layout";
   board.replaceChildren();
+  const cell = fitCells(puzzle.cols, board.parentElement?.clientWidth || 320, 128);
   const grid = document.createElement("div");
-  grid.className = "pips-board";
+  grid.className = "pips-board is-art";
   grid.style.setProperty("--cols", puzzle.cols);
+  grid.style.setProperty("--cell", `${cell}px`);
   const states = regionStates(puzzle, values);
   const labelAt = new Map();
   puzzle.regions.forEach((region, index) => {
@@ -109,7 +109,8 @@ function render() {
     cell.className = "region-cell";
     cell.dataset.cell = String(i);
     const regionId = puzzle.regionIds[i];
-    cell.style.setProperty("--fill", COLORS[regionId % COLORS.length]);
+    cell.classList.add("is-art");
+    cell.style.backgroundImage = `url("${regionUrl(regionId)}")`;
     const state = states[regionId];
     if (state.filled) cell.classList.add(state.ok ? "is-good" : "is-bad");
     if (anchor === i) cell.classList.add("is-anchor");
@@ -121,12 +122,8 @@ function render() {
     }
     if (values[i] != null) {
       const pip = document.createElement("span");
-      pip.className = "face";
-      for (let d = 0; d < 9; d++) {
-        const dot = document.createElement("i");
-        dot.className = `pip${(DOTS[values[i]] || []).includes(d) ? " on" : ""}`;
-        pip.append(dot);
-      }
+      pip.className = "face is-art";
+      pip.append(face(values[i]));
       const cols = puzzle.cols;
       if (owners[i] != null && owners[i + 1] === owners[i] && i % cols !== cols - 1) cell.classList.add("link-e");
       if (owners[i] != null && owners[i - 1] === owners[i] && i % cols !== 0) cell.classList.add("link-w");
@@ -143,7 +140,7 @@ function render() {
   for (const item of remaining()) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `domino-btn${item.id === selected ? " is-selected" : ""}`;
+    btn.className = `domino-btn is-art${item.id === selected ? " is-selected" : ""}`;
     btn.dataset.domino = String(item.id);
     const first = item.id === selected && flipped ? item.b : item.a;
     const second = item.id === selected && flipped ? item.a : item.b;

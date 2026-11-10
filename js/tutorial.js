@@ -1,6 +1,6 @@
 import { rotMask, traceFlow, sauceReaches } from "./engines/sauce.js";
 import { slidePiece } from "./engines/slip.js";
-import { arrowSvg } from "./art.js";
+import { sauceUrl, slipUrl, gateUrl, toppingUrl, pathFile, bowlUrl, numberUrl, faceUrl, regionUrl } from "./pieces.js";
 
 const TILE = "/assets/pipes";
 const SHAPES = {
@@ -74,14 +74,21 @@ function cheer(root, onSolved) {
 }
 
 function facePips(value) {
-  const wrap = document.createElement("span");
-  wrap.className = "mini";
-  for (let i = 0; i < 9; i++) {
-    const dot = document.createElement("i");
-    dot.className = `pip${(PIP_DOTS[value] || []).includes(i) ? " on" : ""}`;
-    wrap.append(dot);
-  }
-  return wrap;
+  const img = document.createElement("img");
+  img.className = "pixel-art pip-face";
+  img.alt = "";
+  img.src = faceUrl(value);
+  return img;
+}
+
+function numberTile(index, numbers, selected, interactive) {
+  const tile = document.createElement("button");
+  tile.type = "button";
+  tile.className = `num is-art${selected === index ? " is-selected" : ""}`;
+  tile.dataset.num = String(index);
+  tile.disabled = !interactive;
+  tile.innerHTML = `<img class="pixel-art" alt="${numbers[index]}" src="${numberUrl(numbers[index])}">`;
+  return tile;
 }
 
 function mountSauce(root, { interactive, solved, onSolved }) {
@@ -100,39 +107,31 @@ function mountSauce(root, { interactive, solved, onSolved }) {
     const flow = traceFlow(tiles, rows, cols, pot);
     const open = sauceReaches(tiles, rows, cols, pot, plate);
     const grid = document.createElement("div");
-    grid.className = "pipe-grid tutorial-sauce";
+    grid.className = "pipe-grid is-art tutorial-sauce";
     grid.style.setProperty("--n", String(cols));
+    grid.style.setProperty("--cell", "64px");
     tiles.forEach((tile, index) => {
       const mask = rotMask(tile.mask, tile.rot);
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pipe-cell";
       btn.dataset.kind = tile.kind;
+      const filled = Boolean(flow.sauced.get(index));
+      const src = tile.kind === "pot"
+        ? "/assets/art/sauce/pot.png"
+        : tile.kind === "plate"
+          ? "/assets/art/sauce/plate.png"
+          : sauceUrl(mask, filled);
+      btn.innerHTML = `<img class="pixel-art" alt="" src="${src}">`;
       if (tile.kind === "pot") {
-        btn.innerHTML = `<img class="bg pot-face" alt="" src="${TILE}/pot.webp" style="--turn:${spoutTurn(mask)}deg">`;
         btn.setAttribute("aria-label", "Pot");
         btn.disabled = true;
       } else if (tile.kind === "plate") {
-        const fed = open
-          ? `<span class="spin" style="--turn:${inletTurn(mask)}deg"><img class="pipe on plate-in" alt="" src="${TILE}/straight-sauce.svg"></span>`
-          : "";
-        btn.innerHTML = `<img class="bg" alt="" src="${TILE}/goal.webp">${fed}`;
         btn.setAttribute("aria-label", "Plate");
         btn.disabled = true;
         if (open) btn.classList.add("is-fed");
-      } else if (tile.kind === "empty") {
-        btn.innerHTML = `<img class="bg" alt="" src="${TILE}/board.webp">`;
-        btn.disabled = true;
-        btn.setAttribute("aria-hidden", "true");
       } else {
-        const [file, turn] = SHAPES[mask] || ["straight", 0];
-        const local = unrot(flow.sauced.get(index) || 0, turn);
-        const sauce = [1, 2, 4, 8]
-          .filter((bit) => local & bit)
-          .map((bit) => `<img class="pipe on" alt="" src="${TILE}/${file}-sauce.svg" style="clip-path:${SAUCE_CLIP[bit]}">`)
-          .join("");
-        btn.innerHTML = `<img class="bg" alt="" src="${TILE}/board.webp"><span class="spin" style="--turn:${turn * 90}deg"><img class="pipe" alt="" src="${TILE}/${file}.svg">${sauce}</span>`;
-        btn.setAttribute("aria-label", "Turn the corner pipe");
+        btn.setAttribute("aria-label", "Turn the middle pipe");
         btn.disabled = !interactive;
         if (interactive) {
           btn.addEventListener("click", () => {
@@ -170,7 +169,8 @@ function mountSlip(root, { interactive, solved, onSolved }) {
     const board = document.createElement("div");
     board.className = "slip-board";
     const frame = document.createElement("div");
-    frame.className = "slip-frame";
+    frame.className = "slip-frame is-art";
+    frame.style.setProperty("--cell", "48px");
     frame.style.setProperty("--cols", cols);
     frame.style.setProperty("--rows", rows);
     frame.style.setProperty("--er", exit.r);
@@ -181,7 +181,7 @@ function mountSlip(root, { interactive, solved, onSolved }) {
     grid.style.setProperty("--rows", rows);
     for (let i = 0; i < rows * cols; i++) {
       const slot = document.createElement("div");
-      slot.className = "slot";
+      slot.className = "slot is-art";
       grid.append(slot);
     }
     pieces.forEach((piece, index) => {
@@ -192,9 +192,7 @@ function mountSlip(root, { interactive, solved, onSolved }) {
       el.style.top = `${(piece.r / rows) * 100}%`;
       el.style.width = `${(1 / cols) * 100}%`;
       el.style.height = `${(1 / rows) * 100}%`;
-      el.innerHTML = piece.ball
-        ? `<span class="body meat"><img class="sprite" alt="" src="/assets/food/meatball.webp"></span>`
-        : `<span class="body lasagna"><img class="sprite" alt="" src="/assets/food/lasagna.webp"></span>`;
+      el.innerHTML = `<span class="body art-piece"><img class="pixel-art" alt="" src="${slipUrl(piece)}"></span>`;
       el.setAttribute("aria-label", piece.ball ? "Meatball" : "Lasagne block");
       el.disabled = !interactive;
       el.addEventListener("click", () => {
@@ -204,8 +202,8 @@ function mountSlip(root, { interactive, solved, onSolved }) {
       grid.append(el);
     });
     const gate = document.createElement("div");
-    gate.className = "exit-gate dir-E";
-    gate.innerHTML = `<span class="glow">${arrowSvg("E")}</span>`;
+    gate.className = "exit-gate is-art dir-E";
+    gate.innerHTML = `<img class="pixel-art" alt="" src="${gateUrl("E")}">`;
     gate.setAttribute("aria-label", "Green exit gate");
     frame.append(grid, gate);
     const pad = document.createElement("div");
@@ -264,20 +262,16 @@ function mountTwirl(root, { interactive, solved, onSolved }) {
     return set;
   };
   const board = document.createElement("div");
-  board.className = "twirl-board";
+  board.className = "twirl-board is-art";
   board.style.setProperty("--n", cols);
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("class", "links");
-  svg.setAttribute("viewBox", "0 0 3 3");
-  board.append(svg);
+  board.style.setProperty("--cell", "56px");
   for (let cell = 0; cell < 9; cell++) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "twirl-cell";
     button.dataset.cell = String(cell);
     if (tops[cell]) {
-      button.innerHTML = `<span class="top"><img alt="" src="/assets/toppings/${tops[cell]}.webp"></span>`;
+        button.innerHTML = `<span class="top"><img class="pixel-art" alt="" src="${toppingUrl(tops[cell])}"></span>`;
       button.setAttribute("aria-label", tops[cell]);
     } else button.setAttribute("aria-label", "Empty square");
     button.disabled = !interactive;
@@ -285,20 +279,31 @@ function mountTwirl(root, { interactive, solved, onSolved }) {
   }
   root.replaceChildren(board);
   const drawLines = () => {
-    svg.replaceChildren();
-    const lines = paths.map((path, index) => ({ path, index }));
-    if (drawing) lines.push({ path: drawing, index: pairAt(drawing[0]) });
-    for (const line of lines) {
-      if (!line.path || line.path.length < 2) continue;
-      const poly = document.createElementNS(svgNS, "polyline");
-      poly.setAttribute("points", line.path.map((cell) => `${(cell % cols) + 0.5},${Math.floor(cell / cols) + 0.5}`).join(" "));
-      poly.setAttribute("fill", "none");
-      poly.setAttribute("stroke", line.index === 0 ? "#e0a82e" : "#2f8f4e");
-      poly.setAttribute("stroke-width", "0.42");
-      poly.setAttribute("stroke-linecap", "round");
-      poly.setAttribute("stroke-linejoin", "round");
-      svg.append(poly);
-    }
+    const layers = new Map();
+    const paint = (list, preview) => {
+      if (!list || list.length < 2) return;
+      list.forEach((cell, at) => {
+        const dirs = [];
+        for (const next of [list[at - 1], list[at + 1]]) {
+          if (next == null) continue;
+          const dr = Math.floor(next / cols) - Math.floor(cell / cols);
+          const dc = (next % cols) - (cell % cols);
+          if (dr === -1 && dc === 0) dirs.push("n");
+          if (dr === 1 && dc === 0) dirs.push("s");
+          if (dc === -1 && dr === 0) dirs.push("w");
+          if (dc === 1 && dr === 0) dirs.push("e");
+        }
+        const file = pathFile(dirs, preview);
+        if (file) layers.set(cell, file);
+      });
+    };
+    paths.forEach((path) => paint(path, false));
+    if (drawing) paint(drawing, true);
+    board.querySelectorAll(".twirl-cell").forEach((button) => {
+      const index = Number(button.dataset.cell);
+      const file = layers.get(index) || "/assets/art/twirl/cell-empty.png";
+      button.style.backgroundImage = `url("${file}")`;
+    });
   };
   const finishCheck = () => {
     if (paths[0] && !done) {
@@ -371,8 +376,9 @@ function mountBowls(root, { interactive, solved, onSolved }) {
       if (bowl >= 0) sums[bowl] += numbers[index];
     });
     const row = document.createElement("div");
-    row.className = "bowl-row";
+    row.className = "bowl-row is-art";
     row.style.setProperty("--bowls", "2");
+    row.style.setProperty("--bowl", "112px");
     ["Left", "Right"].forEach((name, bowl) => {
       const wrap = document.createElement("div");
       wrap.className = "bowl";
@@ -381,20 +387,19 @@ function mountBowls(root, { interactive, solved, onSolved }) {
       title.textContent = name;
       const bin = document.createElement("button");
       bin.type = "button";
-      bin.className = "bowl-bin";
+      bin.className = "bowl-bin is-art";
       bin.dataset.bowl = String(bowl);
       bin.setAttribute("aria-label", `${name}, total ${sums[bowl]}`);
       bin.disabled = !interactive;
+      const count = assignment.filter((place) => place === bowl).length;
+      bin.innerHTML = `<img class="pixel-art bowl-pic" alt="" src="${bowlUrl(count)}">`;
+      const chips = document.createElement("span");
+      chips.className = "bowl-chips";
       assignment.forEach((place, index) => {
         if (place !== bowl) return;
-        const tile = document.createElement("button");
-        tile.type = "button";
-        tile.className = `num${selected === index ? " is-selected" : ""}`;
-        tile.dataset.num = String(index);
-        tile.textContent = String(numbers[index]);
-        tile.disabled = !interactive;
-        bin.append(tile);
+        chips.append(numberTile(index, numbers, selected, interactive));
       });
+      bin.append(chips);
       const sum = document.createElement("p");
       sum.className = "bowl-sum";
       sum.textContent = `Total ${sums[bowl]}`;
@@ -409,13 +414,7 @@ function mountBowls(root, { interactive, solved, onSolved }) {
     tiles.className = "pool-tiles";
     assignment.forEach((place, index) => {
       if (place >= 0) return;
-      const tile = document.createElement("button");
-      tile.type = "button";
-      tile.className = `num${selected === index ? " is-selected" : ""}`;
-      tile.dataset.num = String(index);
-      tile.textContent = String(numbers[index]);
-      tile.disabled = !interactive;
-      tiles.append(tile);
+      tiles.append(numberTile(index, numbers, selected, interactive));
     });
     pool.append(label, tiles);
     const status = root.querySelector(".how-status");
@@ -461,18 +460,34 @@ function mountRavioli(root, { interactive, solved, onSolved }) {
   let done = false;
   const paint = () => {
     const grid = document.createElement("div");
-    grid.className = "half-grid";
-    for (const half of halves) {
+    grid.className = "half-grid is-art";
+    grid.style.setProperty("--half", "72px");
+    const joined = document.createElement("div");
+    joined.className = "word-list is-art";
+    for (const pair of locked) {
+      const row = document.createElement("div");
+      row.className = "ravioli-joined";
+      pair.forEach((half, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "half is-art is-locked";
+        button.disabled = true;
+        const side = index === 0 ? "left" : "right";
+        const scale = half.length >= 5 ? 0.11 : 0.15;
+        button.innerHTML = `<img class="pixel-art" alt="" src="/assets/art/ravioli/half-${side}-basil.png"><span class="ravioli-word" style="font-size:calc(var(--half, 64px) * ${scale})">${half}</span>`;
+        row.append(button);
+      });
+      joined.append(row);
+    }
+    for (const [index, half] of halves.entries()) {
+      if (locked.some((pair) => pair.includes(half))) continue;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "half";
+      button.className = "half is-art";
       button.dataset.half = half;
-      button.textContent = half;
-      const held = locked.some((pair) => pair.includes(half));
-      if (held) {
-        button.classList.add("is-locked");
-        button.disabled = true;
-      }
+      const side = index % 2 ? "right" : "left";
+      const scale = half.length >= 5 ? 0.11 : 0.15;
+      button.innerHTML = `<img class="pixel-art" alt="" src="/assets/art/ravioli/half-${side}.png"><span class="ravioli-word" style="font-size:calc(var(--half, 64px) * ${scale})">${half}</span>`;
       if (selected === half) button.classList.add("is-selected");
       button.disabled = button.disabled || !interactive;
       button.addEventListener("click", () => {
@@ -501,7 +516,7 @@ function mountRavioli(root, { interactive, solved, onSolved }) {
       grid.append(button);
     }
     const status = root.querySelector(".how-status");
-    root.replaceChildren(grid);
+    root.replaceChildren(joined, grid);
     if (status) root.append(status);
     if (locked.length && !done) {
       done = true;
@@ -537,14 +552,15 @@ function mountPips(root, { interactive, solved, onSolved }) {
   };
   const paint = () => {
     const grid = document.createElement("div");
-    grid.className = "pips-board";
+    grid.className = "pips-board is-art";
     grid.style.setProperty("--cols", cols);
+    grid.style.setProperty("--cell", "56px");
     for (let cell = 0; cell < 4; cell++) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "region-cell";
+      button.className = "region-cell is-art";
       button.dataset.cell = String(cell);
-      button.style.setProperty("--fill", PIP_COLORS[regionIds[cell]]);
+      button.style.backgroundImage = `url("${regionUrl(regionIds[cell])}")`;
       const region = regions[regionIds[cell]];
       const ok = regionOk(region);
       if (ok === true) button.classList.add("is-good");
@@ -558,12 +574,8 @@ function mountPips(root, { interactive, solved, onSolved }) {
       }
       if (values[cell] != null) {
         const pip = document.createElement("span");
-        pip.className = "face";
-        for (let dot = 0; dot < 9; dot++) {
-          const mark = document.createElement("i");
-          mark.className = `pip${(PIP_DOTS[values[cell]] || []).includes(dot) ? " on" : ""}`;
-          pip.append(mark);
-        }
+        pip.className = "face is-art";
+        pip.append(facePips(values[cell]));
         if (owners[cell] != null && owners[cell + 1] === owners[cell] && cell % cols !== cols - 1) button.classList.add("link-e");
         if (owners[cell] != null && owners[cell - 1] === owners[cell] && cell % cols !== 0) button.classList.add("link-w");
         button.append(pip);
@@ -579,7 +591,7 @@ function mountPips(root, { interactive, solved, onSolved }) {
       if (used.has(item.id)) continue;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `domino-btn${item.id === selected ? " is-selected" : ""}`;
+      button.className = `domino-btn is-art${item.id === selected ? " is-selected" : ""}`;
       button.dataset.domino = String(item.id);
       const first = item.id === selected && flipped ? item.b : item.a;
       const second = item.id === selected && flipped ? item.a : item.b;

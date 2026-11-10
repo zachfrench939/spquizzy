@@ -1,8 +1,7 @@
 import { createKit } from "../playkit.js";
 import { generateTwirl, twirlSolved } from "../engines/twirl.js";
-import { toppingSvg } from "../art.js";
+import { toppingUrl, pathFile, fitCells } from "../pieces.js";
 
-const COLORS = ["#e23b2f", "#e0a82e", "#2f8f4e", "#355f78", "#e07a4c", "#8d5a32", "#c46b9a", "#1e2a2a", "#b4532a", "#3d8b8b", "#6e4324", "#d64532"];
 const kit = createKit("twirl");
 const board = document.querySelector("#board");
 let puzzle = null;
@@ -56,28 +55,11 @@ function start() {
 function render() {
   board.className = "board";
   board.replaceChildren();
+  const cell = fitCells(puzzle.cols, board.parentElement?.clientWidth || 320, 128);
   const root = document.createElement("div");
-  root.className = "twirl-board";
+  root.className = "twirl-board is-art";
   root.style.setProperty("--n", puzzle.cols);
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("class", "links");
-  svg.setAttribute("viewBox", `0 0 ${puzzle.cols} ${puzzle.rows}`);
-  const drawList = paths.map((path, i) => ({ path, i, preview: false }));
-  if (drawing) drawList.push({ path: drawing.cells, i: drawing.pair, preview: true });
-  for (const item of drawList) {
-    if (!item.path || item.path.length < 2) continue;
-    const poly = document.createElementNS(svgNS, "polyline");
-    poly.setAttribute("points", item.path.map((cell) => `${(cell % puzzle.cols) + 0.5},${Math.floor(cell / puzzle.cols) + 0.5}`).join(" "));
-    poly.setAttribute("fill", "none");
-    poly.setAttribute("stroke", COLORS[item.i % COLORS.length]);
-    poly.setAttribute("stroke-width", item.preview ? "0.34" : "0.42");
-    poly.setAttribute("stroke-linecap", "round");
-    poly.setAttribute("stroke-linejoin", "round");
-    poly.setAttribute("opacity", item.preview ? "0.75" : "1");
-    svg.append(poly);
-  }
-  root.append(svg);
+  root.style.setProperty("--cell", `${cell}px`);
   for (let i = 0; i < puzzle.rows * puzzle.cols; i++) {
     const cell = document.createElement("button");
     cell.type = "button";
@@ -87,7 +69,7 @@ function render() {
     if (owner >= 0) {
       const icon = document.createElement("span");
       icon.className = "top";
-      icon.innerHTML = toppingSvg(puzzle.pairs[owner].topping);
+      icon.innerHTML = `<img class="pixel-art" alt="" src="${toppingUrl(puzzle.pairs[owner].topping)}">`;
       cell.append(icon);
       cell.setAttribute("aria-label", puzzle.pairs[owner].topping);
     } else cell.setAttribute("aria-label", "Empty square");
@@ -95,36 +77,54 @@ function render() {
     root.append(cell);
   }
   board.append(root);
+  applyPaths();
   const left = puzzle.rows * puzzle.cols - filledCount();
   const joined = paths.filter(Boolean).length;
   kit.note(left ? `${joined} of ${puzzle.pairs.length} pairs joined. ${left} squares open.` : "Every square is covered.");
 }
 
+function dirsOf(cell, list) {
+  const cols = puzzle.cols;
+  const at = list.indexOf(cell);
+  if (at < 0) return [];
+  const dirs = [];
+  for (const next of [list[at - 1], list[at + 1]]) {
+    if (next == null) continue;
+    const dr = Math.floor(next / cols) - Math.floor(cell / cols);
+    const dc = (next % cols) - (cell % cols);
+    if (dr === -1 && dc === 0) dirs.push("n");
+    if (dr === 1 && dc === 0) dirs.push("s");
+    if (dc === -1 && dr === 0) dirs.push("w");
+    if (dc === 1 && dr === 0) dirs.push("e");
+  }
+  return dirs;
+}
+
+function applyPaths() {
+  const layers = new Map();
+  const paint = (list, preview) => {
+    if (!list || list.length < 2) return;
+    for (const cell of list) {
+      const file = pathFile(dirsOf(cell, list), preview);
+      if (file) layers.set(cell, file);
+    }
+  };
+  paths.forEach((path) => paint(path, false));
+  if (drawing) paint(drawing.cells, true);
+  board.querySelectorAll(".twirl-cell").forEach((el) => {
+    const index = Number(el.dataset.cell);
+    const file = layers.get(index) || "/assets/art/twirl/cell-empty.png";
+    el.style.backgroundImage = `url("${file}")`;
+    el.classList.toggle("is-drawing", Boolean(drawing?.cells.includes(index)));
+  });
+}
+
 function paintLinks() {
-  const svg = board.querySelector(".links");
-  if (!svg) {
+  if (!board.querySelector(".twirl-cell")) {
     render();
     return;
   }
-  const svgNS = "http://www.w3.org/2000/svg";
-  svg.replaceChildren();
-  const drawList = paths.map((path, i) => ({ path, i, preview: false }));
-  if (drawing) drawList.push({ path: drawing.cells, i: drawing.pair, preview: true });
-  for (const item of drawList) {
-    if (!item.path || item.path.length < 2) continue;
-    const poly = document.createElementNS(svgNS, "polyline");
-    poly.setAttribute("points", item.path.map((cell) => `${(cell % puzzle.cols) + 0.5},${Math.floor(cell / puzzle.cols) + 0.5}`).join(" "));
-    poly.setAttribute("fill", "none");
-    poly.setAttribute("stroke", COLORS[item.i % COLORS.length]);
-    poly.setAttribute("stroke-width", item.preview ? "0.34" : "0.42");
-    poly.setAttribute("stroke-linecap", "round");
-    poly.setAttribute("stroke-linejoin", "round");
-    poly.setAttribute("opacity", item.preview ? "0.75" : "1");
-    svg.append(poly);
-  }
-  board.querySelectorAll(".twirl-cell").forEach((el) => {
-    el.classList.toggle("is-drawing", Boolean(drawing?.cells.includes(Number(el.dataset.cell))));
-  });
+  applyPaths();
 }
 
 function cellFrom(event) {

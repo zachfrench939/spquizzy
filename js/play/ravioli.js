@@ -1,5 +1,6 @@
 import { createKit } from "../playkit.js";
 import { generateRavioli, matchWord } from "../engines/ravioli.js";
+import { fitCells } from "../pieces.js";
 
 const kit = createKit("ravioli");
 const board = document.querySelector("#board");
@@ -33,38 +34,40 @@ function isLocked(half) {
   return locked.some((pair) => pair.includes(half));
 }
 
+function halfButton(half, lockedHalf, side) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = `half is-art side-${side}${lockedHalf ? " is-locked" : ""}${selected === half ? " is-selected" : ""}`;
+  btn.dataset.half = half;
+  btn.disabled = Boolean(lockedHalf);
+  btn.setAttribute("aria-pressed", selected === half ? "true" : "false");
+  const scale = half.length >= 5 ? 0.11 : 0.15;
+  btn.innerHTML = `<img class="pixel-art" alt="" src="/assets/art/ravioli/half-${side}${lockedHalf ? "-basil" : ""}.png"><span class="ravioli-word" style="font-size:calc(var(--half, 64px) * ${scale})">${half}</span>`;
+  return btn;
+}
+
 function render() {
   board.className = "board";
   board.replaceChildren();
+  const loose = puzzle.tiles.filter((half) => !isLocked(half));
+  const width = fitCells(Math.min(4, Math.max(2, loose.length)), board.parentElement?.clientWidth || 320, 128);
   const grid = document.createElement("div");
-  grid.className = "half-grid";
-  for (const half of puzzle.tiles) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "half";
-    btn.dataset.half = half;
-    btn.dataset.len = String(half.length);
-    btn.textContent = half;
-    btn.setAttribute("aria-pressed", selected === half ? "true" : "false");
-    if (selected === half) btn.classList.add("is-selected");
-    if (isLocked(half)) {
-      btn.classList.add("is-locked");
-      btn.disabled = true;
-      const tick = document.createElement("span");
-      tick.className = "tick";
-      btn.append(tick);
-    }
-    grid.append(btn);
+  grid.className = "half-grid is-art";
+  grid.style.setProperty("--half", `${width}px`);
+  for (const half of loose) {
+    grid.append(halfButton(half, false, grid.childElementCount % 2 ? "right" : "left"));
   }
   const words = document.createElement("div");
-  words.className = "word-list";
+  words.className = "word-list is-art";
   for (const pair of locked) {
     const found = matchWord(puzzle.words, pair[0], pair[1]);
-    const chip = document.createElement("span");
-    chip.textContent = found.word;
-    words.append(chip);
+    const joined = document.createElement("div");
+    joined.className = "ravioli-joined";
+    joined.append(halfButton(pair[0], true, "left"), halfButton(pair[1], true, "right"));
+    joined.setAttribute("aria-label", found?.word || `${pair[0]} ${pair[1]}`);
+    words.append(joined);
   }
-  board.append(grid, words);
+  board.append(words, grid);
   if (selected) kit.note(`${selected} is selected. Tap the half that finishes the word.`);
   else kit.note(`${puzzle.words.length - locked.length} words still to make.`);
 }

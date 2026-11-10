@@ -2260,3 +2260,147 @@ body.is-doc .doc .how-stage { margin: 12px 0 18px; }
     border-radius: 18px !important;
   }
 }
+
+.pixel-art { image-rendering: pixelated; image-rendering: crisp-edges; }
+.pipe-grid.is-art { width: calc(var(--cell) * var(--n)); max-width: 100%; gap: 0; background: transparent; }
+.pipe-grid.is-art .pipe-cell { width: var(--cell); height: var(--cell); padding: 0; border: 0; background: transparent; overflow: hidden; }
+.pipe-grid.is-art .pipe-cell img { width: 100%; height: 100%; display: block; }
+.bowl-row.is-art { align-items: end; }
+.bowl-bin.is-art {
+  position: relative;
+  width: var(--bowl);
+  height: var(--bowl);
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.bowl-pic { width: 100%; height: 100%; display: block; pointer-events: none; }
+.bowl-chips {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 22%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  justify-content: center;
+  pointer-events: none;
+}
+.num.is-art {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.bowl-chips .num.is-art { width: 32px; height: 32px; pointer-events: auto; }
+.num.is-art img { width: 100%; height: 100%; display: block; }
+.num.is-art.is-selected { outline: 3px solid #E63326; outline-offset: 2px; }
+.twirl-board.is-art {
+  width: calc(var(--cell) * var(--n));
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  gap: 0;
+}
+.twirl-board.is-art .twirl-cell {
+  width: var(--cell);
+  height: var(--cell);
+  background-color: transparent;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  outline: 0;
+}
+.twirl-board.is-art .top { inset: 16%; }
+.twirl-board.is-art .top img { width: 100%; height: 100%; }
+.slip-frame.is-art { position: relative; width: max-content; margin: 8px 48px 8px 8px; }
+.slip-frame.is-art .slip-grid {
+  width: calc(var(--cell) * var(--cols));
+  height: calc(var(--cell) * var(--rows));
+  aspect-ratio: auto;
+  gap: 0;
+  padding: 0;
+}
+.slot.is-art {
+  width: var(--cell);
+  height: var(--cell);
+  background: url("/assets/art/slip/board-cell.png") center / 100% 100% no-repeat;
+}
+.art-piece, .piece .body.art-piece {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.slip-grid .piece { overflow: hidden; }
+.art-piece img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.exit-gate.is-art, .exit-gate.is-art .glow {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  animation: none;
+}
+.exit-gate.is-art { width: var(--cell); height: var(--cell); }
+.exit-gate.is-art img { width: 100%; height: 100%; display: block; }
+.exit-gate.is-art.dir-E { left: 100%; top: calc(var(--er) * var(--cell)); }
+.exit-gate.is-art.dir-W { right: 100%; left: auto; top: calc(var(--er) * var(--cell)); }
+.exit-gate.is-art.dir-N { bottom: 100%; top: auto; left: calc(var(--ec) * var(--cell)); }
+.exit-gate.is-art.dir-S { top: 100%; left: calc(var(--ec) * var(--cell)); }
+.half.is-art {
+  position: relative;
+  width: var(--half, 64px);
+  height: calc(var(--half, 64px) * 1.25);
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.half.is-art img { width: 100%; height: 100%; display: block; }
+.ravioli-word {
+  position: absolute;
+  top: 43%;
+  transform: translate(-50%, -50%);
+  color: #1e2a2a;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: calc(var(--half, 64px) * 0.13);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  max-width: 46%;
+  text-align: center;
+  pointer-events: none;
+}
+.half.is-art.side-left .ravioli-word { left: 68%; }
+.half.is-art.side-right .ravioli-word { left: 32%; }
+.ravioli-joined { display: flex; align-items: center; justify-content: center; }
+.ravioli-joined .half.is-art + .half.is-art { margin-left: -18px; }
+.word-list.is-art { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; }
+.half-grid.is-art { gap: 10px; }
+.pips-board.is-art { width: calc(var(--cell) * var(--cols)); max-width: 100%; gap: 2px; }
+.region-cell.is-art {
+  width: var(--cell);
+  height: var(--cell);
+  background-color: transparent;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 0;
+  border-radius: 0 !important;
+}
+.face.is-art { background: transparent !important; border: 0 !important; box-shadow: none !important; width: 72%; height: 72%; }
+.pip-face { width: 100%; height: 100%; display: block; }
+.domino-btn.is-art {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  gap: 0;
+  padding: 0;
+}
+.domino-btn.is-art .pip-face { width: 48px; height: 48px; }

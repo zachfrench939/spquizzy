@@ -1,52 +1,12 @@
 import { createKit } from "../playkit.js";
 import { generateSauce, rotateTile, traceFlow, sauceReaches, rotMask } from "../engines/sauce.js";
+import { fitCells, sauceUrl } from "../pieces.js";
 
 const kit = createKit("sauce");
 const board = document.querySelector("#board");
 let puzzle = null;
 let tiles = [];
 
-const TILE = "/assets/pipes";
-// Built sprites face these openings. rot is clockwise turns of that art.
-const SHAPES = {
-  10: ["straight", 0],
-  5: ["straight", 1],
-  12: ["corner", 0],
-  9: ["corner", 1],
-  3: ["corner", 2],
-  6: ["corner", 3],
-  14: ["tee", 0],
-  13: ["tee", 1],
-  11: ["tee", 2],
-  7: ["tee", 3],
-  15: ["cross", 0],
-};
-const SAUCE_CLIP = {
-  1: "inset(-6% 27% 48% 27%)",
-  2: "inset(27% -6% 27% 48%)",
-  4: "inset(48% 27% -6% 27%)",
-  8: "inset(27% 48% 27% -6%)",
-};
-
-function unrot(mask, rot) {
-  return rotMask(mask, (4 - (rot % 4)) % 4);
-}
-
-function spoutTurn(mask) {
-  if (mask & 2) return 0;
-  if (mask & 4) return 90;
-  if (mask & 8) return 180;
-  if (mask & 1) return 270;
-  return 0;
-}
-
-function inletTurn(mask) {
-  if (mask & 8) return 0;
-  if (mask & 1) return 90;
-  if (mask & 2) return 180;
-  if (mask & 4) return 270;
-  return 0;
-}
 
 function start() {
   puzzle = generateSauce(kit.diff, kit.rng());
@@ -84,9 +44,10 @@ function clearHint() {
 
 function render(flash = -1) {
   const flow = traceFlow(tiles, puzzle.rows, puzzle.cols, puzzle.pot);
-  board.style.setProperty("--n", puzzle.rows);
-  board.className = "board pipe-grid";
+  const cell = fitCells(puzzle.cols, board.parentElement?.clientWidth || 320, 128);
+  board.className = "board pipe-grid is-art";
   board.style.setProperty("--n", String(puzzle.rows));
+  board.style.setProperty("--cell", `${cell}px`);
   board.replaceChildren();
   const open = sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate);
   const hint = showHint() && !open;
@@ -101,24 +62,14 @@ function render(flash = -1) {
     const r = Math.floor(index / puzzle.cols) + 1;
     const c = (index % puzzle.cols) + 1;
     btn.setAttribute("aria-label", tile.fixed ? `${tile.kind} row ${r} column ${c}` : `Rotate pipe row ${r} column ${c}`);
-    const sauced = flow.sauced.get(index) || 0;
-    if (tile.kind === "pot") {
-      btn.innerHTML = `<img class="bg pot-face" alt="" src="${TILE}/pot.webp" style="--turn:${spoutTurn(mask)}deg">`;
-    } else if (tile.kind === "plate") {
-      const inlet = open
-        ? `<span class="spin" style="--turn:${inletTurn(mask)}deg"><img class="pipe on plate-in" alt="" src="${TILE}/straight-sauce.svg"></span>`
-        : "";
-      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/goal.webp">${inlet}`;
-      if (open) btn.classList.add("is-fed");
-    } else {
-      const [file, rot] = SHAPES[mask] || ["straight", 0];
-      const local = unrot(sauced, rot);
-      const sauce = [1, 2, 4, 8]
-        .filter((bit) => local & bit)
-        .map((bit) => `<img class="pipe on" alt="" src="${TILE}/${file}-sauce.svg" style="clip-path:${SAUCE_CLIP[bit]}">`)
-        .join("");
-      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/board.webp"><span class="spin" style="--turn:${rot * 90}deg"><img class="pipe" alt="" src="${TILE}/${file}.svg">${sauce}</span>`;
-    }
+    const filled = Boolean(flow.sauced.get(index));
+    const src = tile.kind === "pot"
+      ? "/assets/art/sauce/pot.png"
+      : tile.kind === "plate"
+        ? "/assets/art/sauce/plate.png"
+        : sauceUrl(mask, filled);
+    btn.innerHTML = `<img class="pixel-art" alt="" width="${cell}" height="${cell}" src="${src}">`;
+    if (tile.kind === "plate" && open) btn.classList.add("is-fed");
     if (index === flash) btn.classList.add("pop");
     if (hint && !tile.fixed && !hinted) {
       btn.classList.add("is-hint");
