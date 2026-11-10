@@ -217,8 +217,45 @@ export const SPRITES = {
   icons: ICONS,
 };
 
-export function wombatSvg(label = "Wombat mascot") {
-  return pixelSvg(WOMBAT_ROWS, label);
+const WOMBAT_FACES = {
+  ready: `<circle cx="27" cy="31" r="2.1" fill="#1e2a2a"/><circle cx="45" cy="31" r="2.1" fill="#1e2a2a"/><path d="M30 40c2.4 2.6 9.6 2.6 12 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/>`,
+  think: `<circle cx="27" cy="29" r="2.1" fill="#1e2a2a"/><circle cx="45" cy="29" r="2.1" fill="#1e2a2a"/><path d="M21 24h8" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M43 22h9" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><circle cx="36" cy="41" r="2" fill="none" stroke="#1e2a2a" stroke-width="2"/>`,
+  win: `<path d="M23 31c1.6 2 4.8 2 6.4 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M42 31c1.6 2 4.8 2 6.4 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M28 38c2.6 4.5 13.4 4.5 16 0" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2" stroke-linejoin="round"/><circle cx="22" cy="36" r="2.6" fill="#e7a090"/><circle cx="50" cy="36" r="2.6" fill="#e7a090"/>`,
+};
+
+export function wombatSvg(mood = "ready", label = "Wombat mascot") {
+  if (!WOMBAT_FACES[mood]) {
+    label = typeof mood === "string" && mood ? mood : label;
+    mood = "ready";
+  }
+  const body = `
+    <ellipse cx="16" cy="20" rx="7" ry="8" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2.5"/>
+    <ellipse cx="56" cy="20" rx="7" ry="8" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2.5"/>
+    <ellipse cx="36" cy="34" rx="22" ry="18" fill="#c48a55" stroke="#1e2a2a" stroke-width="2.5"/>
+    <ellipse cx="36" cy="40" rx="13" ry="10" fill="#f3d2a6" stroke="#1e2a2a" stroke-width="2"/>
+    <ellipse cx="36" cy="34" rx="4.5" ry="3.2" fill="#e7a090" stroke="#1e2a2a" stroke-width="2"/>
+    ${WOMBAT_FACES[mood]}
+    <rect x="18" y="50" width="12" height="8" rx="3" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2"/>
+    <rect x="42" y="50" width="12" height="8" rx="3" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2"/>
+  `;
+  return cleanSvg(body, label || "Wombat mascot", "0 0 72 64");
+}
+
+export function pastaBurstHtml() {
+  const kinds = ["sauce", "noodle", "leaf", "ball"];
+  const spots = [
+    [-62, -2],
+    [-40, 8],
+    [-22, -8],
+    [-4, 4],
+    [16, -6],
+    [36, 8],
+    [54, -4],
+    [70, 6],
+  ];
+  return spots
+    .map(([x, y], i) => `<i class="bit bit-${kinds[i % 4]}" style="--x:${x}px;--y:${y}px;--delay:${(i * 0.04).toFixed(2)}s"></i>`)
+    .join("");
 }
 
 export function bowlSvg() {
@@ -231,8 +268,8 @@ function cleanSvg(body, label = "", view = "0 0 32 32") {
 }
 
 const CLEAN_ICONS = {
-  sauce: `<rect x="6" y="14" width="20" height="11" rx="3" fill="#e23b2f"/><rect x="4" y="11" width="24" height="4" rx="2" fill="#b42318"/><path d="M16 11V6h9" fill="none" stroke="#e0a82e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
-  slip: `<rect x="3" y="9" width="14" height="14" rx="3" fill="#f08a6a"/><circle cx="24" cy="16" r="6" fill="#f6c945"/>`,
+  sauce: `<rect x="6" y="14" width="20" height="11" rx="3" fill="#e23b2f" stroke="#1e2a2a" stroke-width="1.6"/><rect x="4" y="11" width="24" height="4" rx="2" fill="#b42318" stroke="#1e2a2a" stroke-width="1.4"/><path d="M16 11V6h9" fill="none" stroke="#e0a82e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
+  slip: `<rect x="3" y="9" width="14" height="14" rx="3" fill="#f08a6a" stroke="#1e2a2a" stroke-width="1.6"/><circle cx="24" cy="16" r="6" fill="#f6c945" stroke="#1e2a2a" stroke-width="1.6"/>`,
   twirl: `<circle cx="8" cy="16" r="5" fill="#e23b2f"/><circle cx="24" cy="16" r="5" fill="#e23b2f"/><path d="M13 16h6" stroke="#e23b2f" stroke-width="3" stroke-linecap="round"/>`,
   bowls: `<path d="M3 12h12v5a6 6 0 0 1-12 0z" fill="#f6c945" stroke="#1e2a2a" stroke-width="1.6"/><path d="M17 12h12v5a6 6 0 0 1-12 0z" fill="#fff" stroke="#1e2a2a" stroke-width="1.6"/>`,
   ravioli: `<rect x="3" y="9" width="12" height="14" rx="3" fill="#f6c945"/><rect x="17" y="9" width="12" height="14" rx="3" fill="#fff" stroke="#e0a82e" stroke-width="1.6"/>`,
@@ -265,7 +302,7 @@ export function toppingSvg(id) {
 export function arrowSvg(dir) {
   const rot = { E: 0, S: 90, W: 180, N: -90 }[dir] ?? 0;
   return cleanSvg(
-    `<g transform="rotate(${rot} 12 12)"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="#1e6b38" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>`,
+    `<g transform="rotate(${rot} 12 12)"><path d="M4 7h9.5L20 12l-6.5 5H4l5-5z" fill="#2f8f4e" stroke="#1e2a2a" stroke-width="1.7" stroke-linejoin="round"/></g>`,
     "Green arrow",
     "0 0 24 24",
   );

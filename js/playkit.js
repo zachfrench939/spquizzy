@@ -17,7 +17,7 @@ import {
   diffKey,
   getStorage,
 } from "./core.js";
-import { wombatSvg } from "./art.js";
+import { wombatSvg, pastaBurstHtml } from "./art.js";
 
 function nounLabel(noun, n) {
   const word = n === 1 ? noun : noun === "try" ? "tries" : noun === "domino" ? "dominoes" : `${noun}s`;
@@ -120,10 +120,7 @@ export function createKit(gameId) {
     document.querySelector("#win-title").textContent = game.win;
     document.querySelector("#win-detail").textContent = `You used ${moves} ${nounLabel(game.noun, moves).toLowerCase()}. Goal was ${par}. Time ${formatTime(seconds)}. ${compared} ${streak}`;
     const burst = document.querySelector("#win-burst");
-    if (burst) {
-      const colors = ["#f6c945", "#e23b2f", "#2f8f4e", "#fff8ea", "#e07a4c"];
-      burst.innerHTML = colors.map((color) => `<i style="background:${color}"></i>`).join("");
-    }
+    if (burst) burst.innerHTML = pastaBurstHtml();
     document.querySelector("#win").showModal();
     if (live) live.textContent = `${game.win} ${note}`;
   }

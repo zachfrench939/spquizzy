@@ -8,6 +8,7 @@ const board = document.querySelector("#board");
 let puzzle = null;
 let pieces = [];
 let selected = 0;
+let flash = -1;
 let drag = null;
 let suppressUntil = 0;
 
@@ -96,7 +97,7 @@ function render() {
   pieces.forEach((p, i) => {
     const el = document.createElement("button");
     el.type = "button";
-    el.className = `piece${p.ball ? " ball" : ""}${i === selected ? " is-selected" : ""}${i === hintIndex ? " is-hint" : ""}`;
+    el.className = `piece${p.ball ? " ball" : ""}${i === selected ? " is-selected" : ""}${i === hintIndex ? " is-hint" : ""}${i === flash ? " pop" : ""}`;
     el.dataset.piece = String(i);
     el.style.setProperty("--c", p.c + 1);
     el.style.setProperty("--r", p.r + 1);
@@ -135,6 +136,7 @@ function tryMove(index, dir, maxSteps) {
   if (showHint()) clearHint();
   pieces = moved.pieces;
   selected = index;
+  flash = index;
   kit.remember(snapshot());
   kit.addMove();
   render();

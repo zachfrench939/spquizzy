@@ -2,7 +2,7 @@ import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
 import { loadStats, loadRun, clearRun, todayString, formatLong, formatTime, plural, isValidDate, compareDates, diffKey, getStorage } from "./core.js";
-import { iconSvg } from "./art.js";
+import { iconSvg, wombatSvg, pastaBurstHtml } from "./art.js";
 import { renderArchive } from "./archive.js";
 
 const LOADERS = {
@@ -118,6 +118,7 @@ function gameStage(game) {
       <div class="play-head">
         <div>
           <p id="when" class="when"></p>
+          <p class="kicker">${game.kicker}</p>
           <h1 class="game-name">${game.name}</h1>
         </div>
         <button type="button" id="how-open" class="help-btn" aria-label="How to play">?</button>
@@ -143,13 +144,20 @@ function gameStage(game) {
     </article>
     <p id="live" class="sr-only" aria-live="polite"></p>
     <dialog id="how">
-      <h2>How to play</h2>
+      <div class="how-head">
+        <div class="mascot mascot-sm">${wombatSvg("think")}</div>
+        <div>
+          <p class="kicker">${game.kicker}</p>
+          <h2>How to play</h2>
+        </div>
+      </div>
       <p class="goal">${game.goal}</p>
       <div class="how-list">${HELP[game.id] || ""}</div>
       <div class="actions"><button type="button" id="how-close" class="btn btn-tomato">Got it</button></div>
     </dialog>
     <dialog id="win">
-      <div class="burst" id="win-burst" aria-hidden="true"></div>
+      <div class="mascot mascot-sm">${wombatSvg("win")}</div>
+      <div class="pasta-burst" id="win-burst" aria-hidden="true"></div>
       <h2 id="win-title">Plated</h2>
       <p id="win-detail"></p>
       <div class="actions">
@@ -199,8 +207,9 @@ function doneStage(game, run, diff) {
   const word = plural(game.noun, run.moves || 0);
   return `
     <section class="done">
-      <div class="intro-icon">${iconSvg(game.id)}</div>
-      <p class="done-kicker">Solved</p>
+      <div class="mascot mascot-win">${wombatSvg("win")}</div>
+      <div class="pasta-burst" aria-hidden="true">${pastaBurstHtml()}</div>
+      <p class="done-kicker">${game.cheer}</p>
       <h1 class="game-name">You solved today's puzzle</h1>
       <p class="goal">${game.name}. ${game.goal}</p>
       <ul class="done-stats">
@@ -222,7 +231,11 @@ function introStage(game, { landing, diff, cta }) {
   }).join("");
   return `
     <section class="intro">
-      <div class="intro-icon">${iconSvg(game.id)}</div>
+      <div class="mascot-row">
+        <div class="mascot">${wombatSvg("ready")}</div>
+        <div class="intro-icon">${iconSvg(game.id)}</div>
+      </div>
+      <p class="kicker">${game.kicker}</p>
       <h1 class="game-name">${game.name}</h1>
       <p class="goal">${game.goal}</p>
       <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
