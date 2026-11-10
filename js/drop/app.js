@@ -1,6 +1,10 @@
 import { LAUNCH_DATE } from "../config.js";
 import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, weeklyLeague } from "./api.js";
-import { addRest, allIn, canManualLock, QUESTION_MS, timeoutCoins } from "./rules.js";
+import {
+  START_COINS, LONG_PRESS_MS, addAmount, addRest, allIn, canManualLock, chipState,
+  clearDoor, clonePots, freshPots, minusStep, QUESTION_MS, stackCount, timeoutPots,
+  totalInPlay, trayTokens,
+} from "./rules.js";
 
 const COIN = "/assets/drop/coin-fusilli-64.png";
 const BANK = "/assets/drop/bank-stack-64.png";
@@ -44,9 +48,10 @@ let session = captureHashSession() || readSession();
 let settings = loadSettings();
 let bank = loadBank();
 let run = null;
-let selectedId = null;
-let selectedDoor = null;
+let armed = null;
 let drag = null;
+let minusPress = null;
+let dropTimers = [];
 let floater = null;
 let timerId = 0;
 let audioCtx = null;
@@ -139,7 +144,8 @@ function todayRun() {
     localStorage.removeItem(RUN_KEY);
     return null;
   }
-  if (stored && stored.date === today) return stored;
+  if (stored && stored.date === today && stored.pots && Number.isInteger(stored.pots.tray)) return stored;
+  if (stored && stored.date === today) localStorage.removeItem(RUN_KEY);
   return null;
 }
 
@@ -218,7 +224,7 @@ function shell() {
     if (drag) event.preventDefault();
   }, { passive: false });
   document.querySelector("#undo").addEventListener("click", undo);
-  document.querySelector("#lock").addEventListener("click", () => { if (canManualLock(run.coins)) lockQuestion(false); });
+  document.querySelector("#lock").addEventListener("click", onLockClick);
   document.querySelector("#share").addEventListener("click", share);
   paintHowArt();
 }
@@ -232,16 +238,19 @@ function homeView() {
   wombat.src = "/assets/drop/wombat-idle.png";
   wombat.alt = "The Spiquizzy wombat";
   wombat.width = 140;
-  const plate = el("div", "hero-plate");
-  plate.id = "hero-plate";
-  for (let i = 0; i < 10; i += 1) plate.append(coinImg(26));
-  art.append(wombat, plate);
+  const stake = el("div", "hero-stake");
+  const stack = el("div", "hero-stack");
+  for (let i = 0; i < 5; i += 1) stack.append(coinImg(32));
+  const figure = el("strong", null, "100");
+  const words = el("span", null, "coins today");
+  stake.append(stack, figure, words);
+  art.append(wombat, stake);
   const badge = el("span", "sticker cheese");
   badge.id = "drop-badge";
   const title = el("h1", null, "The Daily Drop");
   const date = el("p", "date-line");
   date.id = "home-date";
-  const pitch = el("p", "pitch", "Start with 10 coins. Put them on the answers you trust. Only the coins on the right answer go through. Finish all 10 questions to bank what’s left.");
+  const pitch = el("p", "pitch", "Start with 100 coins. Put them on the answers you trust. Only the coins on the right answer go through. Finish all 10 questions to bank what’s left.");
   const endow = el("p", "endow");
   endow.id = "home-endow";
   const cta = el("div", "home-cta");
@@ -275,58 +284,67 @@ function playView() {
   const brand = el("a", "brand");
   brand.href = "/";
   brand.dataset.nav = "home";
+  brand.setAttribute("aria-label", "The Daily Drop");
   const logo = document.createElement("img");
   logo.className = "logo";
   logo.src = LOGO;
-  logo.alt = "";
-  logo.width = 32;
-  logo.height = 32;
-  brand.append(logo, el("span", "wordmark", "The Daily Drop"));
-  const help = el("button", "icon-btn");
-  help.type = "button";
-  help.dataset.nav = "howto";
-  help.setAttribute("aria-label", "How to play");
-  help.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 10v7"/><circle cx="12" cy="7.5" r="0.9" fill="#111"/></svg>`;
-  bar.append(back, brand, help);
+  logo.alt = "The Daily Drop";
+  logo.width = 36;
+  logo.height = 36;
+  brand.append(logo);
+  const coins = el("button", "play-coins");
+  coins.type = "button";
+  coins.id = "play-coins";
+  coins.setAttribute("aria-expanded", "false");
+  coins.setAttribute("aria-controls", "bank-pop");
+  coins.innerHTML = `<img src="${COIN}" width="30" height="30" alt=""><strong id="pending-count">100</strong><span class="pending-float" id="pending-float"></span><div class="bank-pop" id="bank-pop" hidden><div class="row"><img src="${BANK}" alt=""> Bank <strong id="bank-count">0</strong></div><p>Banked when you finish all 10</p></div>`;
+  bar.append(back, brand, coins);
   const stage = el("div", "play-stage");
   stage.id = "play-stage";
-  const meta = el("div", "meta-row");
-  meta.append(el("span", "sticker ink", "Question 1 of 10"));
-  meta.firstChild.id = "q-meta";
-  const chips = el("div", "bank-row");
-  chips.innerHTML = `<span class="chip"><img src="${BANK}" alt=""> Bank <strong id="bank-count">0</strong></span><span class="chip pending"><img src="${COIN}" alt=""> Pending <strong id="pending-count">10</strong></span>`;
-  const finish = el("p", "finish-line");
-  finish.innerHTML = `<span>Finish all 10 to bank your coins</span>`;
+  const chrome = el("div", "play-chrome");
+  const progress = el("div", "q-progress");
+  progress.id = "q-progress";
+  progress.setAttribute("role", "img");
+  const timer = el("div", "q-timer");
+  timer.id = "timer-bar";
+  timer.setAttribute("role", "timer");
+  timer.innerHTML = `<span class="q-timer-fill" id="timer-fill"></span>`;
+  chrome.append(progress, timer);
+  const bankHint = el("p", "bank-hint", "Finish all 10 to bank them.");
+  bankHint.id = "bank-hint";
   const offlineNote = el("p", "offline-note", "Offline, not ranked");
   offlineNote.id = "offline-note";
   offlineNote.hidden = true;
   const question = el("h2");
   question.id = "q-text";
-  const timer = el("div", "timer-bar");
-  timer.id = "timer-bar";
-  timer.innerHTML = `<div class="fill" id="timer-fill"></div><span class="timer-readout" id="timer-readout">20 seconds</span>`;
   const board = el("div", "board");
   board.id = "doors";
   board.setAttribute("aria-label", "Answers");
   const tray = el("div", "tray");
   tray.id = "tray";
   tray.setAttribute("aria-label", "Unplaced coins");
-  const adjust = el("div", "adjust");
-  adjust.id = "adjust";
-  const minus = el("button", "step", "−");
-  minus.type = "button";
-  minus.dataset.dir = "-1";
-  minus.setAttribute("aria-label", "Remove a coin");
-  const label = el("span", "adjust-label", "Answer A");
-  label.id = "adjust-label";
-  const plus = el("button", "step", "+");
-  plus.type = "button";
-  plus.dataset.dir = "1";
-  plus.setAttribute("aria-label", "Add a coin");
-  adjust.append(minus, label, plus);
+  const fact = el("p", "fun-fact");
+  fact.id = "fun-fact";
+  fact.hidden = true;
   const hint = el("p", "hint");
   hint.id = "lock-hint";
   const actions = el("div", "play-actions");
+  const amounts = el("div", "amount-bar");
+  amounts.setAttribute("role", "group");
+  amounts.setAttribute("aria-label", "Add coins to the selected answer");
+  for (const [amount, label] of [[1, "+1"], [10, "+10"], [50, "+50"]]) {
+    const button = el("button", null, label);
+    button.type = "button";
+    button.dataset.add = String(amount);
+    amounts.append(button);
+  }
+  const all = el("button", null, "All");
+  all.type = "button";
+  all.dataset.all = "1";
+  const rest = el("button", null, "Rest");
+  rest.type = "button";
+  rest.dataset.rest = "1";
+  amounts.append(all, rest);
   const lock = el("button", "btn-lock", "Lock in");
   lock.type = "button";
   lock.id = "lock";
@@ -335,12 +353,9 @@ function playView() {
   undoBtn.type = "button";
   undoBtn.id = "undo";
   undoBtn.disabled = true;
-  actions.append(lock, undoBtn);
-  const banner = el("div", "status-banner", "4 SAFE");
-  banner.id = "status-banner";
-  banner.setAttribute("role", "status");
-  stage.append(meta, chips, finish, offlineNote, question, timer, board, tray, adjust, hint, actions);
-  view.append(bar, stage, banner);
+  actions.append(amounts, lock, undoBtn);
+  stage.append(chrome, bankHint, offlineNote, question, board, tray, fact, hint, actions);
+  view.append(bar, stage);
   return view;
 }
 
@@ -410,7 +425,7 @@ function bankView() {
   const view = el("section", "page");
   view.id = "view-bank";
   view.hidden = true;
-  view.innerHTML = `<h1>Your bank</h1><p class="endow" style="justify-content:flex-start"><img src="${BANK}" width="48" height="48" alt=""> <strong id="bank-total">0</strong> coins</p><p>Coins move from pending to your bank only after you finish all 10 questions.</p><ul class="history" id="bank-history"></ul><p><a class="btn-ghost" href="/sign-in/">Sign in to keep your bank</a></p>`;
+  view.innerHTML = `<h1>Your bank</h1><p class="endow" style="justify-content:flex-start"><img src="${BANK}" width="48" height="48" alt=""> <strong id="bank-total">0</strong> coins</p><p>Coins move into your bank only after you finish all 10 questions. Leave early, or run out, and that day banks 0.</p><ul class="history" id="bank-history"></ul><p><a class="btn-ghost" href="/sign-in/">Sign in to keep your bank</a></p>`;
   return view;
 }
 
@@ -466,9 +481,9 @@ function howtoSheet() {
   back.hidden = true;
   back.innerHTML = `<div class="sheet" role="dialog" aria-labelledby="howto-title">
     <h2 id="howto-title">How to play</h2>
-    <div class="panel" data-panel="0"><p>Each day you get <strong>10 coins</strong> and <strong>20 seconds</strong> on every question. Drag them onto the answers you trust, or use All in and Add rest. You must place every coin, and leave at least one answer empty. When time runs out, coins still in the tray are lost and the rest lock in.</p><div class="panel-art" id="howto-art"></div></div>
-    <div class="panel" data-panel="1" hidden><p><strong>Lock in.</strong> Trapdoors under the wrong answers open and those coins fall. Only coins on the right answer go through.</p><div class="panel-art"><span class="sticker ink">✓ Safe</span><span class="sticker" style="background:#111;color:#FFF8E7">↓ Dropped</span></div></div>
-    <div class="panel" data-panel="2" hidden><p><strong>Finish all 10 questions to bank what’s left.</strong> If you leave early, or you run out of coins, you bank <strong>0</strong> for the day. Pending coins are not yours until the last question is done.</p><div class="panel-art"><img src="${BANK}" width="48" height="48" alt=""><strong>Banked only after Q10</strong></div></div>
+    <div class="panel" data-panel="0"><p>Each day you get <strong>100 coins</strong> and <strong>20 seconds</strong> on every question. Tap an answer, then use +1, +10, +50, All or Rest. You can also drag tens from the tray. You must place every coin, and leave at least one answer empty. − takes 10 back; hold it to clear the card. When time runs out, coins still in the tray are lost and the rest lock in.</p><div class="panel-art" id="howto-art"></div></div>
+    <div class="panel" data-panel="1" hidden><p><strong>Lock in.</strong> Trapdoors under the wrong answers open and those coins fall. The right answer gets a tick and +N Safe. Each wrong answer that had coins shows −N.</p><div class="panel-art"><span class="sticker ink">+N Safe</span><span class="sticker" style="background:#111;color:#FFF8E7">−N</span></div></div>
+    <div class="panel" data-panel="2" hidden><p><strong>Finish all 10 questions to bank what’s left.</strong> If you leave early, or you run out of coins, you bank <strong>0</strong> for the day. Coins in play are not yours until the last question is done.</p><div class="panel-art"><img src="${BANK}" width="48" height="48" alt=""><strong>Banked only after Q10</strong></div></div>
     <div class="dots" id="howto-dots"><span class="on"></span><span></span><span></span></div>
     <div class="sheet-nav"><button class="btn-ghost" type="button" id="howto-prev" hidden>Back</button><button class="btn-keep" type="button" id="howto-next">Next</button></div>
   </div>`;
@@ -479,7 +494,7 @@ function leaveModal() {
   const back = el("div", "modal-back");
   back.id = "leave-modal";
   back.hidden = true;
-  back.innerHTML = `<div class="modal" role="dialog" aria-labelledby="leave-title"><h2 id="leave-title">Leave today’s drop?</h2><p>Leave now and you’ll bank 0 coins. You can’t replay today’s official drop.</p><div class="modal-actions"><button class="btn-keep" type="button" id="leave-stay">Keep playing</button><button class="btn-danger" type="button" id="leave-go">Leave</button></div></div>`;
+  back.innerHTML = `<div class="modal" role="dialog" aria-labelledby="leave-title"><h2 id="leave-title">Leave today’s drop?</h2><p>Leave now and you’ll bank 0 coins. Finish all 10 to bank what’s left. You can’t replay today’s official drop.</p><div class="modal-actions"><button class="btn-keep" type="button" id="leave-stay">Keep playing</button><button class="btn-danger" type="button" id="leave-go">Leave</button></div></div>`;
   return back;
 }
 
@@ -492,7 +507,9 @@ function consentBar() {
 
 function paintHowArt() {
   const art = document.querySelector("#howto-art");
-  for (let i = 0; i < 10; i += 1) art.append(coinImg(24));
+  const stack = el("div", "hero-stack");
+  for (let i = 0; i < 5; i += 1) stack.append(coinImg(28));
+  art.append(stack, el("strong", null, "100"));
 }
 
 function show(name) {
@@ -511,7 +528,8 @@ function show(name) {
 }
 
 function currentQuestion() {
-  const index = dropNumber(londonToday()) - 1;
+  let index = dropNumber(londonToday()) - 1;
+  if (SHOT && (!pack || index < 0 || index >= pack.days.length)) index = 0;
   if (!pack || index < 0 || index >= pack.days.length) return null;
   return pack.days[index].questions[run.q];
 }
@@ -519,7 +537,8 @@ function currentQuestion() {
 function paintHome() {
   const today = londonToday();
   const number = dropNumber(today);
-  document.querySelector("#drop-badge").textContent = number >= 1 && number <= (pack?.packDays || 14) ? `Drop no. ${number}` : "Daily drop";
+  const days = pack?.days?.length || pack?.packDays || 0;
+  document.querySelector("#drop-badge").textContent = number >= 1 && number <= days ? `Drop no. ${number}` : "Daily drop";
   document.querySelector("#home-date").textContent = formatLong(today);
   const ended = run && run.date === today && run.status !== "in_progress";
   const button = document.querySelector("#play-btn");
@@ -530,13 +549,14 @@ function paintHome() {
   stack.width = 28;
   stack.height = 28;
   const endow = document.querySelector("#home-endow");
-  endow.replaceChildren(stack, document.createTextNode(` 10 coins today + bank of ${bank.balance}`));
+  endow.replaceChildren(stack, document.createTextNode(` 100 coins today + bank of ${bank.balance}`));
 }
 
 function startOrResume() {
   const today = londonToday();
   const number = dropNumber(today);
-  if (!pack || number < 1 || number > pack.packDays) {
+  const days = pack?.days?.length || pack?.packDays || 0;
+  if (!pack || number < 1 || number > days) {
     show("home");
     return;
   }
@@ -546,8 +566,9 @@ function startOrResume() {
       dropNumber: number,
       status: "in_progress",
       q: 0,
-      coins: Array.from({ length: 10 }, (_, id) => ({ id, loc: "tray" })),
-      history: [10],
+      pots: freshPots(pack?.startCoins || START_COINS),
+      selected: 0,
+      history: [pack?.startCoins || START_COINS],
       undo: [],
       banked: 0,
       servedAt: Date.now(),
@@ -571,52 +592,29 @@ function startOrResume() {
 function renderQuestion() {
   const item = currentQuestion();
   if (!item) return;
-  document.body.classList.remove("is-reveal", "status-out");
-  selectedDoor = null;
-  document.querySelector("#q-meta").textContent = `Question ${run.q + 1} of 10`;
+  clearDrop();
+  if (run.selected == null) run.selected = 0;
   document.querySelector("#q-text").textContent = item.q;
-  document.querySelector("#bank-count").textContent = String(bank.balance);
-  document.querySelector("#pending-count").textContent = String(run.coins.length);
+  document.querySelector("#bank-hint").hidden = run.q !== 0;
+  showFunFact("");
   document.querySelector("#offline-note").hidden = !offline || Boolean(SHOT);
+  paintProgress();
+  paintBankPop();
   const doors = document.querySelector("#doors");
   doors.replaceChildren();
-  item.answers.forEach((answer, index) => {
-    const door = el("div", `door t${index}`);
-    door.dataset.i = String(index);
-    door.tabIndex = 0;
-    const hatch = el("div", "hatch");
-    const flap = el("div", "flap");
-    const letter = el("span", "letter", LETTERS[index]);
-    const name = el("span", "name", answer);
-    const plate = el("div", "plate");
-    plate.dataset.plate = String(index);
-    const quick = el("div", "quick");
-    const all = el("button", null, "All in");
-    all.type = "button";
-    all.dataset.quick = "all";
-    all.dataset.i = String(index);
-    const rest = el("button", null, "Add rest");
-    rest.type = "button";
-    rest.dataset.quick = "rest";
-    rest.dataset.i = String(index);
-    quick.append(all, rest);
-    flap.append(letter, name, plate, quick);
-    door.append(hatch, flap, el("span", "tag safe", "✓ Safe"), el("span", "tag dropped", "↓ Dropped"));
-    doors.append(door);
-  });
+  item.answers.forEach((answer, index) => doors.append(makeDoor(answer, index)));
   if (!run.servedAt) run.servedAt = Date.now();
   saveRun();
-  renderCoins();
+  renderStake();
   const left = Math.max(0, QUESTION_MS - (Date.now() - run.servedAt));
-  if (SHOT === "play") startTimer(14000, true);
-  else if (SHOT === "urgent") startTimer(3000, true);
+  if (SHOT === "play" || SHOT === "falling" || SHOT === "next" || SHOT === "drop") startTimer(11000, true);
   else if (left <= 0) onTimeout();
   else startTimer(left, false);
-  if (session) {
+  if (session && !SHOT) {
     serveQuestion(run.q, session).then((payload) => {
       offline = false;
       document.querySelector("#offline-note").hidden = true;
-      if (payload?.servedAt && !SHOT) {
+      if (payload?.servedAt) {
         const elapsed = Date.now() - new Date(payload.servedAt).getTime();
         run.servedAt = Date.now() - elapsed;
         saveRun();
@@ -633,77 +631,154 @@ function renderQuestion() {
   }
 }
 
-function renderCoins() {
-  document.querySelectorAll(".plate").forEach((plate) => plate.replaceChildren());
+function paintProgress() {
+  const row = document.querySelector("#q-progress");
+  row.replaceChildren();
+  row.setAttribute("aria-label", `Question ${run.q + 1} of 10`);
+  for (let i = 0; i < 10; i += 1) {
+    const seg = el("span", "seg");
+    if (i < run.q) seg.classList.add("is-done");
+    else if (i === run.q) seg.classList.add("is-now");
+    row.append(seg);
+  }
+}
+
+function paintBankPop() {
+  const live = totalInPlay(run.pots);
+  const count = document.querySelector("#pending-count");
+  count.textContent = String(live);
+  document.querySelector("#bank-count").textContent = String(bank.balance);
+  document.querySelector("#play-coins").setAttribute("aria-label", `${live} coins in play. Bank ${bank.balance}. Show bank.`);
+}
+
+function makeDoor(answer, index) {
+  const door = el("div", `door t${index}`);
+  door.dataset.i = String(index);
+  const shake = el("div", "door-shake");
+  const pit = el("div", "pit");
+  pit.setAttribute("aria-hidden", "true");
+  pit.append(el("div", "hole"));
+  const top = el("div", "flap flap-top");
+  top.append(el("div", "flap-face"), el("div", "flap-back"));
+  const bottom = el("div", "flap flap-bottom");
+  bottom.append(el("div", "flap-face"), el("div", "flap-back"));
+  const name = el("div", "name", answer);
+  const letter = el("span", "letter", LETTERS[index]);
+  const lost = el("span", "lost-tag");
+  const stake = el("div", "stake-n", "0");
+  const coins = el("div", "coins");
+  const tab = el("span", "sel-tab", "Selected");
+  const minus = el("button", "btn-minus", "−");
+  minus.type = "button";
+  minus.dataset.i = String(index);
+  minus.setAttribute("aria-label", "Take 10 off. Hold to clear.");
+  minus.addEventListener("pointerdown", onMinusDown);
+  minus.addEventListener("pointerup", onMinusUp);
+  minus.addEventListener("pointercancel", onMinusUp);
+  minus.addEventListener("pointerleave", onMinusLeave);
+  const dim = el("div", "dim");
+  const badge = el("span", "check-badge");
+  badge.setAttribute("aria-hidden", "true");
+  badge.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.2 5.4 10.2 11.5 3.6" stroke="#FFF8E7" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>`;
+  const stamp = el("span", "safe-stamp");
+  shake.append(pit, top, bottom, name, letter, lost, stake, coins, tab, minus, badge, stamp, dim);
+  door.append(shake);
+  return door;
+}
+
+function renderStake() {
+  if (!run?.pots) return;
+  const pots = run.pots;
+  paintBankPop();
+  document.querySelectorAll(".door").forEach((door) => {
+    const index = Number(door.dataset.i);
+    const amount = pots.doors[index] || 0;
+    const stake = door.querySelector(".stake-n");
+    stake.textContent = String(amount);
+    stake.classList.toggle("is-zero", amount === 0);
+    const plate = door.querySelector(".coins");
+    plate.replaceChildren();
+    const drawn = stackCount(amount);
+    for (let i = 0; i < drawn; i += 1) {
+      const coin = el("div", "coin");
+      coin.append(coinImg(26));
+      plate.append(coin);
+    }
+    door.classList.toggle("is-picked", run.phase !== "reveal" && index === run.selected);
+    const minus = door.querySelector(".btn-minus");
+    minus.disabled = amount === 0 || run.phase === "reveal";
+    const lost = door.querySelector(".lost-tag");
+    lost.textContent = amount ? `−${amount}` : "";
+  });
   const tray = document.querySelector("#tray");
   tray.replaceChildren();
-  const groups = { tray: [] };
-  [0, 1, 2, 3].forEach((index) => { groups[index] = []; });
-  run.coins.forEach((coin) => groups[coin.loc].push(coin));
-  groups.tray.forEach((coin) => tray.append(makeCoin(coin)));
-  tray.classList.toggle("is-empty", groups.tray.length === 0);
-  [0, 1, 2, 3].forEach((index) => {
-    const plate = document.querySelector(`.plate[data-plate="${index}"]`);
-    groups[index].forEach((coin) => plate.append(makeCoin(coin)));
-    const rest = document.querySelector(`[data-quick="rest"][data-i="${index}"]`);
-    if (rest) rest.hidden = groups.tray.length === 0;
+  trayTokens(pots.tray).forEach((amount, index) => {
+    const token = el("button", "tray-token");
+    token.type = "button";
+    token.dataset.amt = String(amount);
+    token.dataset.token = String(index);
+    token.setAttribute("aria-label", `${amount} coins`);
+    token.append(coinImg(32));
+    token.append(el("span", "badge", String(amount)));
+    if (armed && armed.token === index) token.classList.add("is-armed");
+    tray.append(token);
   });
-  document.querySelector("#pending-count").textContent = String(run.coins.length);
+  tray.classList.toggle("is-empty", pots.tray === 0);
+  const chips = chipState(pots, run.selected ?? 0);
+  document.querySelectorAll(".amount-bar button").forEach((button) => {
+    if (button.dataset.add) button.disabled = !chips[Number(button.dataset.add)] || run.phase === "reveal";
+    else if (button.dataset.all != null) button.disabled = !chips.all || run.phase === "reveal";
+    else button.disabled = !chips.rest || run.phase === "reveal";
+  });
   const lock = document.querySelector("#lock");
   const hint = document.querySelector("#lock-hint");
-  const ok = canManualLock(run.coins) && run.phase !== "reveal";
-  lock.disabled = !ok;
-  document.querySelector("#undo").disabled = !run.undo.length || run.phase === "reveal";
-  if (!ok && run.coins.some((coin) => coin.loc === "tray")) hint.textContent = "Place every coin, and leave one answer empty.";
-  else if (!ok && emptyDoors() === 0) hint.textContent = "Leave at least one answer empty.";
-  else hint.textContent = "";
-  const adjust = document.querySelector("#adjust");
-  adjust.classList.toggle("is-on", selectedDoor != null && run.phase !== "reveal");
-}
-
-function emptyDoors() {
-  return 4 - new Set(run.coins.filter((coin) => coin.loc !== "tray").map((coin) => coin.loc)).size;
-}
-
-function makeCoin(coin) {
-  const node = el("div", "coin-token");
-  node.dataset.id = String(coin.id);
-  node.tabIndex = 0;
-  node.setAttribute("role", "button");
-  node.setAttribute("aria-label", "Fusilli coin");
-  node.append(coinImg(32));
-  node.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      selectedId = coin.id;
+  if (run.phase === "reveal") {
+    if (run.revealReady) {
+      lock.textContent = nextLabel();
+      lock.disabled = false;
     }
-  });
-  return node;
+    return;
+  }
+  lock.textContent = "Lock in";
+  const ok = canManualLock(pots);
+  lock.disabled = !ok;
+  document.querySelector("#undo").disabled = !run.undo.length;
+  if (!ok && pots.tray > 0) hint.textContent = "Place every coin, and leave one answer empty.";
+  else if (!ok && pots.doors.every((count) => count > 0)) hint.textContent = "Leave at least one answer empty.";
+  else hint.textContent = "";
 }
 
-function moveMany(nextCoins) {
-  const batch = [];
-  nextCoins.forEach((next) => {
-    const coin = run.coins.find((item) => item.id === next.id);
-    if (coin && coin.loc !== next.loc) batch.push({ id: coin.id, from: coin.loc });
-  });
-  if (!batch.length) return;
-  run.undo.push({ batch });
-  run.coins = nextCoins;
+function nextLabel() {
+  if (!run.reveal) return "Next question";
+  if (run.q >= 9 || !run.reveal.keptAmount) return "See results";
+  return "Next question";
+}
+
+function samePots(a, b) {
+  return a.tray === b.tray && a.doors.every((count, index) => count === b.doors[index]);
+}
+
+function applyPots(next, select) {
+  if (!run || run.phase === "reveal") return;
+  const changed = !samePots(run.pots, next);
+  if (!changed && (select == null || select === run.selected)) return;
+  if (changed) run.undo.push({ pots: clonePots(run.pots), selected: run.selected });
+  run.pots = clonePots(next);
+  if (select != null) run.selected = select;
+  armed = null;
   saveRun();
-  renderCoins();
+  renderStake();
 }
 
 function undo() {
+  if (!run || run.phase === "reveal") return;
   const last = run.undo.pop();
-  if (!last) return;
-  const steps = last.batch || [last];
-  steps.forEach((step) => {
-    const coin = run.coins.find((item) => item.id === step.id);
-    if (coin) coin.loc = step.from;
-  });
+  if (!last?.pots) return;
+  run.pots = clonePots(last.pots);
+  run.selected = last.selected ?? 0;
+  armed = null;
   saveRun();
-  renderCoins();
+  renderStake();
 }
 
 function startTimer(left, frozen) {
@@ -715,8 +790,9 @@ function startTimer(left, frozen) {
     const fill = document.querySelector("#timer-fill");
     if (!bar || !fill) return;
     fill.style.width = `${(remain / QUESTION_MS) * 100}%`;
-    bar.classList.toggle("is-urgent", remain <= 5000);
-    document.querySelector("#timer-readout").textContent = `${Math.ceil(remain / 1000)} seconds`;
+    bar.classList.toggle("is-low", remain <= 5000);
+    const seconds = Math.ceil(remain / 1000);
+    bar.setAttribute("aria-label", `${seconds} seconds left of 20`);
     if (!frozen && remain <= 0) {
       stopTimer();
       onTimeout();
@@ -760,23 +836,42 @@ function tick() {
 
 function onTimeout() {
   if (!run || run.phase === "reveal" || run.status !== "in_progress") return;
-  run.coins = timeoutCoins(run.coins);
-  if (!run.coins.length) {
-    lockQuestion(true, true);
+  run.timeoutFrom = totalInPlay(run.pots);
+  run.pots = timeoutPots(run.pots);
+  lockQuestion(true, run.timeoutFrom > 0 && totalInPlay(run.pots) === 0);
+}
+
+function onLockClick() {
+  if (!run) return;
+  if (run.phase === "reveal") {
+    if (run.revealReady) finishReveal(false);
     return;
   }
-  lockQuestion(true);
+  if (canManualLock(run.pots)) lockQuestion(false);
+}
+
+function clearDrop() {
+  dropTimers.forEach((id) => window.clearTimeout(id));
+  dropTimers = [];
+  const view = document.querySelector("#view-play");
+  if (view) view.className = "";
+}
+
+function later(ms, fn) {
+  dropTimers.push(window.setTimeout(fn, ms));
 }
 
 async function lockQuestion(timeout, emptyBust = false) {
   if (!run || run.phase === "reveal") return;
   stopTimer();
   run.phase = "reveal";
-  const dist = [0, 1, 2, 3].map((index) => run.coins.filter((coin) => coin.loc === index).length);
+  run.revealReady = false;
+  const dist = run.pots.doors.slice();
+  const before = timeout ? (run.timeoutFrom ?? totalInPlay(run.pots)) : totalInPlay(run.pots);
   let correct = 0;
   let server = null;
   try {
-    if (SHOT === "drop") {
+    if (SHOT === "falling" || SHOT === "next" || SHOT === "drop") {
       correct = 2;
     } else if (session) {
       server = await lockIn(run.q, dist, timeout, session);
@@ -797,69 +892,146 @@ async function lockQuestion(timeout, emptyBust = false) {
       note.hidden = false;
       note.textContent = "Offline, not ranked. This question can’t be checked until the server answers.";
     }
+    renderStake();
     if (!timeout) {
       const left = Math.max(0, QUESTION_MS - (Date.now() - (run.servedAt || Date.now())));
       if (left > 0) startTimer(left, false);
     }
     return;
   }
-  const wiped = emptyBust || server?.pending === 0 && timeout && server?.timedOut && dist.every((count) => count === 0) || run.coins.length === 0 || run.coins.every((coin) => coin.loc !== correct);
-  const kept = run.coins.filter((coin) => coin.loc === correct);
-  run.reveal = { correct, kept: kept.map((coin) => coin.id), wiped: kept.length === 0, timeout };
+  const keptAmount = dist[correct] || 0;
+  const lostAmount = before - keptAmount;
+  const wiped = emptyBust || keptAmount === 0;
+  const funFact = typeof server?.funFact === "string" ? server.funFact.trim() : "";
+  run.reveal = { correct, keptAmount, lostAmount, wiped, timeout, before, funFact };
   saveRun();
-  document.querySelector("#lock").disabled = true;
-  document.querySelector("#undo").disabled = true;
-  document.querySelectorAll(".door").forEach((door) => {
-    const index = Number(door.dataset.i);
-    if (index === correct) door.classList.add("is-safe");
-    else door.classList.add("is-wrong", "is-open");
-  });
-  const lost = run.coins.filter((coin) => coin.loc !== correct);
-  lost.forEach((coin, index) => {
-    const node = document.querySelector(`.coin-token[data-id="${coin.id}"]`);
-    if (!node) return;
-    const box = node.getBoundingClientRect();
-    node.classList.add("is-falling", `mb-fall-${index % 3}`);
-    node.style.position = "fixed";
-    node.style.left = `${box.left}px`;
-    node.style.top = `${box.top}px`;
-    node.style.margin = "0";
-    document.body.append(node);
-  });
-  document.body.classList.add("is-reveal");
-  const banner = document.querySelector("#status-banner");
-  if (!kept.length) {
-    document.body.classList.add("status-out");
-    banner.textContent = "DROPPED!";
-  } else banner.textContent = `${kept.length} SAFE`;
-  if (SHOT === "drop") return;
-  window.setTimeout(() => finishReveal(false), reduced() ? 400 : 1100);
+  beginDrop(correct, keptAmount, lostAmount);
 }
 
-function finishReveal(skipPaint) {
-  document.querySelectorAll(".coin-token.is-falling").forEach((node) => node.remove());
-  const reveal = run.reveal || { kept: [], wiped: true };
-  const kept = run.coins.filter((coin) => reveal.kept.includes(coin.id));
-  run.history.push(kept.length);
+function showFunFact(text) {
+  const node = document.querySelector("#fun-fact");
+  if (!node) return;
+  const fact = typeof text === "string" ? text.trim() : "";
+  node.hidden = !fact;
+  node.textContent = fact;
+}
+
+function beginDrop(correct, keptAmount, lostAmount) {
+  const view = document.querySelector("#view-play");
+  document.querySelectorAll(".door").forEach((door) => {
+    const index = Number(door.dataset.i);
+    door.classList.remove("is-picked");
+    if (index === correct) {
+      door.classList.add("is-correct");
+      door.querySelector(".safe-stamp").textContent = `+${keptAmount} Safe`;
+    } else door.classList.add("is-wrong");
+  });
+  document.querySelector("#undo").disabled = true;
+  renderStake();
+  document.querySelector("#pending-count").textContent = String(run.reveal.before);
+  const float = document.querySelector("#pending-float");
+  if (float) float.textContent = lostAmount ? `−${lostAmount}` : "";
+  const finish = () => {
+    document.querySelector("#pending-count").textContent = String(keptAmount);
+    document.querySelector("#play-coins")?.setAttribute("aria-label", `${keptAmount} coins in play. Bank ${bank.balance}. Show bank.`);
+    view.classList.add("is-next", "is-done");
+    view.classList.remove("is-pressing");
+    run.revealReady = true;
+    const lock = document.querySelector("#lock");
+    lock.textContent = nextLabel();
+    lock.disabled = false;
+    showFunFact(run.reveal?.funFact);
+  };
+  if ((reduced() && !SHOT) || SHOT === "next") {
+    view.classList.add("is-safe-reveal", "is-stamping", "is-tagged", "is-pending-tick", "is-next", "is-done", "was-open");
+    document.querySelectorAll(".door.is-wrong .coin").forEach((coin) => { coin.style.opacity = "0"; });
+    finish();
+    return;
+  }
+  view.classList.add("is-pressing");
+  const timing = { press: 80, suspense: 300, flap: 280, coinStart: 120, safeAt: 700, stampAt: 980, closeAt: 1120, tagAt: 1320, pendingAt: 1500, doneAt: 1750 };
+  view.style.setProperty("--flap-ms", `${timing.flap}ms`);
+  later(timing.press, () => view.classList.add("is-suspense"));
+  const dropAt = timing.press + timing.suspense;
+  later(dropAt, () => {
+    view.classList.add("is-dropping", "is-hatches-open", "was-open");
+  });
+  later(dropAt + timing.coinStart, () => fallStacks());
+  later(timing.safeAt, () => view.classList.add("is-safe-reveal"));
+  later(timing.stampAt, () => view.classList.add("is-stamping"));
+  later(timing.closeAt, () => {
+    view.classList.add("is-closing");
+    view.classList.remove("is-hatches-open");
+  });
+  later(timing.tagAt, () => view.classList.add("is-tagged"));
+  later(timing.pendingAt, () => {
+    view.classList.add("is-pending-tick");
+    document.querySelector("#pending-count").textContent = String(keptAmount);
+  });
+  later(timing.doneAt, finish);
+  if (SHOT === "falling" || SHOT === "drop") {
+    dropTimers.forEach((id) => window.clearTimeout(id));
+    dropTimers = [];
+    view.classList.add("is-pressing", "is-suspense", "is-dropping", "is-hatches-open", "was-open", "is-flap-mid");
+    fallStacks();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.querySelectorAll(".door.is-wrong .coin").forEach((coin) => {
+          coin.getAnimations().forEach((anim) => {
+            anim.currentTime = 360;
+            anim.pause();
+          });
+        });
+      });
+    });
+  }
+}
+
+function fallStacks() {
+  document.querySelectorAll(".door.is-wrong").forEach((door) => {
+    const hole = door.querySelector(".hole");
+    if (!hole) return;
+    const holeBox = hole.getBoundingClientRect();
+    door.querySelectorAll(".coin").forEach((coin, index) => {
+      const box = coin.getBoundingClientRect();
+      const dx = (holeBox.left + holeBox.width / 2) - (box.left + box.width / 2);
+      const dy = (holeBox.top + holeBox.height / 2) - (box.top + box.height / 2);
+      const spin = index % 2 ? 18 : -16;
+      coin.animate([
+        { transform: "translate(0,0) rotate(0deg) scale(1)", opacity: 1 },
+        { transform: `translate(${dx * 0.06}px, -3px) rotate(${spin / 4}deg) scale(1)`, opacity: 1, offset: 0.14 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(0.22)`, opacity: 1, offset: 0.86 },
+        { transform: `translate(${dx}px, ${dy + 4}px) rotate(${spin}deg) scale(0.08)`, opacity: 0 },
+      ], { duration: 610, delay: index * 50, fill: "forwards" });
+    });
+  });
+}
+
+function finishReveal() {
+  clearDrop();
+  const reveal = run.reveal || { keptAmount: 0 };
+  const kept = reveal.keptAmount || 0;
+  run.history.push(kept);
   run.undo = [];
   run.phase = "question";
+  run.revealReady = false;
   run.servedAt = null;
-  if (!kept.length) {
+  run.selected = 0;
+  armed = null;
+  if (!kept) {
     closeRun(run.q >= 9 ? "completed" : "busted", 0);
     return;
   }
-  run.coins = kept.map((coin, id) => ({ id, loc: "tray" }));
+  run.pots = freshPots(kept);
   if (run.q >= 9) {
-    closeRun("completed", run.coins.length);
+    closeRun("completed", kept);
     return;
   }
   run.q += 1;
   run.servedAt = Date.now();
   saveRun();
-  if (!skipPaint) {
-    show("play");
-    renderQuestion();
-  }
+  show("play");
+  renderQuestion();
 }
 
 function closeRun(status, banked) {
@@ -921,6 +1093,7 @@ function showResults() {
   icon.width = 36;
   icon.height = 36;
   line.append(icon, document.createTextNode(` Banked ${run.banked || 0}`));
+  line.append(el("span", "running", `Bank ${bank.balance}`));
   if (cleared) line.classList.add("banked-anim");
   const snip = document.querySelector("#league-snip");
   snip.textContent = session
@@ -1056,29 +1229,59 @@ function paintHow() {
   document.querySelector("#howto-next").textContent = howtoStep === 2 ? "Got it" : "Next";
 }
 
+function onMinusDown(event) {
+  if (!run || run.phase === "reveal") return;
+  event.stopPropagation();
+  event.preventDefault();
+  const door = Number(event.currentTarget.dataset.i);
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  const timer = window.setTimeout(() => {
+    if (minusPress) minusPress.fired = true;
+    applyPots(clearDoor(run.pots, door));
+  }, LONG_PRESS_MS);
+  minusPress = { door, timer, fired: false };
+}
+
+function onMinusUp(event) {
+  if (!minusPress || Number(event.currentTarget.dataset.i) !== minusPress.door) return;
+  window.clearTimeout(minusPress.timer);
+  const fired = minusPress.fired;
+  const door = minusPress.door;
+  minusPress = null;
+  if (!fired) applyPots(minusStep(run.pots, door));
+}
+
+function onMinusLeave(event) {
+  if (!minusPress || Number(event.currentTarget.dataset.i) !== minusPress.door) return;
+  if (event.buttons) return;
+  window.clearTimeout(minusPress.timer);
+  minusPress = null;
+}
+
 function onClick(event) {
-  const quick = event.target.closest("[data-quick]");
-  if (quick && run && run.phase !== "reveal") {
-    const door = Number(quick.dataset.i);
-    const next = quick.dataset.quick === "all" ? allIn(run.coins, door) : addRest(run.coins, door);
-    const occupied = new Set(next.filter((coin) => coin.loc !== "tray").map((coin) => coin.loc));
-    if (occupied.size >= 4) {
-      document.querySelector("#lock-hint").textContent = "Leave at least one answer empty.";
-      return;
-    }
-    moveMany(next);
+  const coinBtn = event.target.closest("#play-coins");
+  if (coinBtn && !document.querySelector("#view-play").hidden) {
+    const pop = document.querySelector("#bank-pop");
+    const open = pop.hidden;
+    pop.hidden = !open;
+    pop.classList.toggle("is-open", open);
+    coinBtn.setAttribute("aria-expanded", open ? "true" : "false");
     return;
   }
-  const step = event.target.closest("#adjust .step");
-  if (step && run && selectedDoor != null && run.phase !== "reveal") {
-    const dir = Number(step.dataset.dir);
-    if (dir === 1) {
-      const coin = run.coins.find((item) => item.loc === "tray");
-      if (coin) moveMany(run.coins.map((item) => item.id === coin.id ? { ...item, loc: selectedDoor } : item));
-    } else {
-      const coin = [...run.coins].reverse().find((item) => item.loc === selectedDoor);
-      if (coin) moveMany(run.coins.map((item) => item.id === coin.id ? { ...item, loc: "tray" } : item));
-    }
+  const pop = document.querySelector("#bank-pop");
+  if (pop && !pop.hidden) {
+    pop.hidden = true;
+    pop.classList.remove("is-open");
+    document.querySelector("#play-coins")?.setAttribute("aria-expanded", "false");
+  }
+  const chip = event.target.closest(".amount-bar button");
+  if (chip && run && run.phase !== "reveal" && !chip.disabled) {
+    const door = run.selected ?? 0;
+    let next = run.pots;
+    if (chip.dataset.add) next = addAmount(run.pots, door, Number(chip.dataset.add));
+    else if (chip.dataset.all != null) next = allIn(run.pots, door);
+    else next = addRest(run.pots, door);
+    applyPots(next);
     return;
   }
   if (event.target.id === "howto-next") {
@@ -1130,16 +1333,15 @@ function onClick(event) {
     return;
   }
   const door = event.target.closest(".door");
-  if (door && run && run.phase !== "reveal" && !event.target.closest("[data-quick]")) {
+  if (door && run && run.phase !== "reveal" && !event.target.closest(".btn-minus")) {
     const index = Number(door.dataset.i);
-    if (selectedId != null) {
-      moveMany(run.coins.map((coin) => coin.id === selectedId ? { ...coin, loc: index } : coin));
-      selectedId = null;
+    if (armed && run.pots.tray >= armed.amount) {
+      applyPots(addAmount(run.pots, index, armed.amount), index);
+    } else {
+      run.selected = index;
+      armed = null;
+      renderStake();
     }
-    selectedDoor = index;
-    document.querySelectorAll(".door").forEach((node) => node.classList.toggle("is-selected", Number(node.dataset.i) === index));
-    document.querySelector("#adjust-label").textContent = `Answer ${LETTERS[index]}`;
-    document.querySelector("#adjust").classList.add("is-on");
     return;
   }
   const nav = event.target.closest("[data-nav], a[href^='/']");
@@ -1154,17 +1356,22 @@ function onClick(event) {
 
 function onDown(event) {
   if (!run || run.phase === "reveal") return;
-  const coin = event.target.closest(".coin-token");
-  if (!coin) return;
+  const token = event.target.closest(".tray-token");
+  if (!token) return;
   event.preventDefault();
-  coin.setPointerCapture?.(event.pointerId);
-  const id = Number(coin.dataset.id);
-  const found = run.coins.find((item) => item.id === id);
-  drag = { id, from: found.loc, x: event.clientX, y: event.clientY, moved: false, pointerId: event.pointerId };
-  coin.classList.add("is-ghost");
+  token.setPointerCapture?.(event.pointerId);
+  drag = {
+    amount: Number(token.dataset.amt),
+    x: event.clientX,
+    y: event.clientY,
+    moved: false,
+    pointerId: event.pointerId,
+    token,
+  };
+  token.classList.add("is-ghost");
   document.documentElement.classList.add("is-dragging");
   floater = el("div", "floater");
-  floater.append(coinImg(36));
+  floater.append(coinImg(36), el("span", "badge", token.dataset.amt));
   document.body.append(floater);
   placeFloater(event.clientX, event.clientY);
 }
@@ -1175,10 +1382,8 @@ function placeFloater(x, y) {
 }
 function hitAt(x, y) {
   const stack = document.elementsFromPoint(x, y);
-  const door = stack.find((node) => node.classList?.contains("door") && !node.classList.contains("is-open"));
-  const tray = stack.find((node) => node.id === "tray");
+  const door = stack.find((node) => node.classList?.contains("door"));
   if (door) return { type: "door", i: Number(door.dataset.i), el: door };
-  if (tray) return { type: "tray" };
   return null;
 }
 function onMove(event) {
@@ -1197,15 +1402,16 @@ function onUp(event) {
   floater?.remove();
   floater = null;
   document.documentElement.classList.remove("is-dragging");
-  document.querySelector(`.coin-token[data-id="${current.id}"]`)?.classList.remove("is-ghost");
+  current.token?.classList.remove("is-ghost");
   if (!current.moved) {
-    selectedId = current.id;
+    const token = Number(current.token?.dataset.token);
+    armed = armed && armed.token === token ? null : { amount: current.amount, token };
+    renderStake();
     return;
   }
   const hit = hitAt(event.clientX, event.clientY);
-  if (hit?.type === "door") moveMany(run.coins.map((coin) => coin.id === current.id ? { ...coin, loc: hit.i } : coin));
-  else if (hit?.type === "tray") moveMany(run.coins.map((coin) => coin.id === current.id ? { ...coin, loc: "tray" } : coin));
-  else renderCoins();
+  if (hit?.type === "door") applyPots(addAmount(run.pots, hit.i, current.amount), hit.i);
+  else renderStake();
 }
 
 function logEvent(name, extra) {
@@ -1225,23 +1431,22 @@ function applyShot() {
     dropNumber: dropNumber(today),
     status: "in_progress",
     q: 2,
-    coins: [
-      { id: 0, loc: 2 }, { id: 1, loc: 2 }, { id: 2, loc: 2 }, { id: 3, loc: 2 },
-      { id: 4, loc: 1 }, { id: 5, loc: 1 }, { id: 6, loc: "tray" },
-    ],
-    history: [10, 8, 7],
-    undo: [{ id: 0, from: "tray" }],
+    pots: { tray: 0, doors: [10, 20, 70, 0] },
+    selected: 0,
+    history: [100, 100, 100],
+    undo: [{ pots: freshPots(), selected: 0 }],
     banked: 0,
-    servedAt: Date.now(),
+    servedAt: Date.now() - 9000,
     phase: "question",
   };
   if (SHOT === "howto") { show("home"); openHow(0); return; }
   if (SHOT === "league") { show("league"); return; }
   if (SHOT === "results") {
     run.status = "completed";
-    run.banked = 4;
+    run.banked = 20;
     run.q = 9;
-    run.history = [10, 8, 8, 6, 6, 5, 5, 4, 4, 4, 4];
+    run.history = [100, 70, 70, 40, 40, 30, 30, 20, 20, 20, 20];
+    bank.balance = 62;
     showResults();
     return;
   }
@@ -1249,9 +1454,8 @@ function applyShot() {
   show("play");
   renderQuestion();
   if (SHOT === "leave") document.querySelector("#leave-modal").hidden = false;
-  if (SHOT === "drop") {
-    document.body.classList.add("shot-drop");
-    window.setTimeout(() => lockQuestion(false), 50);
+  if (SHOT === "falling" || SHOT === "next" || SHOT === "drop") {
+    window.setTimeout(() => lockQuestion(false), 60);
   }
 }
 
