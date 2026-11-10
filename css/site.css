@@ -41,13 +41,15 @@ h1, h2, h3, p { margin: 0; }
 
 .skip {
   position: absolute;
-  left: 12px;
-  top: -40px;
+  left: 8px;
+  top: 8px;
+  transform: translateY(-200%);
   background: var(--pasta);
-  padding: 8px;
-  z-index: 5;
+  color: var(--ink);
+  padding: 8px 12px;
+  z-index: 40;
 }
-.skip:focus { top: 12px; }
+.skip:focus { transform: none; }
 
 .topbar {
   display: flex;
@@ -1025,9 +1027,9 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
 .glyph-plate { border: 3px solid var(--charcoal); }
 .glyph-plate::before, .glyph-plate::after { border-radius: 50%; }
 .pipe-cell.is-hint, .move-pad.is-hint, .piece.is-hint, .num.is-hint, .bowl-bin.is-hint {
-  outline: 3px solid var(--tomato);
-  outline-offset: 3px;
-  animation: hintpulse 1s ease-in-out infinite;
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--tomato);
+  animation: none;
 }
 @keyframes hintpulse { 50% { outline-color: var(--pasta); } }
 .piece.pop, .num.pop { animation: pop 0.16s ease; }
@@ -1796,7 +1798,8 @@ body.is-play .stage { padding: 0 8px 8px; }
 #win {
   margin: auto;
   width: min(400px, calc(100% - 28px));
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
   text-align: center;
 }
 #win::backdrop { background: rgba(6, 10, 20, 0.96); }
@@ -2462,10 +2465,16 @@ body.is-doc .doc .how-stage { margin: 12px 0 18px; }
 .feature-body .game-name, .feature-body h2 { font-family: var(--body); font-size: 28px; font-weight: 800; color: #1e2a2a; margin: 0; line-height: 1.1; }
 .feature-body .goal, .feature-body p { color: #3A3330; font-size: 16px; font-weight: 700; margin: 0; }
 .btn-play, .feature-body .btn-play, .game-card .btn-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 52px;
+  line-height: 1;
+  text-align: center;
   border-radius: 999px !important;
-  width: max-content;
-  padding: 0 28px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
   background: #FBBF36;
   color: #1e2a2a;
 }
@@ -2540,6 +2549,10 @@ body.is-play .stage { padding-top: 0; }
   left: -999px;
 }
 .skip-ad:focus { left: 8px; top: 8px; background: #FBBF36; color: #1e2a2a; padding: 8px; z-index: 5; }
+#win[open] {
+  overflow-y: auto;
+  max-height: calc(100dvh - 16px);
+}
 @media (min-width: 801px) {
   .topbar { grid-template-columns: auto 1fr; height: 56px; padding: 0 22px; }
   .menu-btn, .top-spacer { display: none; }

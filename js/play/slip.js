@@ -54,8 +54,14 @@ function canMove(index) {
   return ["N", "E", "S", "W"].some((dir) => slidePiece(pieces, puzzle.rows, puzzle.cols, index, dir, 1));
 }
 
+let hintOn = false;
+document.querySelector("#hint")?.addEventListener("click", () => {
+  hintOn = true;
+  render();
+});
+
 function showHint() {
-  if (kit.moves > 0) return false;
+  if (!hintOn || kit.moves > 0) return false;
   try {
     return !localStorage.getItem("spquizzy.hint.v1:slip");
   } catch {

@@ -25,8 +25,14 @@ function snapshot() {
   return { rots: tiles.map((tile) => tile.rot) };
 }
 
+let hintOn = false;
+document.querySelector("#hint")?.addEventListener("click", () => {
+  hintOn = true;
+  render();
+});
+
 function showHint() {
-  if (kit.moves > 0) return false;
+  if (!hintOn || kit.moves > 0) return false;
   try {
     return !localStorage.getItem("spquizzy.hint.v1:sauce");
   } catch {

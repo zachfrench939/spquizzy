@@ -27,8 +27,14 @@ function start() {
   render();
 }
 
+let hintOn = false;
+document.querySelector("#hint")?.addEventListener("click", () => {
+  hintOn = true;
+  render();
+});
+
 function showHint() {
-  if (kit.moves > 0) return false;
+  if (!hintOn || kit.moves > 0) return false;
   try {
     return !localStorage.getItem("spquizzy.hint.v1:bowls");
   } catch {
