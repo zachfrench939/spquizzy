@@ -22,14 +22,30 @@ const SHAPES = {
   15: ["cross", 0],
 };
 const SAUCE_CLIP = {
-  1: "inset(0 31% 50% 31%)",
-  2: "inset(31% 0 31% 42%)",
-  4: "inset(42% 31% 0 31%)",
-  8: "inset(31% 42% 31% 0)",
+  1: "inset(-6% 27% 48% 27%)",
+  2: "inset(27% -6% 27% 48%)",
+  4: "inset(48% 27% -6% 27%)",
+  8: "inset(27% 48% 27% -6%)",
 };
 
 function unrot(mask, rot) {
   return rotMask(mask, (4 - (rot % 4)) % 4);
+}
+
+function spoutTurn(mask) {
+  if (mask & 2) return 0;
+  if (mask & 4) return 90;
+  if (mask & 8) return 180;
+  if (mask & 1) return 270;
+  return 0;
+}
+
+function inletTurn(mask) {
+  if (mask & 8) return 0;
+  if (mask & 1) return 90;
+  if (mask & 2) return 180;
+  if (mask & 4) return 270;
+  return 0;
 }
 
 function start() {
@@ -87,9 +103,12 @@ function render(flash = -1) {
     btn.setAttribute("aria-label", tile.fixed ? `${tile.kind} row ${r} column ${c}` : `Rotate pipe row ${r} column ${c}`);
     const sauced = flow.sauced.get(index) || 0;
     if (tile.kind === "pot") {
-      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/pot.webp">`;
+      btn.innerHTML = `<img class="bg pot-face" alt="" src="${TILE}/pot.webp" style="--turn:${spoutTurn(mask)}deg">`;
     } else if (tile.kind === "plate") {
-      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/goal.webp">`;
+      const inlet = open
+        ? `<span class="spin" style="--turn:${inletTurn(mask)}deg"><img class="pipe on plate-in" alt="" src="${TILE}/straight-sauce.svg"></span>`
+        : "";
+      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/goal.webp">${inlet}`;
       if (open) btn.classList.add("is-fed");
     } else {
       const [file, rot] = SHAPES[mask] || ["straight", 0];

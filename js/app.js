@@ -5,7 +5,7 @@ import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, for
 import { track } from "./analytics.js";
 import { shareResult } from "./share.js";
 import { iconSvg, wombatSvg, pastaBurstHtml, trophySvg } from "./art.js";
-import { clipHtml, restartClip } from "./clips.js";
+import { restartClip } from "./clips.js";
 import { submitAndRank, rankMessage } from "./scores.js";
 import { renderArchive } from "./archive.js";
 
@@ -37,6 +37,14 @@ function statusFor(gameId, today) {
     return run && !run.won && run.moves > 0;
   });
   return busy ? "Playing" : "Ready";
+}
+
+function wickLine() {
+  return `<p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>`;
+}
+
+function withFoot(html) {
+  return `${html}<footer class="site-foot">${wickLine()}</footer>`;
 }
 
 function adSlot(slot) {
@@ -73,7 +81,7 @@ function shell({ activeId, page }) {
   return `
     <header class="topbar">
       <button type="button" class="menu-btn" id="menu-open" aria-label="Open menu" aria-expanded="false">Menu</button>
-      <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.svg" alt="">SPIQUIZZY</a>
+      <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">SPIQUIZZY</a>
       <span class="top-spacer" aria-hidden="true"></span>
     </header>
     <div class="frame">
@@ -107,6 +115,7 @@ function shell({ activeId, page }) {
           ${link("/terms/", "Terms")}
           ${howLinks()}
         </nav>
+        ${wickLine()}
       </aside>
       <main class="stage" id="stage"></main>
     </div>`;
@@ -163,13 +172,14 @@ function resultsSheet(game, run) {
         <li>${run?.moves || 0} ${word}</li>
         ${streak > 0 ? `<li>Streak ${streak}</li>` : ""}
       </ul>
-      ${adSlot("results_rectangle")}
       <p id="win-detail">${game.cheer}</p>
       <div class="sheet-actions">
         <button type="button" id="share" class="btn btn-basil">Share</button>
         <button type="button" id="win-share" class="sr-only">Share</button>
         <a id="win-next" class="btn btn-tomato" href="${next.href}">Next: ${next.name}</a>
       </div>
+      ${wickLine()}
+      ${adSlot("results_rectangle")}
     </dialog>`;
 }
 
@@ -179,13 +189,12 @@ function helpSheet(game) {
       ${sheetClose("how-close")}
       <div class="how-head">
         <div class="mascot mascot-sm">${wombatSvg("think")}</div>
-        <div>
+        <div class="how-copy">
           <p class="kicker">${game.kicker}</p>
           <h2>How to play</h2>
+          <p class="goal">${game.goal}</p>
         </div>
       </div>
-      <p class="goal">${game.goal}</p>
-      <div class="how-clip">${clipHtml(game.id)}</div>
       <div class="how-list">${HELP[game.id] || ""}</div>
       <p class="how-more"><a href="/how-to-play/${game.slug}/">Full rules for ${game.name}</a></p>
     </dialog>`;
@@ -227,6 +236,7 @@ function gameStage(game, diff) {
       ${adSlot("game_below_banner")}
     </article>
     <p id="live" class="sr-only" aria-live="polite"></p>
+      <footer class="site-foot">${wickLine()}</footer>
     ${helpSheet(game)}
     <dialog id="settings" class="sheet">
       ${sheetClose("settings-close")}
@@ -305,10 +315,6 @@ function introStage(game, { diff, cta, date }) {
         <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
         <button type="button" class="btn btn-play" id="start-game">${cta}</button>
         <p class="byline">${formatShort(date)} · Puzzle ${puzzleNumber(date)}</p>
-        <div class="clip-wrap">
-          <button type="button" id="clip-replay" class="help-btn" aria-label="Replay how to play">?</button>
-          ${clipHtml(game.id)}
-        </div>
       </div>
     </section>`;
 }
@@ -348,7 +354,7 @@ export function openHome() {
       <span class="hub-meta"><span>${statusFor(game.id, today)}</span>${streakBit}</span>
     </a>`;
   }).join("");
-  document.querySelector("#stage").innerHTML = `
+  document.querySelector("#stage").innerHTML = withFoot(`
     <section class="home-hub">
       <header class="hero-hub">
         <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
@@ -370,7 +376,7 @@ export function openHome() {
         <a href="/archive/">Archive</a>
         <a href="/about/">About</a>
       </nav>
-    </section>`;
+    </section>`);
 }
 
 export async function openGame(gameId) {
@@ -383,7 +389,7 @@ export async function openGame(gameId) {
   function showEntry() {
     const run = loadRun(game.id, diff, puzzleDate());
     if (run?.won) {
-      stage.innerHTML = `${introStage(game, { diff, cta: "Play again", date: puzzleDate() })}${resultsSheet(game, run)}<div id="toast" class="toast" hidden></div>`;
+      stage.innerHTML = withFoot(`${introStage(game, { diff, cta: "Play again", date: puzzleDate() })}${resultsSheet(game, run)}<div id="toast" class="toast" hidden></div>`);
       const dialog = document.querySelector("#win");
       dialog?.showModal();
       document.querySelector("#win-close")?.addEventListener("click", () => dialog.close());
@@ -422,7 +428,7 @@ export async function openGame(gameId) {
       return;
     }
     const cta = run && run.moves > 0 ? "Continue" : "Play";
-    stage.innerHTML = introStage(game, { diff, cta, date: puzzleDate() });
+    stage.innerHTML = withFoot(introStage(game, { diff, cta, date: puzzleDate() }));
     stage.querySelectorAll("[data-diff]").forEach((button) => {
       button.addEventListener("click", () => {
         diff = button.dataset.diff;
@@ -462,7 +468,7 @@ export function openDirectory() {
   document.title = "All games · Spiquizzy";
   mountChrome(null);
   const today = todayString();
-  document.querySelector("#stage").innerHTML = `
+  document.querySelector("#stage").innerHTML = withFoot(`
     <header class="page-intro">
       <h1 class="game-name">All games</h1>
       <p class="lede">Six plates, same every day. Pick whichever you are hungry for.</p>
@@ -479,7 +485,7 @@ export function openDirectory() {
         <p class="card-meta"><span>${statusFor(game.id, today)}</span>${(loadStats(game.id).streak || 0) > 0 ? `<span class="streak">Streak ${loadStats(game.id).streak}</span>` : ""}</p>
         <a class="btn btn-play" href="${game.href}">Play</a>
       </article>`).join("")}
-    </section>`;
+    </section>`);
 }
 
 export function openArchive() {
@@ -487,10 +493,10 @@ export function openArchive() {
   const copy = document.querySelector("#static-copy");
   const html = copy?.innerHTML || `<h1 class="game-name">Archive</h1><p class="lede">Past plates, still warm. Easy, Medium and Hard light up when that difficulty is cleared on this device.</p>`;
   mountChrome(null);
-  document.querySelector("#stage").innerHTML = `
+  document.querySelector("#stage").innerHTML = withFoot(`
     <article class="page-intro">${html}</article>
     <form class="jump"><label for="jump">Jump to a date</label><input id="jump" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" autocomplete="off" spellcheck="false"></form>
-    <div id="shelves"></div>`;
+    <div id="shelves"></div>`);
   renderArchive(document.querySelector("#shelves"), document.querySelector("#jump"));
 }
 
@@ -499,7 +505,7 @@ export function openAbout() {
   const copy = document.querySelector("#static-copy");
   const html = copy?.innerHTML || `<h1 class="game-name">About</h1><p class="lede">Spiquizzy is six daily pasta puzzles and one wombat who takes sauce seriously.</p>`;
   mountChrome(null);
-  document.querySelector("#stage").innerHTML = `<article class="page-intro about">${html}</article>`;
+  document.querySelector("#stage").innerHTML = withFoot(`<article class="page-intro about">${html}</article>`);
   document.querySelectorAll("[data-contact]").forEach((el) => {
     el.textContent = CONTACT_EMAIL;
     if (el.tagName === "A") el.href = `mailto:${CONTACT_EMAIL}`;

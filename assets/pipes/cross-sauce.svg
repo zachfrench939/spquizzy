@@ -1,20 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="h" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#5c100e"/>
-    <stop offset="0.1" stop-color="#ffb0a0"/>
-    <stop offset="0.32" stop-color="#ff5a48"/>
-    <stop offset="0.62" stop-color="#d62822"/>
-    <stop offset="0.86" stop-color="#8c1612"/>
-    <stop offset="1" stop-color="#5c100e"/></linearGradient>
-    <linearGradient id="v" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#5c100e"/>
-    <stop offset="0.1" stop-color="#ffb0a0"/>
-    <stop offset="0.32" stop-color="#ff5a48"/>
-    <stop offset="0.62" stop-color="#d62822"/>
-    <stop offset="0.86" stop-color="#8c1612"/>
-    <stop offset="1" stop-color="#5c100e"/></linearGradient>
+    <linearGradient id="scross" gradientUnits="userSpaceOnUse" x1="0" y1="27" x2="0" y2="73">
+      <stop offset="0" stop-color="#7a1612"/>
+      <stop offset="0.18" stop-color="#ffc2b4"/>
+      <stop offset="0.45" stop-color="#e23b2f"/>
+      <stop offset="0.72" stop-color="#a31c16"/>
+      <stop offset="1" stop-color="#5c100e"/>
+    </linearGradient>
+    <linearGradient id="scrossv" gradientUnits="userSpaceOnUse" x1="27" y1="0" x2="73" y2="0">
+      <stop offset="0" stop-color="#7a1612"/>
+      <stop offset="0.18" stop-color="#ffc2b4"/>
+      <stop offset="0.45" stop-color="#e23b2f"/>
+      <stop offset="0.72" stop-color="#a31c16"/>
+      <stop offset="1" stop-color="#5c100e"/>
+    </linearGradient>
   </defs>
-  <rect x="0" y="60" width="192" height="72" fill="url(#h)"/>
-  <rect x="60" y="0" width="72" height="192" fill="url(#v)"/>
+  <path d="M-1 50 H101" stroke="url(#scross)" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
+  <path d="M50 -1 V101" stroke="url(#scrossv)" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
 </svg>

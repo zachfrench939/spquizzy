@@ -288,7 +288,7 @@ export function wombatSvg(mood = "ready", label = "Wombat mascot") {
     label = typeof mood === "string" && mood ? mood : label;
     file = "idle";
   }
-  return `<img class="sprite wombat" src="/assets/wombat/${file}.webp" alt="${label || "Wombat mascot"}" decoding="async">`;
+  return `<img class="sprite wombat" src="/assets/wombat/${file}.webp" alt="${label || "Wombat mascot"}" width="238" height="329" decoding="async">`;
 }
 
 const MEATBALL = [
@@ -385,7 +385,7 @@ const ARROWS = {
 
 export function iconSvg(id) {
   const name = ["sauce", "slip", "twirl", "bowls", "ravioli", "pips"].includes(id) ? id : "sauce";
-  return `<img class="sprite game-icon" src="/assets/icons/${name}.webp" alt="" decoding="async">`;
+  return `<img class="sprite game-icon" src="/assets/icons/${name}.webp" alt="" width="280" height="280" decoding="async">`;
 }
 
 export function toppingSvg(id) {
