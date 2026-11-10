@@ -49,12 +49,17 @@ export function lockIn(index, dist, timeout, session) {
   return rpc("dd_lock_in", { p_index: index, p_dist: dist, p_timeout: timeout }, session);
 }
 
-export function gradeQuestion(packIndex, position, dist, timeout) {
+export function serveGuest(guestId, position) {
+  return rpc("dd_serve_guest", { p_guest: guestId, p_position: position }, null);
+}
+
+export function gradeQuestion(packIndex, position, dist, timeout, guestId) {
   return rpc("dd_grade_question", {
     p_pack: packIndex,
     p_position: position,
     p_dist: dist,
     p_timeout: timeout,
+    p_guest: guestId,
   }, null);
 }
 

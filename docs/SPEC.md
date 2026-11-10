@@ -27,7 +27,7 @@ Open as a file, or add `?shot=home|play|drop|results|league|howto|leave|404` to 
 | `shots/mobile-howto.png` | How-to, panel 1 of 3. |
 | `shots/mobile-leave.png` | Leave confirm: “Leave now and you’ll bank 0 coins.” |
 
-**Question pack (14 days × 10, fact-checked):** `data/questions.json`
+**Question pack (14 days × 10, fact-checked):** prompts and options in `data/questions.public.json`. The correct index stays in the database.
 
 **Assets:** `assets/` — official red-square logo, fusilli coin (coin 3) and bank stack (coin 6) as SVG plus 32 / 64 / 128 PNG, wombat idle / thinking / cheering / sad, theme-9 fonts (Archivo Black, Syne, Space Grotesk). The original coin sheet Zach picked is `assets/coin-reference.jpg`.
 
@@ -178,7 +178,7 @@ Ship a complete, fair, shareable daily drop.
 - Home, 3-panel how-to, play (drag + fallbacks), drop animation, results / share, bank, weekly league (plus monthly / yearly / all-time tabs), profile / basic stats, sign-in, settings, privacy / cookies, 404, premium **page** (copy and layout only).
 - Guest play with local pending / bank, and a prompt to sign in to keep the bank and appear on public boards.
 - Supabase (or equivalent) accounts, server-side answer checking, banking and leaderboards. The browser never receives the answer key.
-- 14 days of questions from `data/questions.json`, remapped so drop no. 1 is launch day, plus a content pipeline for the days after.
+- 14 days of questions, remapped so drop no. 1 is launch day, plus a content pipeline for the days after. The browser copy has no answer key.
 - Ad **placeholders** in the reserved slots, plus a UK CMP shell (Accept and Reject equally prominent). No live ad network until Zach says so.
 - SEO: title, description, OG share image (reuse the official-logo OG until a new one is made — do not spend money or use Higgsfield), JSON-LD, sitemap, `lang="en-GB"`.
 - Analytics events for D1 / D7 retention (see §13).
@@ -373,30 +373,28 @@ Keyboard can follow later (arrows move a focused coin, Enter locks in when allow
 
 ## 7. Question data and content pipeline
 
-One JSON pack ships in `data/questions.json`. Server-side, split it so the **client never receives `correct` or `source`**. The client gets `id`, `q`, `answers` (shuffled or in file order — pick one and stay consistent for everyone that day), and the date / drop number.
+The site ships `data/questions.public.json` only. Each question has `id`, `q`, and `answers` (file order, the same for everyone that day). It must not include `correct`, `source`, or any other field that marks the right option. The correct index and the citation stay in `dd_questions`.
 
 ```json
 {
-  "date": "2026-11-11",
-  "dropNumber": 1,
-  "timezone": "Europe/London",
   "startCoins": 10,
-  "questions": [
+  "packDays": 14,
+  "days": [
     {
-      "id": "2026-11-11-01",
-      "category": "Geography",
-      "q": "What is the capital of Australia?",
-      "answers": ["Sydney", "Melbourne", "Canberra", "Perth"],
-      "correct": 2,
-      "difficulty": "easy",
-      "source": "Canberra was chosen as Australia’s capital in 1908…"
+      "questions": [
+        {
+          "id": "d01q01",
+          "q": "What is the capital of Australia?",
+          "answers": ["Sydney", "Melbourne", "Canberra", "Perth"]
+        }
+      ]
     }
   ]
 }
 ```
 
-- `correct` is a 0-based index into `answers` (always length 4).
-- `source` is for the editor and a later corrections log. Do not show it on the play screen.
+- `answers` is always length 4. The correct index is a 0-based index into that array, stored only in the database.
+- `source` is for the editor and a later corrections log. Do not put it in a file the site serves, and do not show it on the play screen.
 - `category` and `difficulty` are metadata. Do not stamp them on the play screen.
 
 **Editorial rules**
@@ -408,24 +406,7 @@ One JSON pack ships in `data/questions.json`. Server-side, split it so the **cli
 - Mix geography, science, arts, sport, history, food, music, maths, UK. This is a general-knowledge drop, not a pasta quiz — one pasta item in 14 days is plenty of flavour.
 - Fact-check every item and keep the citation in `source`. If a question is later found to be wrong, publish a correction; do not silently rewrite a day people have already shared.
 
-**The 14-day pack.** Dated 11–24 November 2026 as a content pack only. **Remap drop no. 1 to the real launch day.** 140 questions, all unique, all cited, in `data/questions.json`. Answer key (correct answer only):
-
-| Drop | Date | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 11 Nov | Canberra | 4 | Ravioli | Mercury | Jane Austen | Leonardo da Vinci | Au | 11 | 1666 | 8 |
-| 2 | 12 Nov | 366 | Paris | 100 | Pacific | Yuri Gagarin | Morocco | 2 | Femur | Vivaldi | Ottawa |
-| 3 | 13 Nov | 6 | Pink | Lemon | Rome | Fe | J. K. Rowling | 7 | Diamond | 1066 | Ampere |
-| 4 | 14 Nov | 24 | Madrid | Dolphin | Michelangelo | Avocado | Henry VIII | NaCl | 64 | Carbon dioxide | Brasília |
-| 5 | 15 Nov | 7 | Rome | Love | Jupiter | Charles Dickens | Pancreas | Tanzania | 12 | 1912 | 88 |
-| 6 | 16 Nov | 8 | Berlin | Badminton | Mercury | Czech Republic | 72 | Marie Curie | 100 | Zeus | 1994 |
-| 7 | 17 Nov | 2 | Cold | Blue | Paris | Homer | Skin | 6 | Dmitri Mendeleev | Wellington | Oboe |
-| 8 | 18 Nov | 6 | Dublin | Basil | Vincent van Gogh | Ben Nevis | 90 | O− | Mediterranean Sea | George Orwell | 300,000 km/s |
-| 9 | 19 Nov | 60 | 4 | Bat | Stockholm | Athena | 3 | K | Egyptian hieroglyphs | 1952 | Vatican City |
-| 10 | 20 Nov | 7 | Washington, D.C. | January | J. R. R. Tolkien | Oxygen | 6 | Charles Darwin | Photosynthesis | Athens | O3 |
-| 11 | 21 Nov | 3 | Edinburgh | Cheese | Neil Armstrong | Piano | 6 | Titan | 1989 | Mozart | 1348 |
-| 12 | 22 Nov | 26 | Cardiff | Carrot | Edvard Munch | The Sun | 60 | Oxygen | Nairobi | Harper Lee | 1,760 |
-| 13 | 23 Nov | 4 | Belfast | Oak | The Louvre | Gravity | Lake Superior | C | Central Processing Unit | 1805 | 46 |
-| 14 | 24 Nov | 7 | Honey | Breakfast | Lisbon | Alexander Fleming | 5 | Ag | Sahara | 1914 | 1215 |
+**The 14-day pack.** Dated 11–24 November 2026 as a content pack only. **Remap drop no. 1 to the real launch day.** 140 questions, all unique, all cited, loaded into `dd_questions`. Do not publish the answer key in the site tree.
 
 **Pipeline after day 14.** Keep a private editor file or a Supabase table (`questions`, not readable by `anon`). Aim to have at least 14 days ahead at all times. A short weekly review: one editor, one fact-check pass, then lock the day. Once a day is locked and has been played, do not edit answers in place.
 

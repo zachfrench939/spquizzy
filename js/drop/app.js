@@ -1,5 +1,5 @@
 import { LAUNCH_DATE } from "../config.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, oauthUrl, readSession, sendMagicLink, serveQuestion, weeklyLeague } from "./api.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, weeklyLeague } from "./api.js";
 import { addRest, allIn, canManualLock, QUESTION_MS, timeoutCoins } from "./rules.js";
 
 const COIN = "/assets/drop/coin-fusilli-64.png";
@@ -12,6 +12,7 @@ const BANK_KEY = "spquizzy.drop.bank";
 const HOW_KEY = "spquizzy.drop.howto";
 const SET_KEY = "spquizzy.drop.settings";
 const CONSENT_KEY = "spquizzy.consent";
+const GUEST_KEY = "spquizzy.drop.guest";
 
 const ROUTES = {
   "/": "home",
@@ -110,6 +111,24 @@ function saveRun() {
 }
 function seenHow() {
   try { return localStorage.getItem(HOW_KEY) === "1" || Boolean(SHOT); } catch { return true; }
+}
+const GUEST_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+let guestMemo = null;
+function guestId() {
+  if (guestMemo) return guestMemo;
+  try {
+    const existing = localStorage.getItem(GUEST_KEY);
+    if (existing && GUEST_UUID.test(existing)) {
+      guestMemo = existing;
+      return existing;
+    }
+    guestMemo = crypto.randomUUID();
+    localStorage.setItem(GUEST_KEY, guestMemo);
+    return guestMemo;
+  } catch {
+    guestMemo = crypto.randomUUID();
+    return guestMemo;
+  }
 }
 
 function todayRun() {
@@ -609,6 +628,8 @@ function renderQuestion() {
       offline = true;
       document.querySelector("#offline-note").hidden = false;
     });
+  } else if (!SHOT) {
+    serveGuest(guestId(), run.q).catch(() => {});
   }
 }
 
@@ -762,7 +783,9 @@ async function lockQuestion(timeout, emptyBust = false) {
       correct = server.correctIndex;
       offline = false;
     } else {
-      server = await gradeQuestion(dropNumber(londonToday()) - 1, run.q, dist, timeout);
+      const guest = guestId();
+      await serveGuest(guest, run.q);
+      server = await gradeQuestion(dropNumber(londonToday()) - 1, run.q, dist, timeout, guest);
       correct = server.correctIndex;
       offline = false;
     }
