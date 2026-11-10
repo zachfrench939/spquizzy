@@ -8,17 +8,17 @@ import {
   formatShort,
   puzzleNumber,
   formatTime,
-  buildShare,
   loadRun,
   saveRun,
   clearRun,
   recordWin,
-  copyText,
   diffKey,
   getStorage,
 } from "./core.js";
 import { wombatSvg, pastaBurstHtml } from "./art.js";
 import { submitAndRank, rankMessage } from "./scores.js";
+import { track } from "./analytics.js";
+import { shareResult } from "./share.js";
 
 function nounLabel(noun, n) {
   const word = n === 1 ? noun : noun === "try" ? "tries" : noun === "domino" ? "dominoes" : `${noun}s`;
@@ -101,8 +101,8 @@ export function createKit(gameId) {
     clearInterval(timer);
   }
 
-  function shareString() {
-    return buildShare({
+  async function doShare() {
+    const status = await shareResult({
       title: game.name,
       date,
       diff,
@@ -110,12 +110,10 @@ export function createKit(gameId) {
       moves,
       par,
       seconds,
+      rank: document.querySelector("#rank-line")?.textContent || "",
     });
-  }
-
-  async function doShare() {
-    const ok = await copyText(shareString());
-    toast(ok ? "Copied results" : "Could not copy");
+    if (status === "cancel") return;
+    toast(status === "failed" ? "Could not copy" : status === "shared" ? "Shared" : "Copied results");
   }
 
   function toast(message) {
@@ -174,6 +172,7 @@ export function createKit(gameId) {
     if (burst) burst.innerHTML = pastaBurstHtml();
     document.querySelector("#win").showModal();
     if (live) live.textContent = `${game.win} ${formatTime(seconds)}`;
+    track("solve");
   }
 
   function begin(saved) {

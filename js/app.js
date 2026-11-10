@@ -1,7 +1,9 @@
 import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
-import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber, buildShare, copyText } from "./core.js";
+import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
+import { track } from "./analytics.js";
+import { shareResult } from "./share.js";
 import { iconSvg, wombatSvg, pastaBurstHtml, trophySvg } from "./art.js";
 import { clipHtml, restartClip } from "./clips.js";
 import { submitAndRank, rankMessage } from "./scores.js";
@@ -51,6 +53,18 @@ function navGames(today, activeId) {
   }).join("");
 }
 
+function howLinks() {
+  const pages = [
+    ["sauce-pipes", "Sauce Pipes rules"],
+    ["pasta-pips", "Pasta Pips rules"],
+    ["ravioli", "Ravioli rules"],
+    ["slip", "Slip rules"],
+    ["twirl", "Twirl rules"],
+    ["even-bowls", "Even Bowls rules"],
+  ];
+  return pages.map(([slug, label]) => `<a href="/how-to-play/${slug}/">${label}</a>`).join("");
+}
+
 function shell({ activeId, page }) {
   const today = todayString();
   const file = currentFile();
@@ -68,8 +82,9 @@ function shell({ activeId, page }) {
         <nav class="side-games" aria-label="Games">${games}</nav>
         <nav class="side-links" aria-label="More">
           ${link("games.html", "All games")}
-          ${link("archive.html", "Archive")}
-          ${link("about.html", "About")}
+          ${link("/archive/", "Archive")}
+          ${link("/about/", "About")}
+          ${howLinks()}
         </nav>
       </aside>
       <div class="backdrop" id="backdrop" hidden></div>
@@ -81,8 +96,9 @@ function shell({ activeId, page }) {
         <nav class="side-games">${games}</nav>
         <nav class="side-links">
           ${link("games.html", "All games")}
-          ${link("archive.html", "Archive")}
-          ${link("about.html", "About")}
+          ${link("/archive/", "Archive")}
+          ${link("/about/", "About")}
+          ${howLinks()}
         </nav>
       </aside>
       <main class="stage" id="stage"></main>
@@ -163,6 +179,7 @@ function helpSheet(game) {
       <p class="goal">${game.goal}</p>
       <div class="how-clip">${clipHtml(game.id)}</div>
       <div class="how-list">${HELP[game.id] || ""}</div>
+      <p class="how-more"><a href="/how-to-play/${game.slug}/">Full rules for ${game.name}</a></p>
     </dialog>`;
 }
 
@@ -343,8 +360,8 @@ export function openHome() {
       <h2 class="hub-title">Every plate</h2>
       <div class="hub-grid">${cards}</div>
       <nav class="hub-links" aria-label="More">
-        <a href="archive.html">Archive</a>
-        <a href="about.html">About</a>
+        <a href="/archive/">Archive</a>
+        <a href="/about/">About</a>
       </nav>
     </section>`;
 }
@@ -378,7 +395,7 @@ export async function openGame(gameId) {
         location.reload();
       });
       document.querySelector("#share")?.addEventListener("click", async () => {
-        const text = buildShare({
+        const status = await shareResult({
           title: game.name,
           date: puzzleDate(),
           diff,
@@ -386,12 +403,12 @@ export async function openGame(gameId) {
           moves: run.moves,
           par: run.par,
           seconds: run.seconds,
+          rank: document.querySelector("#rank-line")?.textContent || "",
         });
-        const ok = await copyText(text);
         const toast = document.querySelector("#toast");
-        if (toast) {
+        if (toast && status !== "cancel") {
           toast.hidden = false;
-          toast.textContent = ok ? "Copied results" : "Could not copy";
+          toast.textContent = status === "failed" ? "Could not copy" : status === "shared" ? "Shared" : "Copied results";
         }
       });
       paintRank(game, diff, run);
@@ -417,6 +434,7 @@ export async function openGame(gameId) {
       stage.innerHTML = gameStage(game, diff);
       const mod = await LOADERS[game.id]();
       if (typeof mod.mount === "function") mod.mount();
+      track("play");
       document.querySelector("#how-open")?.addEventListener("click", () => {
         restartClip(document.querySelector("#how"));
       });
@@ -458,27 +476,21 @@ export function openDirectory() {
 }
 
 export function openArchive() {
-  document.title = "Archive · Spiquizzy";
+  document.title = "Archive of free daily puzzles | Spiquizzy";
+  const copy = document.querySelector("#static-copy");
+  const html = copy?.innerHTML || `<h1 class="game-name">Archive</h1><p class="lede">Past plates, still warm. E, M, and H light up when that difficulty is cleared on this device.</p>`;
   mountChrome(null);
   document.querySelector("#stage").innerHTML = `
-    <header class="page-intro">
-      <h1 class="game-name">Archive</h1>
-      <p class="lede">Past plates, still warm. E, M, and H light up when that difficulty is cleared on this device.</p>
-    </header>
+    <article class="page-intro">${html}</article>
     <form class="jump"><label for="jump">Jump to a date</label><input id="jump" type="date"></form>
     <div id="shelves"></div>`;
   renderArchive(document.querySelector("#shelves"), document.querySelector("#jump"));
 }
 
 export function openAbout() {
-  document.title = "About · Spiquizzy";
+  document.title = "About Spiquizzy, free daily puzzle games";
+  const copy = document.querySelector("#static-copy");
+  const html = copy?.innerHTML || `<h1 class="game-name">About</h1><p class="lede">Spiquizzy is six daily pasta puzzles and one wombat who takes sauce seriously.</p>`;
   mountChrome(null);
-  document.querySelector("#stage").innerHTML = `
-    <article class="page-intro about">
-      <h1 class="game-name">About</h1>
-      <p class="lede">Spiquizzy is six daily pasta puzzles and one wombat who takes sauce seriously.</p>
-      <p>Everyone on the same local date gets the same board. Easy, medium, and hard are three sizes of that day. Streaks and half-finished games stay on this device. There is no account.</p>
-      <p>The puzzle at the front door is set in <code>js/config.js</code> as <code>PRIMARY_GAME</code>. It is Sauce Pipes unless that line says otherwise.</p>
-      <p><a class="btn" href="index.html">Today's puzzle</a></p>
-    </article>`;
+  document.querySelector("#stage").innerHTML = `<article class="page-intro about">${html}</article>`;
 }

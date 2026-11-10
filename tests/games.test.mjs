@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { makeRng, puzzleNumber, recordWin, shiftDate } from "../js/core.js";
+import { makeRng, puzzleNumber, recordWin, shiftDate, buildShare } from "../js/core.js";
 import { generateSauce, sauceReaches, alignPath, rotMask } from "../js/engines/sauce.js";
 import { generateSlip, applySolution, ballOnExit } from "../js/engines/slip.js";
 import { generateTwirl, pathIsSimple, twirlSolved } from "../js/engines/twirl.js";
@@ -37,6 +37,32 @@ function overlaps(pieces, rows, cols) {
   }
   return false;
 }
+
+test("share text is time, rank, and squares", () => {
+  const text = buildShare({
+    title: "Sauce Pipes",
+    date: "2026-11-10",
+    diff: "easy",
+    moves: 4,
+    par: 6,
+    seconds: 84,
+    rank: "Faster than 10% of players today. 21 players. Median 0:40.",
+  });
+  assert.match(text, /1:24/);
+  assert.match(text, /🟢🟢🟢🟢/);
+  assert.match(text, /Faster than 10%/);
+  assert.doesNotMatch(text, /Checking/);
+  const pending = buildShare({
+    title: "Sauce Pipes",
+    date: "2026-11-10",
+    diff: "easy",
+    moves: 4,
+    par: 6,
+    seconds: 84,
+    rank: "Checking today's times…",
+  });
+  assert.doesNotMatch(pending, /Checking/);
+});
 
 test("puzzle numbers increase one per day from 1 Jan 2026", () => {
   assert.equal(puzzleNumber("2026-01-01"), 1);

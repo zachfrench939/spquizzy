@@ -755,9 +755,11 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
 .done-stats { list-style: none; display: flex; gap: 8px; padding: 0; margin: 4px 0; flex-wrap: wrap; justify-content: center; }
 .done-stats li { background: var(--paper); border: 3px solid var(--charcoal); padding: 8px 12px; font-weight: 800; }
 .countdown { font-weight: 700; }
-.page-intro { margin-bottom: 16px; }
+.page-intro { margin-bottom: 16px; color: #f6ecd1; }
 .page-intro .lede, .about p { margin: 10px 0; }
-.about code { font-family: var(--body); background: var(--paper); border: 2px solid var(--charcoal); padding: 0 4px; }
+.about code { font-family: var(--body); background: var(--paper); color: var(--charcoal); border: 2px solid var(--charcoal); padding: 0 4px; }
+.how-more { margin: 12px 0 0; font-weight: 800; text-align: left; }
+.how-more a { color: var(--tomato-dark); }
 .diffs button { min-height: 44px; min-width: 76px; transition: transform 0.12s ease, box-shadow 0.12s ease; }
 .btn { transition: transform 0.12s ease, box-shadow 0.12s ease; }
 .note { color: #3d4a4a; }
@@ -1869,3 +1871,50 @@ body.is-home {
 .piece.ball .eye.l { left: 12%; }
 .piece.ball .eye.r { right: 12%; }
 .piece.ball .mouth { top: 64%; border-bottom-width: 3px; left: 26%; right: 26%; }
+
+body.is-doc {
+  overflow: auto;
+  height: auto;
+  background: #f6ecd1;
+  color: #1e2a2a;
+}
+body.is-doc::before,
+body.is-doc::after { display: none; }
+body.is-doc .doc {
+  width: min(680px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 8px 0 64px;
+  position: relative;
+  z-index: 1;
+}
+body.is-doc .doc h1 {
+  font-family: var(--body);
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 8px 0 12px;
+}
+body.is-doc .doc h2 {
+  font-family: var(--body);
+  font-size: 22px;
+  font-weight: 800;
+  margin: 22px 0 8px;
+}
+body.is-doc .doc p,
+body.is-doc .doc li { margin: 8px 0; }
+body.is-doc .doc ol { margin: 8px 0 16px; padding-left: 1.2em; }
+body.is-doc .doc .example {
+  width: min(280px, 72%);
+  margin: 12px 0 18px;
+  background: #fff8e6;
+  border: 4px solid #1e2a2a;
+  box-shadow: 4px 4px 0 #1e2a2a;
+}
+body.is-doc .doc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 28px;
+  font-weight: 800;
+}
+body.is-doc .doc-links a { text-decoration: none; }

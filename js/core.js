@@ -104,17 +104,20 @@ export function plural(noun, n) {
   return noun + "s";
 }
 
-export function buildShare({ title, date, diff, noun, moves, par, seconds }) {
+export function buildShare({ title, date, diff, moves, par, seconds, rank }) {
   const n = puzzleNumber(date);
   const label = diff.charAt(0).toUpperCase() + diff.slice(1);
   const marks = moves <= par ? "🟢" : "🟡";
   const row = marks.repeat(Math.max(1, Math.min(6, moves || 1)));
-  return [
+  const lines = [
     `🍝 Spiquizzy ${title}`,
     `Puzzle ${n}, ${label}`,
     row,
-    `${moves} ${plural(noun, moves)} in ${formatTime(seconds)}`,
-  ].join("\n");
+    formatTime(seconds),
+  ];
+  const clean = String(rank || "").replace(/\s+/g, " ").trim();
+  if (clean && !/^checking/i.test(clean)) lines.push(clean);
+  return lines.join("\n");
 }
 
 const memory = new Map();
