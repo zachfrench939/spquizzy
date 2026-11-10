@@ -65,7 +65,8 @@ function render() {
     words.append(chip);
   }
   board.append(grid, words);
-  kit.note(`${puzzle.words.length - locked.length} words still to make.`);
+  if (selected) kit.note(`${selected} is selected. Tap the half that finishes the word.`);
+  else kit.note(`${puzzle.words.length - locked.length} words still to make.`);
 }
 
 board.addEventListener("click", (event) => {
@@ -97,9 +98,11 @@ board.addEventListener("click", (event) => {
   selected = null;
   kit.remember(snapshot());
   kit.addMove();
-  kit.announce("Those halves do not make one of today's words.");
   render();
   board.querySelector(`[data-half="${half}"]`)?.classList.add("shake");
+  const miss = "Those halves do not make one of today's words.";
+  kit.announce(miss);
+  kit.note(miss);
 });
 
 kit.onUndo((state) => {
