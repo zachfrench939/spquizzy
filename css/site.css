@@ -1599,20 +1599,7 @@ img, svg, .pixel, .clip-hand {
 body {
   background: #101820;
 }
-body::before, body::after {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-}
-body::before {
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.28) 100%);
-}
-body::after {
-  background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0, 0, 0, 0.06) 3px 4px);
-  mix-blend-mode: multiply;
-}
+body::before, body::after { content: none; display: none; }
 .stage, .play, .splash, .sidebar, .home-hub { position: relative; z-index: 1; }
 .home-hub, .sidebar, .sidebar .side-links a, .hero-when, .hub-title { color: #f6ecd1; }
 .drawer, .drawer .side-links a, .drawer .side-kicker, .drawer .nav-copy, .drawer .nav-copy strong, .drawer .nav-copy em, .drawer .nav-copy small { color: #1e2a2a; }
@@ -1991,6 +1978,46 @@ body.is-doc .doc-links {
   font-weight: 800;
 }
 body.is-doc .doc-links a { text-decoration: none; }
+
+.logo-mark, .brand img, .pipe-cell img, .mascot img {
+  image-rendering: auto;
+}
+.brand {
+  font-family: var(--body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.btn, .pill, .diffs button, .icon-btn, .hub-copy strong, .play-title, #timer, .hud .pill {
+  font-family: var(--body);
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.btn-play, .splash #start-game, .feature-card .btn {
+  background: #FBBF36;
+  color: #1e2a2a;
+  min-height: 48px;
+}
+.feature-card, .feature-card .kicker, .feature-card .game-name, .feature-card .goal, .feature-card .byline {
+  background: #7a120c;
+  color: #f6ecd1;
+}
+.hub-card.tomato { background: #7a120c; color: #f6ecd1; }
+.hub-card.tomato strong, .hub-card.tomato em, .hub-card.tomato .hub-meta {
+  color: #f6ecd1;
+  background: transparent;
+}
+.page-intro, .page-intro h1, .page-intro p, .page-intro .lede, .page-intro a, .tagline {
+  color: #f6ecd1;
+}
+.splash-icon { width: 88px; height: 88px; padding: 6px; }
+.splash .game-name { font-size: 22px; line-height: 1.25; }
+.splash .diffs button[aria-pressed="true"] { background: #FBBF36; color: #1e2a2a; }
+.pipe-grid { max-width: 440px; }
+#win-title { font-family: var(--display); font-size: 28px; line-height: 1.4; }
 
 .pipe-grid { gap: 0; }
 .pipe-cell {

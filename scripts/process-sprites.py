@@ -47,7 +47,7 @@ def despill(im: Image.Image, erode_px: int = 2) -> Image.Image:
     strength = np.maximum(edge, pink)
     r = np.clip(r - spill_r * (0.55 + 0.45 * strength), 0, 255)
     b = np.clip(b - spill_b * (0.75 + 0.25 * strength), 0, 255)
-    still = (r > 150) & (b > 80) & (g < 90) & ((r + b) * 0.5 - g > 60)
+    still = (r > 130) & (b > 50) & (g < 110) & ((r + b) * 0.5 - g > 35)
     a = np.where(still, 0, a)
     arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], arr[:, :, 3] = r, g, b, a
     out = Image.fromarray(arr.astype(np.uint8), "RGBA")
@@ -335,7 +335,7 @@ def process_wombat() -> None:
     for i, (name, body) in enumerate(zip(names, bodies)):
         left = 0 if i == 0 else (bodies[i - 1][2] + body[0]) // 2
         right = sheet.width if i == 3 else (body[2] + bodies[i + 1][0]) // 2
-        pose = despill(clip_pose(sheet, body, left, right), 2)
+        pose = despill(clip_pose(sheet, body, left, right), 3)
         save(pose, OUT / "wombat" / name, size=420)
 
 
@@ -351,7 +351,7 @@ def process_icons() -> None:
         (780, 450, 1090, 766),
     ]
     for name, box in zip(names, boxes):
-        icon = despill(trim(sheet.crop(box), 2), 1)
+        icon = despill(trim(sheet.crop(box), 2), 2)
         save(icon, OUT / "icons" / name, size=280)
 
 

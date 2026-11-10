@@ -135,15 +135,14 @@ export function createKit(gameId) {
     if (shareBtn) shareBtn.disabled = false;
     document.querySelector("#board").classList.add("is-solved");
     if (solvedFlag) solvedFlag.hidden = false;
-    const compared = moves < par ? "Better than the goal." : moves === par ? "Right on the goal." : "A little over the goal.";
-    const streak = archive ? "An older puzzle." : `Streak ${record.streak}. Best ${record.bestStreak}.`;
-    document.querySelector("#win-title").textContent = game.win;
+    document.querySelector("#win-title").textContent = "SOLVED!";
     const timeLine = document.querySelector("#win-time");
     if (timeLine) timeLine.textContent = formatTime(seconds);
-    document.querySelector("#win-detail").textContent = `${streak} ${compared}`;
+    document.querySelector("#win-detail").textContent = game.cheer;
     const statList = document.querySelector("#win-stats");
     if (statList) {
-      statList.innerHTML = `<li>${moves} ${nounLabel(game.noun, moves).toLowerCase()}</li><li>Streak ${archive ? 0 : record.streak || 0}</li>`;
+      const streakChip = !archive && record.streak > 0 ? `<li>Streak ${record.streak}</li>` : "";
+      statList.innerHTML = `<li>${moves} ${nounLabel(game.noun, moves).toLowerCase()}</li>${streakChip}`;
     }
     const nextLink = document.querySelector("#win-next");
     if (nextLink) {
@@ -163,7 +162,7 @@ export function createKit(gameId) {
         moves,
       }).then((rank) => {
         if (!rankLine.isConnected) return;
-        const text = rankMessage(rank);
+        const text = rankMessage(rank, seconds);
         rankLine.hidden = !text;
         if (text) rankLine.textContent = text;
       });

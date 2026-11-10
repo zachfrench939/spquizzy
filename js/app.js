@@ -149,12 +149,12 @@ function resultsSheet(game, run) {
       ${sheetClose("win-close")}
       <div class="mascot mascot-sm">${wombatSvg("win")}</div>
       <div class="pasta-burst" id="win-burst" aria-hidden="true">${pastaBurstHtml()}</div>
-      <h2 id="win-title">${game.win}</h2>
+      <h2 id="win-title">SOLVED!</h2>
       <p id="win-time" class="win-time">${formatTime(run?.seconds || 0)}</p>
       <p class="trophy-row"><span class="trophy">${trophySvg()}</span><span id="rank-line" class="rank-line">Checking today's times…</span></p>
       <ul class="done-stats" id="win-stats">
         <li>${run?.moves || 0} ${word}</li>
-        <li>Streak ${streak}</li>
+        ${streak > 0 ? `<li>Streak ${streak}</li>` : ""}
       </ul>
       ${adSlot("results_rectangle")}
       <p id="win-detail">${game.cheer}</p>
@@ -295,13 +295,13 @@ function introStage(game, { diff, cta, date }) {
         <div class="splash-icon">${iconSvg(game.id)}</div>
         <h1 class="game-name">${game.name}</h1>
         <p class="goal">${game.goal}</p>
-        <p class="byline">${formatShort(date)}<br>Puzzle ${puzzleNumber(date)}<br>by Spiquizzy</p>
+        <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
+        <button type="button" class="btn btn-play" id="start-game">${cta}</button>
+        <p class="byline">${formatShort(date)} · Puzzle ${puzzleNumber(date)}</p>
         <div class="clip-wrap">
           <button type="button" id="clip-replay" class="help-btn" aria-label="Replay how to play">?</button>
           ${clipHtml(game.id)}
         </div>
-        <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
-        <button type="button" class="btn btn-tomato" id="start-game">${cta}</button>
       </div>
     </section>`;
 }
@@ -317,7 +317,7 @@ function paintRank(game, diff, run) {
     moves: run.moves || 0,
   }).then((rank) => {
     if (!line.isConnected) return;
-    const text = rankMessage(rank);
+    const text = rankMessage(rank, run.seconds);
     if (!text) {
       line.hidden = true;
       return;
@@ -331,12 +331,14 @@ export function openHome() {
   const main = gameById(PRIMARY_GAME);
   document.title = "Spiquizzy · Daily pasta puzzles";
   mountChrome(null, { home: true });
-  const cards = GAMES.map((game) => {
+  const cards = GAMES.filter((game) => game.id !== main.id).map((game) => {
     const stats = loadStats(game.id);
+    const streak = stats.streak || 0;
+    const streakBit = streak > 0 ? `<span>Streak ${streak}</span>` : "";
     return `<a class="hub-card ${game.cart}" href="${game.href}">
       <span class="hub-icon">${iconSvg(game.id)}</span>
       <span class="hub-copy"><strong>${game.name}</strong><em>${game.blurb}</em></span>
-      <span class="hub-meta"><span>${statusFor(game.id, today)}</span><span>Streak ${stats.streak || 0}</span></span>
+      <span class="hub-meta"><span>${statusFor(game.id, today)}</span>${streakBit}</span>
     </a>`;
   }).join("");
   document.querySelector("#stage").innerHTML = `
@@ -353,9 +355,9 @@ export function openHome() {
           <h1 class="game-name">${main.name}</h1>
           <p class="goal">${main.blurb}</p>
         </div>
-        <span class="btn btn-tomato">Play</span>
+        <span class="btn btn-play">Play</span>
       </a>
-      <h2 class="hub-title">Every plate</h2>
+      <h2 class="hub-title">All games</h2>
       <div class="hub-grid">${cards}</div>
       <nav class="hub-links" aria-label="More">
         <a href="/archive/">Archive</a>
