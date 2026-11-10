@@ -41,9 +41,9 @@
   "totalTime": "PT5M",
   "url": "https://spiquizzy.com/how-to-play/twirl/",
   "step": [
-      {"@type": "HowToStep", "position": 1, "name": "Match the pictures", "text": "Press a picture and drag to the same picture."},
-      {"@type": "HowToStep", "position": 2, "name": "Stay on empty squares", "text": "The line cannot cross another line or another picture."},
-      {"@type": "HowToStep", "position": 3, "name": "Cover every square", "text": "You win when every square is part of a line."}
+      {"@type": "HowToStep", "position": 1, "name": "Drag to the match", "text": "Press a picture and drag, square by square, to the same picture."},
+      {"@type": "HowToStep", "position": 2, "name": "Do not cross", "text": "A line cannot cross another line, and it cannot pass through a different picture."},
+      {"@type": "HowToStep", "position": 3, "name": "Fill the grid", "text": "You win when every square is part of a line."}
   ]
 }
   </script>
@@ -55,19 +55,19 @@
   <main class="doc">
     <h1>How to play Twirl</h1>
     <p>Twirl is a daily path puzzle. Matching pictures sit on a grid. You draw a line from one picture to its twin, and the lines together have to cover every square.</p>
-    <img class="example" src="/assets/icons/twirl.webp" alt="A fork of spaghetti, the Twirl icon" width="280" height="280">
+    <div class="how-stage doc-board" data-tutorial="twirl" data-solved="1"></div>
     <h2>Steps</h2>
     <ol>
-      <li><strong>Match the pictures.</strong> Press a picture and drag to the same picture.</li>
-      <li><strong>Stay on empty squares.</strong> The line cannot cross another line or another picture.</li>
-      <li><strong>Cover every square.</strong> You win when every square is part of a line.</li>
+      <li><strong>Drag to the match.</strong> Press a picture and drag, square by square, to the same picture.</li>
+      <li><strong>Do not cross.</strong> A line cannot cross another line, and it cannot pass through a different picture.</li>
+      <li><strong>Fill the grid.</strong> You win when every square is part of a line.</li>
     </ol>
     <h2>Tips</h2>
     <ul>
       <li>A tap is not a line. Press and drag, and stay on neighbouring squares. If you let go early, the note tells you to drag to the matching picture.</li>
       <li>Pictures that are not the pair you started from are walls. You cannot pass through them.</li>
       <li>If two paths would have to cross, one of them needs a different route.</li>
-      <li>The pictures are garlic, cheese, basil, olives, and the other foods in the set. Match the shape, not only the color.</li>
+      <li>The pictures are garlic, cheese, basil, olives, and the other foods in the set. Match the shape, not only the colour.</li>
     </ul>
     <p><a class="btn btn-tomato" href="/twirl/">Play</a></p>
 
@@ -75,6 +75,13 @@
 <p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>
   <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
 
+
+  <script type="module">
+    import { mountTutorial } from "/js/tutorial.js";
+    document.querySelectorAll("[data-tutorial]").forEach((el) => {
+      mountTutorial(el, el.dataset.tutorial, { interactive: false, solved: el.dataset.solved === "1" });
+    });
+  </script>
   <script type="module" src="/js/analytics.js"></script>
 </body>
 </html>

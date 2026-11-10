@@ -41,9 +41,9 @@
   "totalTime": "PT5M",
   "url": "https://spiquizzy.com/how-to-play/sauce-pipes/",
   "step": [
-      {"@type": "HowToStep", "position": 1, "name": "Tap a pipe", "text": "One tap turns that pipe a quarter turn. Keep tapping to keep turning."},
-      {"@type": "HowToStep", "position": 2, "name": "Follow the red", "text": "Red sauce leaves the pot and fills every open pipe it can reach."},
-      {"@type": "HowToStep", "position": 3, "name": "Reach the plate", "text": "You win when the red sauce touches the plate."}
+      {"@type": "HowToStep", "position": 1, "name": "Turn a pipe", "text": "Tap a pipe. Each tap turns it a quarter turn."},
+      {"@type": "HowToStep", "position": 2, "name": "Follow the red", "text": "Sauce only travels where openings meet. If a pipe does not face its neighbour, the path stops."},
+      {"@type": "HowToStep", "position": 3, "name": "Reach the plate", "text": "You win when the sauce touches the plate."}
   ]
 }
   </script>
@@ -55,12 +55,12 @@
   <main class="doc">
     <h1>How to play Sauce Pipes</h1>
     <p>Sauce Pipes is a daily path puzzle. The pot and the plate are fixed. Every other tile is a pipe you can turn. You win when red sauce runs from the pot to the plate.</p>
-    <img class="example" src="/assets/icons/sauce.webp" alt="A pot pouring red sauce onto a plate of spaghetti" width="280" height="280">
+    <div class="how-stage doc-board" data-tutorial="sauce" data-solved="1"></div>
     <h2>Steps</h2>
     <ol>
-      <li><strong>Tap a pipe.</strong> One tap turns that pipe a quarter turn. Keep tapping to keep turning.</li>
-      <li><strong>Follow the red.</strong> Red sauce leaves the pot and fills every open pipe it can reach.</li>
-      <li><strong>Reach the plate.</strong> You win when the red sauce touches the plate.</li>
+      <li><strong>Turn a pipe.</strong> Tap a pipe. Each tap turns it a quarter turn.</li>
+      <li><strong>Follow the red.</strong> Sauce only travels where openings meet. If a pipe does not face its neighbour, the path stops.</li>
+      <li><strong>Reach the plate.</strong> You win when the sauce touches the plate.</li>
     </ol>
     <h2>Tips</h2>
     <ul>
@@ -75,6 +75,13 @@
 <p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>
   <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
 
+
+  <script type="module">
+    import { mountTutorial } from "/js/tutorial.js";
+    document.querySelectorAll("[data-tutorial]").forEach((el) => {
+      mountTutorial(el, el.dataset.tutorial, { interactive: false, solved: el.dataset.solved === "1" });
+    });
+  </script>
   <script type="module" src="/js/analytics.js"></script>
 </body>
 </html>

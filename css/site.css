@@ -2156,3 +2156,107 @@ a.btn-tomato, button.btn-tomato, #win-next.btn-tomato, .actions .btn-tomato {
 .site-foot .wick-line { margin: 0; }
 body.is-doc .wick-line { width: min(720px, calc(100% - 32px)); margin: 18px auto 0; }
 .pipe-grid { gap: 0; }
+
+#how.how-sheet:not([open]) { display: none; }
+#how.how-sheet[open] {
+  background: #fff8ea;
+  color: #1e2a2a;
+  border: 3px solid #1e2a2a;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(72dvh, 560px);
+  margin: auto 0 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px 18px 0 0 !important;
+}
+#how .how-scroll { overflow: auto; padding: 14px 14px 8px; min-height: 0; }
+#how .how-head {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 44px;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+#how .how-wombat {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  display: block;
+  image-rendering: auto;
+}
+#how h2#how-title {
+  font-family: var(--body);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1e2a2a;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+#how .sheet-x { position: static; width: 44px; height: 44px; }
+#how .how-goal {
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.35;
+  color: #1e2a2a;
+  text-align: left;
+  margin: 8px 0 0;
+  max-width: none;
+}
+#how .how-stage { margin: 12px 0; }
+#how .how-steps { margin: 4px 0 8px; }
+#how .how-step strong, #how .how-step p { color: #1e2a2a; font-family: var(--body); }
+#how .how-step strong { font-size: 16px; font-weight: 800; }
+#how .how-step p { font-size: 16px; font-weight: 700; }
+#how .how-n { width: 28px; height: 28px; font-family: var(--body); font-size: 16px; }
+#how .how-foot {
+  flex: none;
+  display: grid;
+  gap: 8px;
+  padding: 8px 14px 14px;
+  background: #fff8ea;
+  border-top: 2px solid rgba(30, 42, 42, 0.12);
+}
+#how #how-done { width: 100%; min-height: 52px; }
+#how #how-done.is-ready { box-shadow: 0 0 0 3px #1e2a2a; }
+#how .how-more { color: #E63326; font-weight: 800; text-align: center; }
+.how-stage { border-radius: 12px; padding: 8px; }
+.how-stage-sauce, .how-stage-slip, .how-stage-bowls, .how-stage-pips, .splash-demo { background: #101820; }
+.how-stage-twirl, .how-stage-ravioli { background: #fff8ea; }
+.how-stage .pipe-grid { width: min(100%, 180px); margin: 0 auto; }
+.how-stage .slip-board { width: min(100%, 260px); }
+.how-stage .slip-frame { margin: 4px 36px 4px 4px; }
+.how-stage .move-pad { justify-content: center; }
+.how-stage .move-pad button { min-width: 44px; min-height: 44px; font-size: 22px; }
+.how-stage .twirl-board, .how-stage .pips-board { width: min(100%, 220px); margin: 0 auto; }
+.how-stage .half-grid { grid-template-columns: 1fr 1fr; }
+.how-stage .half {
+  color: #1e2a2a;
+  font-weight: 800;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 5px #e0a82e, inset 0 0 0 9px #f6c945;
+  background:
+    radial-gradient(circle at 32% 42%, #e23b2f 0 7%, transparent 8%),
+    radial-gradient(circle at 68% 62%, #2f8f4e 0 6%, transparent 7%),
+    linear-gradient(rgba(255, 248, 234, 0.62), rgba(255, 248, 234, 0.62)),
+    url("/assets/food/ravioli.webp") center/cover no-repeat;
+}
+.how-stage .bowl-name, .how-stage .bowl-sum, .how-stage .pool p { color: #f6ecd1; }
+.how-stage .how-status { margin: 6px 0 0; text-align: center; font-weight: 800; color: #f6ecd1; }
+.how-stage-twirl .how-status, .how-stage-ravioli .how-status { color: #1e2a2a; }
+.how-stage.is-shake { animation: shake 180ms linear; }
+.splash-demo { width: min(100%, 280px); margin: 4px auto 0; }
+body.is-doc .doc .how-stage { margin: 12px 0 18px; }
+@media (min-width: 800px) {
+  #how.how-sheet[open] {
+    margin: auto;
+    width: min(420px, calc(100% - 48px));
+    border-radius: 18px !important;
+  }
+}

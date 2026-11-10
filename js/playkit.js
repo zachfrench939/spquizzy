@@ -86,8 +86,12 @@ export function createKit(gameId) {
     saveRun(gameId, diff, date, { state: snapshot, moves, seconds, won, par });
   }
 
+  function howBlocking() {
+    return document.body.dataset.howFirst === "1" || Boolean(document.querySelector("#how")?.open);
+  }
+
   function startTimer() {
-    if (running || won || paused) return;
+    if (running || won || paused || howBlocking()) return;
     running = true;
     timer = setInterval(() => {
       seconds += 1;
@@ -190,7 +194,7 @@ export function createKit(gameId) {
       if (shareBtn) shareBtn.disabled = true;
       document.querySelector("#board").classList.remove("is-solved");
       if (solvedFlag) solvedFlag.hidden = true;
-      if (moves > 0) startTimer();
+      if (moves > 0 && !howBlocking()) startTimer();
     } else {
       moves = 0;
       seconds = 0;
@@ -223,8 +227,26 @@ export function createKit(gameId) {
   document.querySelector("#share").addEventListener("click", doShare);
   document.querySelector("#win-share").addEventListener("click", doShare);
   document.querySelector("#win-close").addEventListener("click", () => document.querySelector("#win").close());
-  document.querySelector("#how-open").addEventListener("click", () => document.querySelector("#how").showModal());
-  document.querySelector("#how-close").addEventListener("click", () => document.querySelector("#how").close());
+  const how = document.querySelector("#how");
+  const seenKey = `spquizzy.how.v2:${gameId}`;
+  how?.addEventListener("close", () => {
+    getStorage().setItem(seenKey, "1");
+    if (!paused && moves > 0 && !won) startTimer();
+  });
+  document.querySelector("#how-done")?.addEventListener("click", () => how?.close());
+  document.querySelector("#how-open")?.addEventListener("click", () => {
+    const done = document.querySelector("#how-done");
+    if (done) done.textContent = "Got it";
+    const wombat = document.querySelector("#how .how-wombat");
+    if (wombat) {
+      wombat.src = "/assets/wombat/thinking.webp";
+      wombat.alt = "Wombat thinking";
+    }
+    if (!paused && moves > 0 && !won) stopTimer();
+    how?.showModal();
+    document.querySelector("#how-stage")?.focus();
+  });
+  document.querySelector("#how-close")?.addEventListener("click", () => how?.close());
   for (const id of ["how", "win", "settings"]) {
     document.querySelector(`#${id}`)?.addEventListener("click", (event) => {
       if (event.target.tagName === "DIALOG") event.target.close();
@@ -283,7 +305,6 @@ export function createKit(gameId) {
   }
   pauseBtn?.addEventListener("click", () => setPaused(!paused));
   document.querySelector("#resume")?.addEventListener("click", () => setPaused(false));
-  document.querySelector("#hint")?.addEventListener("click", () => document.querySelector("#how")?.showModal());
   document.querySelector("#settings-open")?.addEventListener("click", () => document.querySelector("#settings")?.showModal());
   document.querySelector("#settings-close")?.addEventListener("click", () => document.querySelector("#settings")?.close());
 

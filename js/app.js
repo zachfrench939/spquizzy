@@ -1,11 +1,11 @@
 import { CONTACT_EMAIL, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
-import { HELP } from "./help.js";
+import { stepsHtml, TUTORIALS } from "./help.js";
+import { mountTutorial } from "./tutorial.js";
 import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
 import { track } from "./analytics.js";
 import { shareResult } from "./share.js";
 import { iconSvg, wombatSvg, pastaBurstHtml, trophySvg } from "./art.js";
-import { restartClip } from "./clips.js";
 import { submitAndRank, rankMessage } from "./scores.js";
 import { renderArchive } from "./archive.js";
 
@@ -184,20 +184,30 @@ function resultsSheet(game, run) {
 }
 
 function helpSheet(game) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
   return `
-    <dialog id="how" class="sheet">
-      ${sheetClose("how-close")}
-      <div class="how-head">
-        <div class="mascot mascot-sm">${wombatSvg("think")}</div>
-        <div class="how-copy">
-          <p class="kicker">${game.kicker}</p>
-          <h2>How to play</h2>
-          <p class="goal">${game.goal}</p>
+    <dialog id="how" class="sheet how-sheet" aria-modal="true" aria-labelledby="how-title" aria-describedby="how-goal">
+      <div class="how-scroll">
+        <div class="how-head">
+          <img class="how-wombat" src="/assets/wombat/thinking.webp" width="238" height="329" alt="Wombat thinking">
+          <h2 id="how-title">How to play</h2>
+          ${sheetClose("how-close")}
         </div>
+        <p id="how-goal" class="how-goal">${goal}</p>
+        <div id="how-stage" class="how-stage" tabindex="0" aria-label="Try it"></div>
+        ${stepsHtml(game.id)}
       </div>
-      <div class="how-list">${HELP[game.id] || ""}</div>
-      <p class="how-more"><a href="/how-to-play/${game.slug}/">Full rules for ${game.name}</a></p>
+      <footer class="how-foot">
+        <button type="button" id="how-done" class="btn btn-play">Play</button>
+        <a class="how-more" href="/how-to-play/${game.slug}/">Full rules</a>
+      </footer>
     </dialog>`;
+}
+
+function paintStaticTutorials(scope) {
+  scope.querySelectorAll("[data-tutorial]").forEach((el) => {
+    mountTutorial(el, el.dataset.tutorial, { interactive: false, solved: el.dataset.solved === "1" });
+  });
 }
 
 function diffButtons(pressed) {
@@ -231,7 +241,7 @@ function gameStage(game, diff) {
       <div class="action-bar">
         <button type="button" id="undo" class="pill pill-undo" disabled>Undo</button>
         <button type="button" id="reset" class="pill pill-reset">Reset</button>
-        <button type="button" id="hint" class="pill pill-hint">Hint</button>
+        <button type="button" id="hint" class="pill pill-hint" hidden>Hint</button>
       </div>
       ${adSlot("game_below_banner")}
     </article>
@@ -315,6 +325,7 @@ function introStage(game, { diff, cta, date }) {
         <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
         <button type="button" class="btn btn-play" id="start-game">${cta}</button>
         <p class="byline">${formatShort(date)} · Puzzle ${puzzleNumber(date)}</p>
+        <div class="how-stage splash-demo" data-tutorial="${game.id}"></div>
       </div>
     </section>`;
 }
@@ -390,6 +401,7 @@ export async function openGame(gameId) {
     const run = loadRun(game.id, diff, puzzleDate());
     if (run?.won) {
       stage.innerHTML = withFoot(`${introStage(game, { diff, cta: "Play again", date: puzzleDate() })}${resultsSheet(game, run)}<div id="toast" class="toast" hidden></div>`);
+      paintStaticTutorials(stage);
       const dialog = document.querySelector("#win");
       dialog?.showModal();
       document.querySelector("#win-close")?.addEventListener("click", () => dialog.close());
@@ -429,14 +441,12 @@ export async function openGame(gameId) {
     }
     const cta = run && run.moves > 0 ? "Continue" : "Play";
     stage.innerHTML = withFoot(introStage(game, { diff, cta, date: puzzleDate() }));
+    paintStaticTutorials(stage);
     stage.querySelectorAll("[data-diff]").forEach((button) => {
       button.addEventListener("click", () => {
         diff = button.dataset.diff;
         showEntry();
       });
-    });
-    document.querySelector("#clip-replay")?.addEventListener("click", () => {
-      restartClip(stage);
     });
     document.querySelector("#start-game").addEventListener("click", async (event) => {
       event.currentTarget.disabled = true;
@@ -445,19 +455,19 @@ export async function openGame(gameId) {
       history.replaceState(null, "", url);
       getStorage().setItem(diffKey(game.id), diff);
       stage.innerHTML = gameStage(game, diff);
+      const how = document.querySelector("#how");
+      const first = how && !getStorage().getItem(`spquizzy.how.v2:${game.id}`);
+      if (first) document.body.dataset.howFirst = "1";
       const mod = await LOADERS[game.id]();
       if (typeof mod.mount === "function") mod.mount();
+      mountTutorial(document.querySelector("#how-stage"), game.id, { interactive: true });
       track("play");
-      document.querySelector("#how-open")?.addEventListener("click", () => {
-        restartClip(document.querySelector("#how"));
-      });
-      const how = document.querySelector("#how");
-      const seenKey = `spquizzy.how.v1:${game.id}`;
-      if (how && !getStorage().getItem(seenKey)) {
-        restartClip(how);
+      if (first) {
+        document.querySelector("#how-done").textContent = "Play";
         how.showModal();
-        how.addEventListener("close", () => getStorage().setItem(seenKey, "1"), { once: true });
+        document.querySelector("#how-stage")?.focus();
       }
+      delete document.body.dataset.howFirst;
     });
   }
 

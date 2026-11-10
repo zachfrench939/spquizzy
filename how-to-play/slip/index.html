@@ -41,9 +41,9 @@
   "totalTime": "PT5M",
   "url": "https://spiquizzy.com/how-to-play/slip/",
   "step": [
-      {"@type": "HowToStep", "position": 1, "name": "Tap a block", "text": "The meatball starts selected when it can move. Tap another block if you want to move that one."},
-      {"@type": "HowToStep", "position": 2, "name": "Tap an arrow", "text": "Each tap slides the selected block one square, when that square is empty."},
-      {"@type": "HowToStep", "position": 3, "name": "Reach the exit gate", "text": "Slide the meatball onto the square by the green exit gate."}
+      {"@type": "HowToStep", "position": 1, "name": "Pick a block", "text": "The meatball starts selected. Tap another block if you want to move that one instead."},
+      {"@type": "HowToStep", "position": 2, "name": "Tap an arrow", "text": "Each tap slides the selected block one square, and only into an empty square."},
+      {"@type": "HowToStep", "position": 3, "name": "Reach the gate", "text": "Get the meatball onto the square beside the green exit. That is the only way out."}
   ]
 }
   </script>
@@ -55,12 +55,12 @@
   <main class="doc">
     <h1>How to play Slip</h1>
     <p>Slip is a daily sliding puzzle. Blocks of pasta fill a small tray. The meatball has to reach the green exit gate, one square at a time.</p>
-    <img class="example" src="/assets/icons/slip.webp" alt="A meatball and a slice of lasagna, the Slip icon" width="280" height="280">
+    <div class="how-stage doc-board" data-tutorial="slip" data-solved="1"></div>
     <h2>Steps</h2>
     <ol>
-      <li><strong>Tap a block.</strong> The meatball starts selected when it can move. Tap another block if you want to move that one.</li>
-      <li><strong>Tap an arrow.</strong> Each tap slides the selected block one square, when that square is empty.</li>
-      <li><strong>Reach the exit gate.</strong> Slide the meatball onto the square by the green exit gate.</li>
+      <li><strong>Pick a block.</strong> The meatball starts selected. Tap another block if you want to move that one instead.</li>
+      <li><strong>Tap an arrow.</strong> Each tap slides the selected block one square, and only into an empty square.</li>
+      <li><strong>Reach the gate.</strong> Get the meatball onto the square beside the green exit. That is the only way out.</li>
     </ol>
     <h2>Tips</h2>
     <ul>
@@ -75,6 +75,13 @@
 <p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>
   <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
 
+
+  <script type="module">
+    import { mountTutorial } from "/js/tutorial.js";
+    document.querySelectorAll("[data-tutorial]").forEach((el) => {
+      mountTutorial(el, el.dataset.tutorial, { interactive: false, solved: el.dataset.solved === "1" });
+    });
+  </script>
   <script type="module" src="/js/analytics.js"></script>
 </body>
 </html>
