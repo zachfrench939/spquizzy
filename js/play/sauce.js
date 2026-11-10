@@ -30,7 +30,7 @@ function snapshot() {
   return { rots: tiles.map((tile) => tile.rot) };
 }
 
-function render() {
+function render(flash = -1) {
   const flow = traceFlow(tiles, puzzle.rows, puzzle.cols, puzzle.pot);
   board.style.setProperty("--n", puzzle.rows);
   board.className = "board pipe-grid";
@@ -64,11 +64,12 @@ function render() {
       glyph.className = `glyph glyph-${tile.kind}`;
       btn.append(glyph);
     }
+    if (index === flash) btn.classList.add("pop");
     btn.addEventListener("click", () => turn(index));
     board.append(btn);
   });
   const open = sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate);
-  kit.note(open ? "The sauce made it." : "Sauce is still looking for the plate.");
+  kit.note(open ? "The sauce made it." : "Turn the pipes that stop the sauce.");
 }
 
 function turn(index) {
@@ -76,7 +77,7 @@ function turn(index) {
   tiles = rotateTile(tiles, index);
   kit.remember(snapshot());
   kit.addMove();
-  render();
+  render(index);
   if (sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate)) kit.win();
 }
 

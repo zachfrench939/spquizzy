@@ -1,15 +1,10 @@
 import { GAMES, DIFFICULTIES } from "./catalog.js";
 import { loadStats, todayString, shiftDate, formatShort, puzzleNumber, isValidDate, compareDates } from "./core.js";
-import { wombatSvg } from "./art.js";
 
-const today = todayString();
-const root = document.querySelector("#shelves");
-const jump = document.querySelector("#jump");
-const mini = document.querySelector("[data-art='wombat-mini']");
-if (mini) mini.innerHTML = wombatSvg("");
-if (jump) jump.max = today;
-
-const stats = Object.fromEntries(GAMES.map((game) => [game.id, loadStats(game.id)]));
+export function renderArchive(root, jump) {
+  const today = todayString();
+  if (jump) jump.max = today;
+  const stats = Object.fromEntries(GAMES.map((game) => [game.id, loadStats(game.id)]));
 
 function shelf(date) {
   const section = document.createElement("section");
@@ -63,5 +58,6 @@ jump?.addEventListener("change", () => {
     root.prepend(shelf(date));
     shown.add(date);
   }
-  document.querySelector(`#day-${date}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-});
+  document.querySelector(`#day-${CSS.escape(date)}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}

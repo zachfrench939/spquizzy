@@ -108,7 +108,7 @@ export function buildShare({ title, date, diff, noun, moves, par, seconds }) {
   const label = diff.charAt(0).toUpperCase() + diff.slice(1);
   const mark = moves < par ? "🟩" : moves === par ? "🟨" : "🟥";
   return [
-    `Spquizzy ${title} #${n}`,
+    `Spiquizzy ${title} #${n}`,
     `${label} 🍝`,
     `${moves} ${plural(noun, moves)} (par ${par})`,
     `⏱ ${formatTime(seconds)}`,

@@ -81,6 +81,10 @@ for (const diff of DIFFS) {
       assert.equal(sauceReaches(solved, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate), true);
       assert.equal(sauceReaches(puzzle.tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate), false);
       assert.ok(puzzle.par >= 1);
+      const onPath = new Set(puzzle.path);
+      puzzle.tiles.forEach((tile, index) => {
+        if (!onPath.has(index)) assert.equal(tile.rot, 0);
+      });
       const aligned = alignPath(puzzle.tiles, puzzle.path, puzzle.cols);
       assert.equal(aligned.clicks, puzzle.par);
       assert.equal(sauceReaches(aligned.tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate), true);

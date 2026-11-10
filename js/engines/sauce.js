@@ -228,28 +228,46 @@ export function generateSauce(difficulty, rng) {
       kind: i === pot ? "pot" : i === plate ? "plate" : "pipe",
     }));
     if (!sauceReaches(tiles, rows, cols, pot, plate)) continue;
-    for (const tile of tiles) {
-      if (!tile.fixed) tile.rot = int(rng, 4);
-    }
-    if (sauceReaches(tiles, rows, cols, pot, plate)) {
-      let broke = false;
-      for (const i of path) {
-        if (tiles[i].fixed) continue;
-        const before = tiles[i].rot;
-        for (let k = 1; k <= 3; k++) {
-          tiles[i].rot = (before + k) % 4;
-          if (!sauceReaches(tiles, rows, cols, pot, plate)) {
-            broke = true;
-            break;
-          }
+    const limits = { easy: [4, 8], medium: [6, 12], hard: [8, 14] }[difficulty] || [4, 10];
+    const onPath = new Set(path);
+    const cost = (index) => {
+      const tile = tiles[index];
+      const need = requiredBits(path, index, cols);
+      let best = 4;
+      let bestR = tile.rot;
+      for (let r = 0; r < 4; r++) {
+        if ((rotMask(tile.mask, r) & need) !== need) continue;
+        const cw = (r - tile.rot + 4) % 4;
+        if (cw < best) {
+          best = cw;
+          bestR = r;
         }
-        if (broke) break;
-        tiles[i].rot = before;
       }
-      if (!broke) continue;
+      return { best, bestR };
+    };
+    for (const i of path) {
+      if (tiles[i].fixed) continue;
+      const { bestR } = cost(i);
+      tiles[i].rot = (bestR + 3) % 4;
     }
+    let guard = 0;
+    while (parTurns(tiles, path, cols) > limits[1] && guard++ < 40) {
+      const pricey = path.find((i) => !tiles[i].fixed && cost(i).best > 0);
+      if (pricey == null) break;
+      tiles[pricey].rot = cost(pricey).bestR;
+    }
+    guard = 0;
+    while (parTurns(tiles, path, cols) < limits[0] && guard++ < 40) {
+      const idle = path.find((i) => !tiles[i].fixed && cost(i).best === 0);
+      if (idle == null) break;
+      tiles[idle].rot = (cost(idle).bestR + 3) % 4;
+    }
+    if (sauceReaches(tiles, rows, cols, pot, plate)) continue;
     const par = parTurns(tiles, path, cols);
-    if (par < 1) continue;
+    if (par < limits[0] || par > limits[1]) continue;
+    for (let i = 0; i < tiles.length; i++) {
+      if (!onPath.has(i)) tiles[i].rot = 0;
+    }
     return { rows, cols, tiles, path, pot, plate, par, difficulty };
   }
   throw new Error(`Sauce Pipes could not deal ${difficulty}`);

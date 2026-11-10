@@ -121,6 +121,11 @@ export function createKit(gameId) {
       : `Streak ${stats.streak}. Best ${stats.bestStreak}.`;
     document.querySelector("#win-title").textContent = game.win;
     document.querySelector("#win-detail").textContent = `${nounLabel(game.noun, moves)} ${moves} · Par ${par} · ${formatTime(seconds)}. ${note} ${streak}`;
+    const burst = document.querySelector("#win-burst");
+    if (burst) {
+      const colors = ["#f6c945", "#e23b2f", "#2f8f4e", "#fff8ea", "#e07a4c"];
+      burst.innerHTML = colors.map((color) => `<i style="background:${color}"></i>`).join("");
+    }
     document.querySelector("#win").showModal();
     if (live) live.textContent = `${game.win} ${note}`;
   }

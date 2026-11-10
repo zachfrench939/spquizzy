@@ -99,6 +99,33 @@ function render() {
   kit.note(left ? `${left} squares left to fill.` : "Grid full.");
 }
 
+function paintLinks() {
+  const svg = board.querySelector(".links");
+  if (!svg) {
+    render();
+    return;
+  }
+  const svgNS = "http://www.w3.org/2000/svg";
+  svg.replaceChildren();
+  const drawList = paths.map((path, i) => ({ path, i, preview: false }));
+  if (drawing) drawList.push({ path: drawing.cells, i: drawing.pair, preview: true });
+  for (const item of drawList) {
+    if (!item.path || item.path.length < 2) continue;
+    const poly = document.createElementNS(svgNS, "polyline");
+    poly.setAttribute("points", item.path.map((cell) => `${(cell % puzzle.cols) + 0.5},${Math.floor(cell / puzzle.cols) + 0.5}`).join(" "));
+    poly.setAttribute("fill", "none");
+    poly.setAttribute("stroke", COLORS[item.i % COLORS.length]);
+    poly.setAttribute("stroke-width", item.preview ? "0.34" : "0.42");
+    poly.setAttribute("stroke-linecap", "square");
+    poly.setAttribute("stroke-linejoin", "miter");
+    poly.setAttribute("opacity", item.preview ? "0.75" : "1");
+    svg.append(poly);
+  }
+  board.querySelectorAll(".twirl-cell").forEach((el) => {
+    el.classList.toggle("is-drawing", Boolean(drawing?.cells.includes(Number(el.dataset.cell))));
+  });
+}
+
 function cellFrom(event) {
   const el = document.elementFromPoint(event.clientX, event.clientY);
   const cell = el?.closest?.("[data-cell]");
@@ -113,7 +140,7 @@ board.addEventListener("pointerdown", (event) => {
   if (pair < 0) return;
   paths[pair] = null;
   drawing = { pair, cells: [cell], pointer: event.pointerId };
-  render();
+  paintLinks();
 });
 
 window.addEventListener("pointermove", (event) => {
@@ -125,14 +152,14 @@ window.addEventListener("pointermove", (event) => {
   if (cell === last) return;
   if (cells.length > 1 && cell === cells[cells.length - 2]) {
     cells.pop();
-    render();
+    paintLinks();
     return;
   }
   if (!adjacent(last, cell) || cells.includes(cell)) return;
   const partner = drawing.cells[0] === puzzle.pairs[drawing.pair].a ? puzzle.pairs[drawing.pair].b : puzzle.pairs[drawing.pair].a;
   if (blocked(drawing.pair).has(cell) && cell !== partner) return;
   cells.push(cell);
-  render();
+  paintLinks();
 });
 
 function finishDraw(event) {

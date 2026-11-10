@@ -1,12 +1,14 @@
-# Spquizzy
+# Spiquizzy
 
-Six daily pasta puzzles, served as a static site. No build step. Open `index.html`, or serve the folder and play.
+Six daily pasta puzzles, served as a static site. The repository is still named `spquizzy`. No build step. Open `index.html`, or serve the folder and play.
 
 ```bash
 python3 -m http.server
 ```
 
-The daily board is chosen from your local date, so everyone on the same calendar day gets the same puzzle. Easy, medium, and hard are three different boards. Streaks and half-finished plates live in `localStorage` on the device.
+The root page opens straight into the primary game. That game is `PRIMARY_GAME` in `js/config.js` (Sauce Pipes unless you change it). Every puzzle is also on its own page, and `games.html` lists all six.
+
+The daily board comes from the player's local date, so everyone on the same calendar day gets the same puzzle. Easy, medium, and hard are three sizes of that day. Streaks and half-finished plates live in `localStorage` on the device.
 
 Puzzle #1 is 1 January 2026.
 
@@ -14,17 +16,25 @@ Puzzle #1 is 1 January 2026.
 
 | Page | What it is |
 | --- | --- |
-| `index.html` | Landing page. Six equal game cards, hero, footer. |
+| `index.html` | Today's primary game. |
+| `games.html` | All six games. |
 | `archive.html` | Past puzzles, the last four weeks plus a date jump. |
+| `about.html` | What the site is. |
 | `sauce-pipes.html` | Rotate pipes so the sauce reaches the plate. |
 | `slip.html` | Slide lasagne trays until the meatball hits the exit. |
 | `twirl.html` | Join matching toppings with paths that fill the grid. |
-| `even-bowls.html` | Split numbers into bowls with the same total. |
+| `even-bowls.html` | Split numbers so every bowl totals the same. |
 | `ravioli.html` | Join word halves into compound words. |
-| `pasta-pips.html` | Lay dominoes so every coloured region meets its rule. |
+| `pasta-pips.html` | Lay dominoes so every region meets its rule. |
 | `404.html` | Missing-page fallback for GitHub Pages. |
 
-An empty ad slot (`<div class="ad-slot">`) sits under the hero, between the game cards, under each board, and on the result dialog. Nothing in those slots talks to an ad network.
+## Ads
+
+The home page, the all-games list, the archive, and the about page have no ad slots.
+
+Each game opens on a Play now screen. That screen has one placeholder, except the home page, which stays clear. During play there is a slim placeholder under the board, with its height reserved so the board does not jump, and a sidebar placeholder on wide desktop only. The win dialog has one placeholder. Nothing sits inside the board, and no ad script is loaded.
+
+`ADSENSE_CLIENT` in `js/config.js` is the place for a publisher id later. Leave it empty for now.
 
 ## Tests
 
@@ -36,7 +46,7 @@ Node 18 or newer. The tests deal many dates at every difficulty and check that e
 
 ## GitHub Pages
 
-The site is meant to be published from the `main` branch root. There is no build.
+The site is published from the `main` branch root. There is no build.
 
 1. On GitHub, open **Settings → Pages**.
 2. Under **Build and deployment**, choose **Deploy from a branch**.
@@ -47,7 +57,7 @@ The site is meant to be published from the `main` branch root. There is no build
 
 ## Custom domain later
 
-Do not add a `CNAME` file until the domain is ready. Pages treats that file as the custom host.
+Do not add a `CNAME` file until the domain is ready. Pages treats that file as the custom host. This works for a domain bought anywhere, including a `.com` registered through Wix: the name stays at the registrar, and DNS points at GitHub Pages.
 
 1. Add a file named `CNAME` (no extension) at the repository root. Its only line is the hostname, for example `play.example.com`.
 2. Commit it to `main`.
