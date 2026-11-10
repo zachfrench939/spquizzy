@@ -1727,14 +1727,15 @@ img.sprite, .mascot img, .hub-icon img, .splash-icon img, .feature-icon img, .na
   background: transparent;
   box-shadow: none;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
 }
-.pipe-cell .bg, .pipe-cell .spin, .pipe-cell .pipe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.pipe-cell .spin { transform: rotate(var(--turn)); }
+.pipe-cell .bg { position: absolute; inset: 7%; width: 86%; height: 86%; pointer-events: none; }
+.pipe-cell .spin, .pipe-cell .pipe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pipe-cell .spin { transform: rotate(var(--turn)) scale(1.18); }
 .pipe-cell .pipe.on { z-index: 2; }
 .pipe-cell.is-fed { outline: 4px solid #f6c945; outline-offset: -4px; }
 .piece .body { border: 0; background: transparent; box-shadow: none; overflow: hidden; }
-.piece .body img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.piece .body img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .piece.ball .body { background: transparent; }
 .board-slot { position: relative; }
 .react { position: absolute; left: 6px; bottom: 6px; width: 84px; z-index: 4; pointer-events: none; }
