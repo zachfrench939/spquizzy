@@ -1,4 +1,4 @@
-import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
+import { PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
 import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
@@ -39,8 +39,8 @@ function statusFor(gameId, today) {
   return busy ? "Playing" : "Ready";
 }
 
-function adSlot(slot, className = "") {
-  return `<aside class="ad-slot ${className}" data-slot="${slot}" data-ad-client="${ADSENSE_CLIENT}" aria-label="Advertisement"><span>Ad</span></aside>`;
+function adSlot(slot) {
+  return `<div class="ad-slot" data-ad-slot="${slot}" aria-label="Advertisement"><span>Advertisement</span></div>`;
 }
 
 function navGames(today, activeId) {
@@ -86,6 +86,7 @@ function shell({ activeId, page }) {
           ${link("/about/", "About")}
           ${howLinks()}
         </nav>
+        ${activeId ? adSlot("game_desktop_sidebar") : ""}
       </aside>
       <div class="backdrop" id="backdrop" hidden></div>
       <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Menu">
@@ -155,6 +156,7 @@ function resultsSheet(game, run) {
         <li>${run?.moves || 0} ${word}</li>
         <li>Streak ${streak}</li>
       </ul>
+      ${adSlot("results_rectangle")}
       <p id="win-detail">${game.cheer}</p>
       <div class="sheet-actions">
         <button type="button" id="share" class="btn btn-basil">Share</button>
@@ -215,6 +217,7 @@ function gameStage(game, diff) {
         <button type="button" id="reset" class="pill pill-reset">Reset</button>
         <button type="button" id="hint" class="pill pill-hint">Hint</button>
       </div>
+      ${adSlot("game_below_banner")}
     </article>
     <p id="live" class="sr-only" aria-live="polite"></p>
     ${helpSheet(game)}
@@ -293,7 +296,6 @@ function introStage(game, { diff, cta, date }) {
         <h1 class="game-name">${game.name}</h1>
         <p class="goal">${game.goal}</p>
         <p class="byline">${formatShort(date)}<br>Puzzle ${puzzleNumber(date)}<br>by Spiquizzy</p>
-        ${adSlot("intro", "ad-intro")}
         <div class="clip-wrap">
           <button type="button" id="clip-replay" class="help-btn" aria-label="Replay how to play">?</button>
           ${clipHtml(game.id)}

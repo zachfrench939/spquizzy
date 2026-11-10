@@ -886,7 +886,55 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
   background: rgba(255, 248, 230, 0.7);
 }
 .ad-slot span { font-family: var(--body); font-size: 13px; letter-spacing: 0.08em; font-weight: 800; }
-.ad-below, .ad-result, .ad-side { display: none !important; }
+.ad-intro, .ad-below, .ad-result, .ad-side { display: none !important; }
+.ad-slot[data-ad-slot] {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  margin: 16px auto 0;
+  padding: 8px;
+  width: 320px;
+  height: 100px;
+  min-height: 100px;
+  max-height: 100px;
+  overflow: hidden;
+  flex: none;
+  position: static;
+}
+.ad-slot[data-ad-slot="results_rectangle"] {
+  width: 300px;
+  height: 250px;
+  min-height: 250px;
+  max-height: 250px;
+  margin: 12px auto;
+}
+.ad-slot[data-ad-slot="game_desktop_sidebar"] { display: none; }
+@media (min-width: 1200px) {
+  .ad-slot[data-ad-slot="game_below_banner"] {
+    width: 728px;
+    height: 90px;
+    min-height: 90px;
+    max-height: 90px;
+  }
+  body.is-play .stage { width: min(760px, 100%); }
+  .ad-slot[data-ad-slot="game_desktop_sidebar"] {
+    display: grid;
+    width: 160px;
+    height: 600px;
+    min-height: 600px;
+    max-height: 600px;
+    margin: 16px 0 0;
+  }
+}
+@media (min-width: 900px) {
+  #win { width: min(420px, calc(100% - 32px)); }
+  .ad-slot[data-ad-slot="results_rectangle"] {
+    width: 336px;
+    height: 280px;
+    min-height: 280px;
+    max-height: 280px;
+  }
+}
 
 .kicker { font-weight: 800; color: var(--tomato-dark); font-size: 15px; line-height: 1.2; }
 .intro .kicker, .done .kicker { text-align: center; }
