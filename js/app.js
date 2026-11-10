@@ -48,7 +48,7 @@ function withFoot(html) {
 }
 
 function adSlot(slot) {
-  return `<div class="ad-slot" data-ad-slot="${slot}" aria-label="Advertisement"><span>Advertisement</span></div>`;
+  return `<div class="ad-slot" data-ad-slot="${slot}"><a class="skip-ad" href="#after-${slot}">Skip advertisement</a><span>Advertisement</span></div><span id="after-${slot}" tabindex="-1"></span>`;
 }
 
 function navGames(today, activeId) {
@@ -79,9 +79,16 @@ function shell({ activeId, page }) {
   const games = navGames(today, activeId);
   const link = (href, label) => `<a href="${href}"${file === href ? ' aria-current="page"' : ""}>${label}</a>`;
   return `
+    <a class="skip" href="#stage">Skip to games</a>
     <header class="topbar">
-      <button type="button" class="menu-btn" id="menu-open" aria-label="Open menu" aria-expanded="false">Menu</button>
+      <button type="button" class="menu-btn" id="menu-open" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" fill="currentColor"/></svg></button>
       <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">SPIQUIZZY</a>
+      <nav class="header-nav" aria-label="Main">
+        ${link("/games/", "All games")}
+        ${link("/archive/", "Archive")}
+        ${link("/how-to-play/", "How to play")}
+        ${link("/about/", "About")}
+      </nav>
       <span class="top-spacer" aria-hidden="true"></span>
     </header>
     <div class="frame">
@@ -97,12 +104,11 @@ function shell({ activeId, page }) {
           ${link("/terms/", "Terms")}
           ${howLinks()}
         </nav>
-        ${activeId ? adSlot("game_desktop_sidebar") : ""}
       </aside>
       <div class="backdrop" id="backdrop" hidden></div>
       <aside class="drawer" id="drawer" inert aria-hidden="true" aria-label="Menu">
         <div class="drawer-head">
-          <strong>Spiquizzy</strong>
+          <strong><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">Spiquizzy</strong>
           <button type="button" id="menu-close" aria-label="Close menu">Close</button>
         </div>
         <nav class="side-games">${games}</nav>
@@ -113,7 +119,7 @@ function shell({ activeId, page }) {
           ${link("/privacy/", "Privacy")}
           ${link("/cookies/", "Cookies")}
           ${link("/terms/", "Terms")}
-          ${howLinks()}
+          ${link("/how-to-play/", "How to play")}
         </nav>
         ${wickLine()}
       </aside>
@@ -218,32 +224,30 @@ function diffButtons(pressed) {
 }
 
 function gameStage(game, diff) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
   return `
     <article class="play">
-      <header class="play-bar">
-        <a class="icon-btn" href="/" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        <h1 class="play-title">${game.name}</h1>
-        <button type="button" id="how-open" class="icon-btn" aria-label="How to play">?</button>
-        <button type="button" id="settings-open" class="icon-btn" aria-label="Settings"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      <header class="game-header">
+        <a class="icon-btn" href="/" aria-label="Back to all games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-8 7 8 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <div class="game-title"><img src="/logo-mark.png" width="28" height="28" alt="">${game.name}</div>
+        <p id="timer" class="timer">0:00</p>
+        <button type="button" id="how-open" class="icon-btn" aria-label="How to play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 10v6M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
       </header>
-      <p id="when" class="when"></p>
-      <div class="hud">
-        <p id="stat-line">Ready</p>
-        <p id="timer">0:00</p>
-        <button type="button" id="pause" class="pill" aria-pressed="false">Pause</button>
-      </div>
+      <div class="diffs play-diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
+      <p class="rule-bar" id="rule">${goal}</p>
+      <p id="stat-line" class="sr-only">Ready</p>
+      <button type="button" id="pause" class="sr-only" aria-pressed="false">Pause</button>
+      <p id="when" class="sr-only"></p>
       <p id="solved-flag" class="solved-flag" hidden>Solved</p>
       <p id="archive-note" class="archive-note" hidden></p>
-      <p class="rule-bar" id="rule">${game.goal}</p>
       <div class="note-row"><p id="note" class="note"></p><div class="react" id="react" hidden></div></div>
       <div class="board-slot"><div id="board" class="board"></div></div>
-      <div class="pause-screen"><p>Paused</p><button type="button" id="resume" class="btn btn-tomato">Resume</button></div>
-      <div class="action-bar">
+      <div class="pause-screen"><p>Paused</p><button type="button" id="resume" class="btn btn-play">Resume</button></div>
+      <div class="action-bar toolbar">
         <button type="button" id="undo" class="pill pill-undo" disabled>Undo</button>
         <button type="button" id="reset" class="pill pill-reset">Reset</button>
-        <button type="button" id="hint" class="pill pill-hint" hidden>Hint</button>
+        <button type="button" id="hint" class="pill pill-hint">Hint</button>
       </div>
-      ${adSlot("game_below_banner")}
     </article>
     <p id="live" class="sr-only" aria-live="polite"></p>
       <footer class="site-foot">${wickLine()}</footer>
@@ -315,19 +319,26 @@ function doneStage(game, run, diff) {
 }
 
 function introStage(game, { diff, cta, date }) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
   return `
+    <header class="game-header">
+      <a class="icon-btn" href="/" aria-label="Back to all games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-8 7 8 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <div class="game-title"><img src="/logo-mark.png" width="28" height="28" alt="">Spiquizzy</div>
+      <span></span>
+      <a class="icon-btn" href="/how-to-play/${game.slug}/" aria-label="How to play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 10v6M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></a>
+    </header>
     <section class="splash ${game.cart}">
-      <a class="icon-btn splash-back" href="/" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       <div class="splash-body">
-        <div class="splash-icon">${iconSvg(game.id)}</div>
+        <div class="splash-preview"><img src="/assets/covers/${game.id}-board.png" alt=""></div>
         <h1 class="game-name">${game.name}</h1>
-        <p class="goal">${game.goal}</p>
+        <p class="goal">${goal}</p>
         <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
         <button type="button" class="btn btn-play" id="start-game">${cta}</button>
-        <p class="byline">${formatShort(date)} · Puzzle ${puzzleNumber(date)}</p>
-        <div class="how-stage splash-demo" data-tutorial="${game.id}"></div>
+        <p class="byline">${formatLong(date)} · Puzzle ${puzzleNumber(date)}</p>
       </div>
-    </section>`;
+      ${adSlot("game_below_banner")}
+    </section>
+    ${helpSheet(game)}`;
 }
 
 function paintRank(game, diff, run) {
@@ -355,39 +366,53 @@ export function openHome() {
   const main = gameById(PRIMARY_GAME);
   document.title = "Spiquizzy · Daily pasta puzzles";
   mountChrome(null, { home: true });
-  const cards = GAMES.filter((game) => game.id !== main.id).map((game) => {
-    const stats = loadStats(game.id);
-    const streak = stats.streak || 0;
-    const streakBit = streak > 0 ? `<span>Streak ${streak}</span>` : "";
-    return `<a class="hub-card ${game.cart}" href="${game.href}">
-      <span class="hub-icon">${iconSvg(game.id)}</span>
-      <span class="hub-copy"><strong>${game.name}</strong><em>${game.blurb}</em></span>
-      <span class="hub-meta"><span>${statusFor(game.id, today)}</span>${streakBit}</span>
-    </a>`;
-  }).join("");
-  document.querySelector("#stage").innerHTML = withFoot(`
-    <section class="home-hub">
+  const cards = GAMES.filter((game) => game.id !== main.id).map((game) => catalogCard(game, today)).join("");
+  const goal = TUTORIALS[main.id]?.goal || main.goal;
+  document.querySelector("#stage").innerHTML = `
+    <section class="home-page">
       <header class="hero-hub">
-        <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
-        <h1 class="hero-line">Today's pasta puzzles</h1>
-        <p class="hero-when">${formatLong(today)}, puzzle ${puzzleNumber(today)}</p>
+        <img class="wombat-hero" src="/assets/wombat/idle.webp" width="238" height="329" alt="The Spiquizzy wombat, smiling">
+        <h1 class="hero-line">Today’s pasta puzzles</h1>
+        <p class="hero-when">${formatLong(today)} · Puzzle ${puzzleNumber(today)}</p>
       </header>
-      <a class="feature-card" href="${main.href}">
-        <div class="feature-icon">${iconSvg(main.id)}</div>
-        <div>
-          <p class="kicker">Today's main game</p>
-          <h1 class="game-name">${main.name}</h1>
-          <p class="goal">${main.blurb}</p>
+      <article class="feature-card">
+        <a class="feature-cover" href="${main.href}"><img src="/assets/covers/sauce-board.png" alt="Sauce Pipes board, pipes and sauce"></a>
+        <div class="feature-body">
+          <p class="kicker">Today’s main game</p>
+          <h2 class="game-name">${main.name}</h2>
+          <p class="goal">${goal}</p>
+          <a class="btn btn-play" href="${main.href}">Play</a>
         </div>
-        <span class="btn btn-play">Play</span>
-      </a>
+      </article>
       <h2 class="hub-title">All games</h2>
-      <div class="hub-grid">${cards}</div>
-      <nav class="hub-links" aria-label="More">
-        <a href="/archive/">Archive</a>
+      <div class="game-grid home-grid">${cards}</div>
+    </section>
+    <footer class="site-footer">
+      ${wickLine()}
+      <nav class="legal" aria-label="More on Spiquizzy">
         <a href="/about/">About</a>
+        <a href="/archive/">Archive</a>
+        <a href="/how-to-play/">How to play</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/cookies/">Cookies</a>
+        <a href="/terms/">Terms</a>
       </nav>
-    </section>`);
+    </footer>`;
+}
+
+function catalogCard(game, today) {
+  const goal = TUTORIALS[game.id]?.goal || game.goal;
+  const state = statusFor(game.id, today);
+  const played = state === "Ready" ? "Ready" : "Played";
+  return `<article class="game-card">
+    <a class="cover" href="${game.href}"><img src="/assets/covers/${game.id}.png" alt=""></a>
+    <div class="body">
+      <h3><a href="${game.href}">${game.name}</a></h3>
+      <p>${goal}</p>
+      <p class="meta">${played}</p>
+      <a class="btn btn-play" href="${game.href}">Play</a>
+    </div>
+  </article>`;
 }
 
 export async function openGame(gameId) {
@@ -478,24 +503,13 @@ export function openDirectory() {
   document.title = "All games · Spiquizzy";
   mountChrome(null);
   const today = todayString();
-  document.querySelector("#stage").innerHTML = withFoot(`
-    <header class="page-intro">
-      <h1 class="game-name">All games</h1>
-      <p class="lede">Six plates, same every day. Pick whichever you are hungry for.</p>
-    </header>
-    <section class="game-grid">
-      ${GAMES.map((game) => `<article class="game-card">
-        <div class="card-top">
-          <div class="icon-slot">${iconSvg(game.id)}</div>
-          <div>
-            <h2>${game.name}</h2>
-            <p class="goal">${game.goal}</p>
-          </div>
-        </div>
-        <p class="card-meta"><span>${statusFor(game.id, today)}</span>${(loadStats(game.id).streak || 0) > 0 ? `<span class="streak">Streak ${loadStats(game.id).streak}</span>` : ""}</p>
-        <a class="btn btn-play" href="${game.href}">Play</a>
-      </article>`).join("")}
-    </section>`);
+  document.querySelector("#stage").innerHTML = `
+    <section class="home-page">
+      <h1 class="hero-line">All games</h1>
+      <p class="hero-when">Six plates, same every day.</p>
+      <div class="game-grid home-grid">${GAMES.map((game) => catalogCard(game, today)).join("")}</div>
+    </section>
+    <footer class="site-footer">${wickLine()}</footer>`;
 }
 
 export function openArchive() {

@@ -44,7 +44,9 @@ function clearHint() {
 
 function render(flash = -1) {
   const flow = traceFlow(tiles, puzzle.rows, puzzle.cols, puzzle.pot);
-  const cell = fitCells(puzzle.cols, board.parentElement?.clientWidth || 320, 128);
+  const maxW = board.parentElement?.clientWidth || 320;
+  const maxH = Math.max(160, window.innerHeight - 230);
+  const cell = Math.min(fitCells(puzzle.cols, maxW, 128), fitCells(puzzle.rows, maxH, 128));
   board.className = "board pipe-grid is-art";
   board.style.setProperty("--n", String(puzzle.rows));
   board.style.setProperty("--cell", `${cell}px`);
