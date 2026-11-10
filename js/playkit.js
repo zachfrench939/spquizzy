@@ -70,6 +70,14 @@ export function createKit(gameId) {
     board.classList.remove("is-shake");
     void board.offsetWidth;
     board.classList.add("is-shake");
+    const react = document.querySelector("#react");
+    if (!react) return;
+    react.innerHTML = wombatSvg("sad", "That move is blocked");
+    react.hidden = false;
+    clearTimeout(shake.timer);
+    shake.timer = setTimeout(() => {
+      react.hidden = true;
+    }, 800);
   }
 
   function persist() {

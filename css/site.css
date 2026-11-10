@@ -1704,6 +1704,42 @@ body.is-home .topbar { background: #0c1424; }
 .splash .diffs button { color: #fff8ea; }
 .piece .body.meat { inset: 4%; }
 
+img.sprite, .mascot img, .hub-icon img, .splash-icon img, .feature-icon img, .nav-icon img, .pipe-cell img {
+  image-rendering: auto;
+}
+.mascot, .mascot-hero, .mascot-sm { width: auto; height: auto; background: none; }
+.mascot img, .mascot-sm img { width: 112px; height: auto; }
+.mascot-hero img { width: min(46vw, 210px); }
+.hub-icon, .feature-icon, .splash-icon, .nav-game .nav-icon {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.hub-icon { width: 96px; height: 96px; }
+.feature-icon { width: 128px; height: 128px; }
+.splash-icon { width: 168px; height: 168px; }
+.nav-icon, .nav-game .nav-icon { width: 52px; height: 52px; }
+.hub-icon img, .feature-icon img, .splash-icon img, .nav-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.pipe-grid { gap: 0; width: 100%; max-width: 100%; }
+.pipe-cell {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  overflow: hidden;
+}
+.pipe-cell .bg, .pipe-cell .spin, .pipe-cell .pipe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pipe-cell .spin { transform: rotate(var(--turn)); }
+.pipe-cell .pipe.on { z-index: 2; }
+.pipe-cell.is-fed { outline: 4px solid #f6c945; outline-offset: -4px; }
+.piece .body { border: 0; background: transparent; box-shadow: none; overflow: hidden; }
+.piece .body img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.piece.ball .body { background: transparent; }
+.board-slot { position: relative; }
+.react { position: absolute; left: 6px; bottom: 6px; width: 84px; z-index: 4; pointer-events: none; }
+.react img { width: 84px; height: auto; }
+
 body.is-home {
   background-color: #0c1424;
   background-image:
@@ -1730,7 +1766,9 @@ body.is-home {
 #win .sheet-body, #win p { color: #fff8ea; }
 #win .done-stats li { background: #fff8ea; color: #1e2a2a; }
 #win .mascot { width: 128px; height: 108px; }
-.hub-card { grid-template-columns: 80px 1fr; }
+.hub-card { grid-template-columns: 108px 1fr; }
+#win .mascot { width: auto; height: auto; }
+#win .mascot img { width: 140px; }
 .hub-copy strong { font-size: 11px; line-height: 1.5; }
 .hub-copy em { display: block; margin-top: 4px; }
 .play .half, .play .domino-btn, .play .region-cell, .play .face { color: #1e2a2a; }

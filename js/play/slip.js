@@ -1,8 +1,7 @@
 import { createKit } from "../playkit.js";
 import { generateSlip, slidePiece, ballOnExit, clonePieces } from "../engines/slip.js";
-import { arrowSvg, meatballSprite } from "../art.js";
+import { arrowSvg } from "../art.js";
 
-const FILLS = ["#e23b2f", "#e07a4c", "#c4483a", "#f08a6a", "#d4562e"];
 const kit = createKit("slip");
 const board = document.querySelector("#board");
 let puzzle = null;
@@ -73,16 +72,10 @@ function clearHint() {
 }
 
 function face(p, i) {
-  if (p.ball) {
-    return `<span class="body meat">${meatballSprite()}</span>`;
-  }
-  if (p.w > 1 && p.h > 1) {
-    return `<span class="body ravi"><span class="gloss"></span><span class="crimp"></span></span>`;
-  }
-  if (p.h > p.w) {
-    return `<span class="body tube"><span class="gloss"></span></span>`;
-  }
-  return `<span class="body lasagna" style="--fill:${FILLS[i % FILLS.length]}"><span class="gloss"></span><span class="stripe"></span><span class="stripe s2"></span></span>`;
+  if (p.ball) return `<span class="body meat"><img class="sprite" alt="" src="/assets/food/meatball.webp"></span>`;
+  if (p.w > 1 && p.h > 1) return `<span class="body ravi"><img class="sprite" alt="" src="/assets/food/ravioli.webp"></span>`;
+  if (p.h > p.w || p.w > p.h) return `<span class="body tube"><img class="sprite" alt="" src="/assets/food/penne.webp"></span>`;
+  return `<span class="body lasagna"><img class="sprite" alt="" src="/assets/food/lasagna.webp"></span>`;
 }
 
 function paintPiece(el, p, i) {

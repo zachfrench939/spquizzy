@@ -6,12 +6,31 @@ const board = document.querySelector("#board");
 let puzzle = null;
 let tiles = [];
 
-const ARMS = [
-  ["n", 1],
-  ["e", 2],
-  ["s", 4],
-  ["w", 8],
-];
+const TILE = "/assets/pipes";
+// Built sprites face these openings. rot is clockwise turns of that art.
+const SHAPES = {
+  10: ["straight", 0],
+  5: ["straight", 1],
+  12: ["corner", 0],
+  9: ["corner", 1],
+  3: ["corner", 2],
+  6: ["corner", 3],
+  14: ["tee", 0],
+  13: ["tee", 1],
+  11: ["tee", 2],
+  7: ["tee", 3],
+  15: ["cross", 0],
+};
+const SAUCE_CLIP = {
+  1: "inset(18% 24% 46% 24%)",
+  2: "inset(24% 0 24% 46%)",
+  4: "inset(46% 24% 0 24%)",
+  8: "inset(24% 46% 24% 0)",
+};
+
+function unrot(mask, rot) {
+  return rotMask(mask, (4 - (rot % 4)) % 4);
+}
 
 function start() {
   puzzle = generateSauce(kit.diff, kit.rng());
@@ -67,21 +86,19 @@ function render(flash = -1) {
     const c = (index % puzzle.cols) + 1;
     btn.setAttribute("aria-label", tile.fixed ? `${tile.kind} row ${r} column ${c}` : `Rotate pipe row ${r} column ${c}`);
     const sauced = flow.sauced.get(index) || 0;
-    for (const [name, bit] of ARMS) {
-      const arm = document.createElement("span");
-      arm.className = `arm ${name}`;
-      if (mask & bit) arm.classList.add("show");
-      if (sauced & bit) arm.classList.add("on");
-      btn.append(arm);
-    }
-    const hub = document.createElement("span");
-    hub.className = "hub show";
-    if (sauced) hub.classList.add("on");
-    btn.append(hub);
-    if (tile.kind !== "pipe") {
-      const glyph = document.createElement("span");
-      glyph.className = `glyph glyph-${tile.kind}`;
-      btn.append(glyph);
+    if (tile.kind === "pot") {
+      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/pot.webp">`;
+    } else if (tile.kind === "plate") {
+      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/goal.webp">`;
+      if (open) btn.classList.add("is-fed");
+    } else {
+      const [file, rot] = SHAPES[mask] || ["straight", 0];
+      const local = unrot(sauced, rot);
+      const sauce = [1, 2, 4, 8]
+        .filter((bit) => local & bit)
+        .map((bit) => `<img class="pipe on" alt="" src="${TILE}/${file}-sauce.webp" style="clip-path:${SAUCE_CLIP[bit]}">`)
+        .join("");
+      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/board.webp"><span class="spin" style="--turn:${rot * 90}deg"><img class="pipe" alt="" src="${TILE}/${file}.webp">${sauce}</span>`;
     }
     if (index === flash) btn.classList.add("pop");
     if (hint && !tile.fixed && !hinted) {

@@ -280,13 +280,15 @@ const WOMBAT_PIXEL = {
   ],
 };
 
+const WOMBAT_FILE = { ready: "idle", idle: "idle", think: "thinking", happy: "thinking", win: "cheering", cheer: "cheering", sad: "sad", fail: "sad" };
+
 export function wombatSvg(mood = "ready", label = "Wombat mascot") {
-  const map = { ready: "idle", think: "happy", win: "cheer", idle: "idle", happy: "happy", cheer: "cheer" };
-  if (!map[mood]) {
+  let file = WOMBAT_FILE[mood];
+  if (!file) {
     label = typeof mood === "string" && mood ? mood : label;
-    mood = "ready";
+    file = "idle";
   }
-  return pixelSvg(WOMBAT_PIXEL[map[mood] || "idle"], label || "Wombat mascot");
+  return `<img class="sprite wombat" src="/assets/wombat/${file}.webp" alt="${label || "Wombat mascot"}" decoding="async">`;
 }
 
 const MEATBALL = [
@@ -382,7 +384,8 @@ const ARROWS = {
 };
 
 export function iconSvg(id) {
-  return pixelSvg(ICONS[id] || ICONS.sauce, "");
+  const name = ["sauce", "slip", "twirl", "bowls", "ravioli", "pips"].includes(id) ? id : "sauce";
+  return `<img class="sprite game-icon" src="/assets/icons/${name}.webp" alt="" decoding="async">`;
 }
 
 export function toppingSvg(id) {

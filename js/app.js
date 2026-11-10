@@ -192,7 +192,7 @@ function gameStage(game, diff) {
       <p id="archive-note" class="archive-note" hidden></p>
       <p class="rule-bar" id="rule">${game.goal}</p>
       <p id="note" class="note"></p>
-      <div class="board-slot"><div id="board" class="board"></div></div>
+      <div class="board-slot"><div id="board" class="board"></div><div class="react" id="react" hidden></div></div>
       <div class="pause-screen"><p>Paused</p><button type="button" id="resume" class="btn btn-tomato">Resume</button></div>
       <div class="action-bar">
         <button type="button" id="undo" class="pill pill-undo" disabled>Undo</button>
