@@ -106,6 +106,11 @@ function turn(index) {
   if (sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate)) kit.win();
 }
 
+kit.onUndo((state) => {
+  if (!state?.rots) return;
+  tiles = tiles.map((tile, i) => ({ ...tile, rot: state.rots[i] % 4 }));
+  render();
+});
 kit.onReset(start);
 kit.onDiff(start);
 start();

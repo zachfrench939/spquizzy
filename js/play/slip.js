@@ -170,6 +170,7 @@ function tryMove(index, dir, maxSteps) {
   const moved = slidePiece(pieces, puzzle.rows, puzzle.cols, index, dir, maxSteps);
   if (!moved) {
     kit.note("That way is blocked. Try another arrow, or tap a different block.");
+    kit.shake();
     return false;
   }
   if (showHint()) clearHint();
@@ -228,6 +229,11 @@ window.addEventListener("keydown", (event) => {
   tryMove(selected, dir, 1);
 });
 
+kit.onUndo((state) => {
+  if (!state?.pieces) return;
+  pieces = pieces.map((p, i) => ({ ...p, r: state.pieces[i].r, c: state.pieces[i].c }));
+  render();
+});
 kit.onReset(start);
 kit.onDiff(start);
 start();

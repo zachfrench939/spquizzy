@@ -134,6 +134,12 @@ board.addEventListener("click", (event) => {
   }
 });
 
+kit.onUndo((state) => {
+  if (!state?.assignment) return;
+  assignment = state.assignment.slice();
+  selected = -1;
+  render();
+});
 kit.onReset(start);
 kit.onDiff(start);
 start();

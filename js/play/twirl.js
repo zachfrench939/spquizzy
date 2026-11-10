@@ -183,6 +183,12 @@ function finishDraw(event) {
 window.addEventListener("pointerup", finishDraw);
 window.addEventListener("pointercancel", finishDraw);
 
+kit.onUndo((state) => {
+  if (!state?.paths) return;
+  paths = state.paths.map((path) => (Array.isArray(path) ? path.slice() : null));
+  drawing = null;
+  render();
+});
 kit.onReset(start);
 kit.onDiff(start);
 start();

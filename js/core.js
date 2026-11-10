@@ -107,11 +107,13 @@ export function plural(noun, n) {
 export function buildShare({ title, date, diff, noun, moves, par, seconds }) {
   const n = puzzleNumber(date);
   const label = diff.charAt(0).toUpperCase() + diff.slice(1);
+  const marks = moves <= par ? "🟢" : "🟡";
+  const row = marks.repeat(Math.max(1, Math.min(6, moves || 1)));
   return [
-    `Spiquizzy ${title} ${n}`,
-    label,
-    `${moves} ${plural(noun, moves)}. Goal ${par}.`,
-    formatTime(seconds),
+    `🍝 Spiquizzy ${title}`,
+    `Puzzle ${n}, ${label}`,
+    row,
+    `${moves} ${plural(noun, moves)} in ${formatTime(seconds)}`,
   ].join("\n");
 }
 

@@ -1,4 +1,4 @@
-import { gameById, DIFFICULTIES } from "./catalog.js";
+import { gameById, GAMES, DIFFICULTIES } from "./catalog.js";
 import {
   makeRng,
   todayString,
@@ -18,6 +18,7 @@ import {
   getStorage,
 } from "./core.js";
 import { wombatSvg, pastaBurstHtml } from "./art.js";
+import { submitAndRank, rankMessage } from "./scores.js";
 
 function nounLabel(noun, n) {
   const word = n === 1 ? noun : noun === "try" ? "tries" : noun === "domino" ? "dominoes" : `${noun}s`;
@@ -42,8 +43,11 @@ export function createKit(gameId) {
   let running = false;
   let timer = null;
   let snapshot = null;
+  let undoStack = [];
+  let paused = false;
   let onReset = () => {};
   let onDiff = () => {};
+  let onUndo = () => {};
   let resetArmed = false;
 
   const stat = document.querySelector("#stat-line");
@@ -54,8 +58,18 @@ export function createKit(gameId) {
   const solvedFlag = document.querySelector("#solved-flag");
 
   function paintHud() {
-    stat.textContent = `${nounLabel(game.noun, moves)} ${moves}`;
-    timerEl.textContent = formatTime(seconds);
+    if (stat) stat.textContent = `${nounLabel(game.noun, moves)} ${moves}`;
+    if (timerEl) timerEl.textContent = formatTime(seconds);
+    const undoBtn = document.querySelector("#undo");
+    if (undoBtn) undoBtn.disabled = won || undoStack.length < 2;
+  }
+
+  function shake() {
+    const board = document.querySelector("#board");
+    if (!board) return;
+    board.classList.remove("is-shake");
+    void board.offsetWidth;
+    board.classList.add("is-shake");
   }
 
   function persist() {
@@ -65,7 +79,7 @@ export function createKit(gameId) {
   }
 
   function startTimer() {
-    if (running || won) return;
+    if (running || won || paused) return;
     running = true;
     timer = setInterval(() => {
       seconds += 1;
@@ -111,18 +125,47 @@ export function createKit(gameId) {
     won = true;
     stopTimer();
     persist();
-    const stats = recordWin(gameId, date, diff, { moves, par, seconds }, today);
-    shareBtn.disabled = false;
+    const record = recordWin(gameId, date, diff, { moves, par, seconds }, today);
+    if (shareBtn) shareBtn.disabled = false;
     document.querySelector("#board").classList.add("is-solved");
     if (solvedFlag) solvedFlag.hidden = false;
     const compared = moves < par ? "Better than the goal." : moves === par ? "Right on the goal." : "A little over the goal.";
-    const streak = archive ? "This was an older puzzle." : `Streak ${stats.streak}. Best ${stats.bestStreak}.`;
+    const streak = archive ? "An older puzzle." : `Streak ${record.streak}. Best ${record.bestStreak}.`;
     document.querySelector("#win-title").textContent = game.win;
-    document.querySelector("#win-detail").textContent = `You used ${moves} ${nounLabel(game.noun, moves).toLowerCase()}. Goal was ${par}. Time ${formatTime(seconds)}. ${compared} ${streak}`;
+    const timeLine = document.querySelector("#win-time");
+    if (timeLine) timeLine.textContent = formatTime(seconds);
+    document.querySelector("#win-detail").textContent = `${streak} ${compared}`;
+    const statList = document.querySelector("#win-stats");
+    if (statList) {
+      statList.innerHTML = `<li>${moves} ${nounLabel(game.noun, moves).toLowerCase()}</li><li>${formatTime(seconds)}</li><li>Streak ${archive ? 0 : record.streak || 0}</li>`;
+    }
+    const nextLink = document.querySelector("#win-next");
+    if (nextLink) {
+      const index = GAMES.findIndex((item) => item.id === gameId);
+      const next = GAMES[(index + 1) % GAMES.length];
+      nextLink.href = next.href;
+      nextLink.textContent = `Next: ${next.name}`;
+    }
+    const rankLine = document.querySelector("#rank-line");
+    if (rankLine) {
+      rankLine.textContent = "Checking today's times…";
+      submitAndRank({
+        slug: game.slug,
+        difficulty: diff,
+        date,
+        seconds,
+        moves,
+      }).then((rank) => {
+        if (!rankLine.isConnected) return;
+        const text = rankMessage(rank);
+        rankLine.hidden = !text;
+        if (text) rankLine.textContent = text;
+      });
+    }
     const burst = document.querySelector("#win-burst");
     if (burst) burst.innerHTML = pastaBurstHtml();
     document.querySelector("#win").showModal();
-    if (live) live.textContent = `${game.win} ${note}`;
+    if (live) live.textContent = `${game.win} ${formatTime(seconds)}`;
   }
 
   function begin(saved) {
@@ -131,14 +174,14 @@ export function createKit(gameId) {
       moves = saved.moves || 0;
       seconds = saved.seconds || 0;
       won = true;
-      shareBtn.disabled = false;
+      if (shareBtn) shareBtn.disabled = false;
       document.querySelector("#board").classList.add("is-solved");
       if (solvedFlag) solvedFlag.hidden = false;
     } else if (resume) {
       moves = saved.moves || 0;
       seconds = saved.seconds || 0;
       won = false;
-      shareBtn.disabled = true;
+      if (shareBtn) shareBtn.disabled = true;
       document.querySelector("#board").classList.remove("is-solved");
       if (solvedFlag) solvedFlag.hidden = true;
       if (moves > 0) startTimer();
@@ -146,7 +189,7 @@ export function createKit(gameId) {
       moves = 0;
       seconds = 0;
       won = false;
-      shareBtn.disabled = true;
+      if (shareBtn) shareBtn.disabled = true;
       document.querySelector("#board").classList.remove("is-solved");
       if (solvedFlag) solvedFlag.hidden = true;
     }
@@ -176,8 +219,8 @@ export function createKit(gameId) {
   document.querySelector("#win-close").addEventListener("click", () => document.querySelector("#win").close());
   document.querySelector("#how-open").addEventListener("click", () => document.querySelector("#how").showModal());
   document.querySelector("#how-close").addEventListener("click", () => document.querySelector("#how").close());
-  for (const id of ["how", "win"]) {
-    document.querySelector(`#${id}`).addEventListener("click", (event) => {
+  for (const id of ["how", "win", "settings"]) {
+    document.querySelector(`#${id}`)?.addEventListener("click", (event) => {
       if (event.target.tagName === "DIALOG") event.target.close();
     });
   }
@@ -197,10 +240,46 @@ export function createKit(gameId) {
     resetArmed = false;
     btn.textContent = "Reset";
     stopTimer();
+    paused = false;
     clearRun(gameId, diff, date);
     snapshot = null;
+    undoStack = [];
     onReset();
   });
+
+  document.querySelector("#undo")?.addEventListener("click", () => {
+    if (undoStack.length < 2 || won) {
+      shake();
+      return;
+    }
+    undoStack.pop();
+    moves = Math.max(0, moves - 1);
+    snapshot = structuredClone(undoStack[undoStack.length - 1]);
+    if (moves === 0) {
+      stopTimer();
+      clearRun(gameId, diff, date);
+    } else persist();
+    onUndo(snapshot);
+    paintHud();
+  });
+
+  const pauseBtn = document.querySelector("#pause");
+  function setPaused(next) {
+    if (won) return;
+    paused = next;
+    if (paused) stopTimer();
+    else if (moves > 0) startTimer();
+    document.querySelector(".play")?.classList.toggle("is-paused", paused);
+    if (pauseBtn) {
+      pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false");
+      pauseBtn.textContent = paused ? "Resume" : "Pause";
+    }
+  }
+  pauseBtn?.addEventListener("click", () => setPaused(!paused));
+  document.querySelector("#resume")?.addEventListener("click", () => setPaused(false));
+  document.querySelector("#hint")?.addEventListener("click", () => document.querySelector("#how")?.showModal());
+  document.querySelector("#settings-open")?.addEventListener("click", () => document.querySelector("#settings")?.showModal());
+  document.querySelector("#settings-close")?.addEventListener("click", () => document.querySelector("#settings")?.close());
 
   document.querySelectorAll("[data-diff]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -209,6 +288,8 @@ export function createKit(gameId) {
       persist();
       diff = btn.dataset.diff;
       snapshot = null;
+      undoStack = [];
+      document.querySelector("#settings")?.close();
       onDiff();
     });
   });
@@ -230,20 +311,24 @@ export function createKit(gameId) {
     begin,
     remember(data) {
       snapshot = data;
+      if (!undoStack.length) undoStack = [structuredClone(data)];
       if (moves > 0 || won) persist();
     },
     addMove() {
       if (won) return;
+      undoStack.push(structuredClone(snapshot));
       moves += 1;
       startTimer();
       paintHud();
       persist();
     },
+    shake,
     win,
     toast,
     note(text) { if (noteEl) noteEl.textContent = text || ""; },
     announce(text) { if (live) live.textContent = text; },
     onReset(fn) { onReset = fn; },
     onDiff(fn) { onDiff = fn; },
+    onUndo(fn) { onUndo = fn; },
   };
 }

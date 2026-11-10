@@ -102,6 +102,12 @@ board.addEventListener("click", (event) => {
   board.querySelector(`[data-half="${half}"]`)?.classList.add("shake");
 });
 
+kit.onUndo((state) => {
+  if (!state?.locked) return;
+  locked = state.locked.map((pair) => pair.slice());
+  selected = null;
+  render();
+});
 kit.onReset(start);
 kit.onDiff(start);
 start();

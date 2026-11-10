@@ -1,7 +1,7 @@
 import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
-import { loadStats, loadRun, clearRun, todayString, formatLong, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
+import { loadStats, loadRun, clearRun, todayString, formatLong, formatShort, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber, buildShare, copyText } from "./core.js";
 import { iconSvg, wombatSvg, pastaBurstHtml } from "./art.js";
 import { clipHtml, restartClip } from "./clips.js";
 import { submitAndRank, rankMessage } from "./scores.js";
@@ -110,43 +110,49 @@ function bindDrawer() {
 
 function mountChrome(activeId, { home = false } = {}) {
   document.body.classList.toggle("is-home", home);
+  document.body.classList.toggle("is-play", !home && Boolean(activeId));
   const app = document.querySelector("#app");
   app.innerHTML = shell({ activeId });
   bindDrawer();
 }
 
-function gameStage(game) {
+const iconBtn = (label, extra = "") =>
+  `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+
+function sheetClose(id) {
+  return `<button type="button" id="${id}" class="sheet-x" aria-label="Close">${iconBtn("Close")}</button>`;
+}
+
+function resultsSheet(game, run) {
+  const next = nextGame(game);
+  const word = plural(game.noun, run?.moves || 0);
+  const streak = loadStats(game.id).streak || 0;
   return `
-    <article class="play">
-      <div class="play-head">
-        <div>
-          <p id="when" class="when"></p>
-          <p class="kicker">${game.kicker}</p>
-          <h1 class="game-name">${game.name}</h1>
-        </div>
-        <button type="button" id="how-open" class="help-btn" aria-label="How to play">?</button>
+    <dialog id="win" class="sheet">
+      ${sheetClose("win-close")}
+      <div class="mascot mascot-sm">${wombatSvg("win")}</div>
+      <div class="pasta-burst" id="win-burst" aria-hidden="true">${pastaBurstHtml()}</div>
+      <h2 id="win-title">${game.win}</h2>
+      <p id="win-time" class="win-time">${formatTime(run?.seconds || 0)}</p>
+      <p id="rank-line" class="rank-line">Checking today's times…</p>
+      <ul class="done-stats" id="win-stats">
+        <li>${run?.moves || 0} ${word}</li>
+        <li>${formatTime(run?.seconds || 0)}</li>
+        <li>Streak ${streak}</li>
+      </ul>
+      <p id="win-detail">${game.cheer}</p>
+      <div class="sheet-actions">
+        <button type="button" id="share" class="btn btn-basil">Share</button>
+        <button type="button" id="win-share" class="sr-only">Share</button>
+        <a id="win-next" class="btn btn-tomato" href="${next.href}">Next: ${next.name}</a>
       </div>
-      <div class="diffs" role="group" aria-label="Difficulty">
-        <button type="button" data-diff="easy">Easy</button>
-        <button type="button" data-diff="medium">Medium</button>
-        <button type="button" data-diff="hard">Hard</button>
-      </div>
-      <div class="hud">
-        <p id="stat-line">Ready</p>
-        <p id="timer">0:00</p>
-      </div>
-      <p id="solved-flag" class="solved-flag" hidden>Solved</p>
-      <p id="archive-note" class="archive-note" hidden></p>
-      <p class="rule-bar" id="rule">${game.goal}</p>
-      <p id="note" class="note"></p>
-      <div id="board" class="board"></div>
-      <div class="tool-row">
-        <button type="button" id="reset" class="tool">Reset</button>
-        <button type="button" id="share" class="tool" disabled>Share</button>
-      </div>
-    </article>
-    <p id="live" class="sr-only" aria-live="polite"></p>
-    <dialog id="how">
+    </dialog>`;
+}
+
+function helpSheet(game) {
+  return `
+    <dialog id="how" class="sheet">
+      ${sheetClose("how-close")}
       <div class="how-head">
         <div class="mascot mascot-sm">${wombatSvg("think")}</div>
         <div>
@@ -157,18 +163,52 @@ function gameStage(game) {
       <p class="goal">${game.goal}</p>
       <div class="how-clip">${clipHtml(game.id)}</div>
       <div class="how-list">${HELP[game.id] || ""}</div>
-      <div class="actions"><button type="button" id="how-close" class="btn btn-tomato">Got it</button></div>
-    </dialog>
-    <dialog id="win">
-      <div class="mascot mascot-sm">${wombatSvg("win")}</div>
-      <div class="pasta-burst" id="win-burst" aria-hidden="true"></div>
-      <h2 id="win-title">Plated</h2>
-      <p id="win-detail"></p>
-      <div class="actions">
-        <button type="button" id="win-share" class="btn btn-basil">Share</button>
-        <button type="button" id="win-close" class="btn">Close</button>
+    </dialog>`;
+}
+
+function diffButtons(pressed) {
+  return DIFFICULTIES.map((name) => {
+    const label = name.charAt(0).toUpperCase() + name.slice(1);
+    return `<button type="button" data-diff="${name}" aria-pressed="${name === pressed ? "true" : "false"}">${label}</button>`;
+  }).join("");
+}
+
+function gameStage(game, diff) {
+  return `
+    <article class="play">
+      <header class="play-bar">
+        <a class="icon-btn" href="index.html" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <h1 class="play-title">${game.name}</h1>
+        <button type="button" id="how-open" class="icon-btn" aria-label="How to play">?</button>
+        <button type="button" id="settings-open" class="icon-btn" aria-label="Settings"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      </header>
+      <p id="when" class="when"></p>
+      <div class="hud">
+        <p id="stat-line">Ready</p>
+        <p id="timer">0:00</p>
+        <button type="button" id="pause" class="pill" aria-pressed="false">Pause</button>
       </div>
+      <p id="solved-flag" class="solved-flag" hidden>Solved</p>
+      <p id="archive-note" class="archive-note" hidden></p>
+      <p class="rule-bar" id="rule">${game.goal}</p>
+      <p id="note" class="note"></p>
+      <div class="board-slot"><div id="board" class="board"></div></div>
+      <div class="pause-screen"><p>Paused</p><button type="button" id="resume" class="btn btn-tomato">Resume</button></div>
+      <div class="action-bar">
+        <button type="button" id="undo" class="pill" disabled>Undo</button>
+        <button type="button" id="reset" class="pill">Reset</button>
+        <button type="button" id="hint" class="pill">Hint</button>
+      </div>
+    </article>
+    <p id="live" class="sr-only" aria-live="polite"></p>
+    ${helpSheet(game)}
+    <dialog id="settings" class="sheet">
+      ${sheetClose("settings-close")}
+      <h2>Settings</h2>
+      <p class="goal">Difficulty changes today's board.</p>
+      <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
     </dialog>
+    ${resultsSheet(game, { moves: 0, seconds: 0 })}
     <div id="toast" class="toast" hidden></div>`;
 }
 
@@ -228,23 +268,23 @@ function doneStage(game, run, diff) {
     </section>`;
 }
 
-function introStage(game, { diff, cta }) {
-  const choices = DIFFICULTIES.map((name) => {
-    const label = name.charAt(0).toUpperCase() + name.slice(1);
-    return `<button type="button" data-diff="${name}" aria-pressed="${name === diff ? "true" : "false"}">${label}</button>`;
-  }).join("");
+function introStage(game, { diff, cta, date }) {
   return `
-    <section class="intro">
-      <p class="kicker">${game.kicker}</p>
-      <h1 class="game-name">${game.name}</h1>
-      <p class="goal">${game.goal}</p>
-      ${adSlot("intro", "ad-intro")}
-      <div class="clip-wrap">
-        <button type="button" id="clip-replay" class="help-btn" aria-label="Replay how to play">?</button>
-        ${clipHtml(game.id)}
+    <section class="splash ${game.cart}">
+      <a class="icon-btn splash-back" href="index.html" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <div class="splash-body">
+        <div class="splash-icon">${iconSvg(game.id)}</div>
+        <h1 class="game-name">${game.name}</h1>
+        <p class="goal">${game.goal}</p>
+        <p class="byline">${formatShort(date)}<br>Puzzle ${puzzleNumber(date)}<br>by Spiquizzy</p>
+        ${adSlot("intro", "ad-intro")}
+        <div class="clip-wrap">
+          <button type="button" id="clip-replay" class="help-btn" aria-label="Replay how to play">?</button>
+          ${clipHtml(game.id)}
+        </div>
+        <div class="diffs" role="group" aria-label="Difficulty">${diffButtons(diff)}</div>
+        <button type="button" class="btn btn-tomato" id="start-game">${cta}</button>
       </div>
-      <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
-      <button type="button" class="btn btn-tomato" id="start-game">${cta}</button>
     </section>`;
 }
 
@@ -278,7 +318,7 @@ export function openHome() {
     return `<a class="hub-card ${game.cart}" href="${game.href}">
       <span class="hub-icon">${iconSvg(game.id)}</span>
       <span class="hub-copy"><strong>${game.name}</strong><em>${game.blurb}</em></span>
-      <span class="hub-meta"><span>${statusFor(game.id, today)}</span><span>Streak ${stats.streak || 0}</span></span>
+      <span class="hub-meta"><span>${formatShort(today)} #${puzzleNumber(today)}</span><span>${statusFor(game.id, today)}</span><span>Streak ${stats.streak || 0}</span></span>
     </a>`;
   }).join("");
   document.querySelector("#stage").innerHTML = `
@@ -288,17 +328,18 @@ export function openHome() {
           <p class="pixel-logo">SPIQUIZZY</p>
           <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
         </div>
-        <p class="hero-when">${formatLong(today)} · Puzzle ${puzzleNumber(today)}</p>
+        <p class="hero-when">${formatLong(today)}, puzzle ${puzzleNumber(today)}</p>
       </header>
-      <article class="feature-card">
+      <a class="feature-card" href="${main.href}">
         <div class="feature-icon">${iconSvg(main.id)}</div>
         <div>
           <p class="kicker">Today's main game</p>
           <h1 class="game-name">${main.name}</h1>
           <p class="goal">${main.blurb}</p>
+          <p class="byline">${formatShort(today)}, puzzle ${puzzleNumber(today)}</p>
         </div>
-        <a class="btn btn-tomato" href="${main.href}">Play</a>
-      </article>
+        <span class="btn btn-tomato">Play</span>
+      </a>
       <h2 class="hub-title">Every plate</h2>
       <div class="hub-grid">${cards}</div>
       <nav class="hub-links" aria-label="More">
@@ -318,22 +359,46 @@ export async function openGame(gameId) {
   function showEntry() {
     const run = loadRun(game.id, diff, puzzleDate());
     if (run?.won) {
-      stage.innerHTML = doneStage(game, run, diff);
+      stage.innerHTML = `${introStage(game, { diff, cta: "Play again", date: puzzleDate() })}${resultsSheet(game, run)}<div id="toast" class="toast" hidden></div>`;
+      const dialog = document.querySelector("#win");
+      dialog?.showModal();
+      document.querySelector("#win-close")?.addEventListener("click", () => dialog.close());
+      document.querySelector("#start-game")?.addEventListener("click", () => {
+        clearRun(game.id, diff, puzzleDate());
+        location.reload();
+      });
       stage.querySelectorAll("[data-diff]").forEach((button) => {
         button.addEventListener("click", () => {
           diff = button.dataset.diff;
           showEntry();
         });
       });
-      document.querySelector("#play-again").addEventListener("click", () => {
+      document.querySelector("#play-again")?.addEventListener("click", () => {
         clearRun(game.id, diff, puzzleDate());
         location.reload();
+      });
+      document.querySelector("#share")?.addEventListener("click", async () => {
+        const text = buildShare({
+          title: game.name,
+          date: puzzleDate(),
+          diff,
+          noun: game.noun,
+          moves: run.moves,
+          par: run.par,
+          seconds: run.seconds,
+        });
+        const ok = await copyText(text);
+        const toast = document.querySelector("#toast");
+        if (toast) {
+          toast.hidden = false;
+          toast.textContent = ok ? "Copied results" : "Could not copy";
+        }
       });
       paintRank(game, diff, run);
       return;
     }
     const cta = run && run.moves > 0 ? "Continue" : "Play";
-    stage.innerHTML = introStage(game, { diff, cta });
+    stage.innerHTML = introStage(game, { diff, cta, date: puzzleDate() });
     stage.querySelectorAll("[data-diff]").forEach((button) => {
       button.addEventListener("click", () => {
         diff = button.dataset.diff;
@@ -349,16 +414,19 @@ export async function openGame(gameId) {
       url.searchParams.set("diff", diff);
       history.replaceState(null, "", url);
       getStorage().setItem(diffKey(game.id), diff);
-      stage.innerHTML = gameStage(game);
+      stage.innerHTML = gameStage(game, diff);
       const mod = await LOADERS[game.id]();
       if (typeof mod.mount === "function") mod.mount();
       document.querySelector("#how-open")?.addEventListener("click", () => {
         restartClip(document.querySelector("#how"));
       });
-      document.querySelector("#win")?.addEventListener("close", () => {
-        const finished = loadRun(game.id, diff, puzzleDate());
-        if (finished?.won) showEntry();
-      });
+      const how = document.querySelector("#how");
+      const seenKey = `spquizzy.how.v1:${game.id}`;
+      if (how && !getStorage().getItem(seenKey)) {
+        restartClip(how);
+        how.showModal();
+        how.addEventListener("close", () => getStorage().setItem(seenKey, "1"), { once: true });
+      }
     });
   }
 

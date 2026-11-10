@@ -233,6 +233,14 @@ board.addEventListener("click", (event) => {
   place(anchor, cell);
 });
 
+kit.onUndo((state) => {
+  if (!state?.values || !state?.owners) return;
+  values = state.values.slice();
+  owners = state.owners.slice();
+  selected = null;
+  anchor = null;
+  render();
+});
 kit.onReset(start);
 kit.onDiff(start);
 start();
