@@ -218,9 +218,9 @@ export const SPRITES = {
 };
 
 const WOMBAT_FACES = {
-  ready: `<circle cx="27" cy="31" r="2.1" fill="#1e2a2a"/><circle cx="45" cy="31" r="2.1" fill="#1e2a2a"/><path d="M30 40c2.4 2.6 9.6 2.6 12 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/>`,
-  think: `<circle cx="27" cy="29" r="2.1" fill="#1e2a2a"/><circle cx="45" cy="29" r="2.1" fill="#1e2a2a"/><path d="M21 24h8" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M43 22h9" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><circle cx="36" cy="41" r="2" fill="none" stroke="#1e2a2a" stroke-width="2"/>`,
-  win: `<path d="M23 31c1.6 2 4.8 2 6.4 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M42 31c1.6 2 4.8 2 6.4 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M28 38c2.6 4.5 13.4 4.5 16 0" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2" stroke-linejoin="round"/><circle cx="22" cy="36" r="2.6" fill="#e7a090"/><circle cx="50" cy="36" r="2.6" fill="#e7a090"/>`,
+  ready: `<circle cx="30" cy="24" r="2.2" fill="#1e2a2a"/><circle cx="58" cy="24" r="2.2" fill="#1e2a2a"/><path d="M38 46c3 2.4 9 2.4 12 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/>`,
+  think: `<circle cx="30" cy="22" r="2.2" fill="#1e2a2a"/><circle cx="58" cy="22" r="2.2" fill="#1e2a2a"/><path d="M24 18h8M52 16h10" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><ellipse cx="44" cy="47" rx="2.2" ry="1.6" fill="none" stroke="#1e2a2a" stroke-width="1.8"/>`,
+  win: `<path d="M26 24c1.8 2 5 2 6.6 0M54 24c1.8 2 5 2 6.6 0" fill="none" stroke="#1e2a2a" stroke-width="2" stroke-linecap="round"/><path d="M36 44c2.6 4 13 4 16 0" fill="#e23b2f" stroke="#1e2a2a" stroke-width="2" stroke-linejoin="round"/>`,
 };
 
 export function wombatSvg(mood = "ready", label = "Wombat mascot") {
@@ -229,16 +229,19 @@ export function wombatSvg(mood = "ready", label = "Wombat mascot") {
     mood = "ready";
   }
   const body = `
-    <ellipse cx="16" cy="20" rx="7" ry="8" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2.5"/>
-    <ellipse cx="56" cy="20" rx="7" ry="8" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2.5"/>
-    <ellipse cx="36" cy="34" rx="22" ry="18" fill="#c48a55" stroke="#1e2a2a" stroke-width="2.5"/>
-    <ellipse cx="36" cy="40" rx="13" ry="10" fill="#f3d2a6" stroke="#1e2a2a" stroke-width="2"/>
-    <ellipse cx="36" cy="34" rx="4.5" ry="3.2" fill="#e7a090" stroke="#1e2a2a" stroke-width="2"/>
+    <ellipse cx="16" cy="40" rx="6" ry="5" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2.2"/>
+    <ellipse cx="72" cy="40" rx="6" ry="5" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2.2"/>
+    <rect x="18" y="38" width="52" height="24" rx="12" fill="#7a6a5e" stroke="#1e2a2a" stroke-width="2.4"/>
+    <rect x="10" y="16" width="68" height="26" rx="11" fill="#8b7b6e" stroke="#1e2a2a" stroke-width="2.4"/>
+    <ellipse cx="44" cy="33" rx="13" ry="8" fill="#c98978" stroke="#1e2a2a" stroke-width="2.2"/>
+    <ellipse cx="39" cy="33" rx="1.5" ry="2.1" fill="#1e2a2a"/>
+    <ellipse cx="49" cy="33" rx="1.5" ry="2.1" fill="#1e2a2a"/>
     ${WOMBAT_FACES[mood]}
-    <rect x="18" y="50" width="12" height="8" rx="3" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2"/>
-    <rect x="42" y="50" width="12" height="8" rx="3" fill="#8d5a32" stroke="#1e2a2a" stroke-width="2"/>
+    <rect x="24" y="58" width="14" height="8" rx="3" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2"/>
+    <rect x="50" y="58" width="14" height="8" rx="3" fill="#6d5e54" stroke="#1e2a2a" stroke-width="2"/>
+    <path d="M27 64v4M31 64v4M35 64v4M53 64v4M57 64v4M61 64v4" fill="none" stroke="#1e2a2a" stroke-width="1.5" stroke-linecap="round"/>
   `;
-  return cleanSvg(body, label || "Wombat mascot", "0 0 72 64");
+  return cleanSvg(body, label || "Wombat mascot", "0 0 88 72");
 }
 
 export function pastaBurstHtml() {

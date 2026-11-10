@@ -13,10 +13,13 @@ const pipe = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
 
 const slip = `<svg class="how-fig" viewBox="0 0 120 28" aria-hidden="true">
   <rect x="1" y="4" width="22" height="18" rx="4" fill="#f08a6a"/>
-  <circle cx="40" cy="14" r="8" fill="#f6c945" stroke="#e0a82e" stroke-width="2"/>
+  <circle cx="40" cy="14" r="8" fill="#f0b429" stroke="#1e2a2a" stroke-width="2"/>
+  <circle cx="37" cy="12" r="1.4" fill="#1e2a2a"/>
+  <circle cx="43" cy="12" r="1.4" fill="#1e2a2a"/>
   <rect x="58" y="2" width="18" height="18" rx="4" fill="#fff" stroke="#e4ddd0"/>
   <path d="M63 15h8M67 11l4 4-4 4" fill="none" stroke="#1e2a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M92 6 L100 14 L92 22 Z" fill="#2f8f4e"/>
+  <rect x="90" y="4" width="22" height="20" rx="4" fill="#e5f6ea" stroke="#1e6b38" stroke-width="2"/>
+  <path d="M96 14h10M102 10l4 4-4 4" fill="none" stroke="#1e6b38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
 const twirl = `<svg class="how-fig" viewBox="0 0 72 28" aria-hidden="true">
@@ -55,9 +58,9 @@ export const HELP = {
     ${step(3, "Reach the plate", "You win when the red sauce touches the plate.", "")}
   </ol>`,
   slip: `<ol class="how-steps">
-    ${step(1, "Tap a block", "The yellow ball starts selected. Tap another block if you want to move that one.", slip)}
+    ${step(1, "Tap a block", "The meatball starts selected. Tap another block if you want to move that one.", slip)}
     ${step(2, "Tap an arrow", "Each tap slides the selected block one square, when that square is empty.", "")}
-    ${step(3, "Use the green arrow", "Put the yellow ball on the green arrow.", "")}
+    ${step(3, "Reach the exit gate", "Slide the meatball onto the square by the green exit gate.", "")}
   </ol>`,
   twirl: `<ol class="how-steps">
     ${step(1, "Match the pictures", "Press a picture and drag to the same picture.", twirl)}

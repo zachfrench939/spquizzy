@@ -103,8 +103,8 @@ function render() {
   const hint = showHint();
   const pad = board.querySelector(".move-pad");
   if (pad) pad.classList.toggle("is-hint", hint);
-  if (out) kit.note("The yellow ball is on the green arrow.");
-  else if (hint && pieces[selected]?.ball) kit.note("The yellow ball is selected. Tap an arrow to slide it one square.");
+  if (out) kit.note("The meatball reached the green exit gate.");
+  else if (hint && pieces[selected]?.ball) kit.note("The meatball is selected. Tap an arrow to slide it one square.");
   else if (hint) kit.note("This block can move. Tap an arrow to slide it one square.");
   else kit.note("Tap a block, then an arrow.");
 }
@@ -114,6 +114,12 @@ function build() {
   board.replaceChildren();
   const root = document.createElement("div");
   root.className = "slip-board";
+  const frame = document.createElement("div");
+  frame.className = "slip-frame";
+  frame.style.setProperty("--cols", puzzle.cols);
+  frame.style.setProperty("--rows", puzzle.rows);
+  frame.style.setProperty("--er", puzzle.exit.r);
+  frame.style.setProperty("--ec", puzzle.exit.c);
   const grid = document.createElement("div");
   grid.className = "slip-grid";
   grid.style.setProperty("--cols", puzzle.cols);
@@ -122,11 +128,6 @@ function build() {
     for (let c = 0; c < puzzle.cols; c++) {
       const slot = document.createElement("div");
       slot.className = "slot";
-      if (r === puzzle.exit.r && c === puzzle.exit.c) {
-        slot.classList.add("is-exit");
-        slot.innerHTML = `<span class="gate">${arrowSvg(puzzle.exit.dir)}</span>`;
-        slot.setAttribute("aria-label", "Green arrow. Put the yellow ball here.");
-      }
       grid.append(slot);
     }
   }
@@ -135,7 +136,7 @@ function build() {
     el.type = "button";
     el.dataset.piece = String(i);
     el.innerHTML = face(p, i);
-    el.setAttribute("aria-label", p.ball ? "Yellow meatball" : `Pasta block ${i}`);
+    el.setAttribute("aria-label", p.ball ? "Meatball" : `Pasta block ${i}`);
     paintPiece(el, p, i);
     grid.append(el);
   });
@@ -148,7 +149,12 @@ function build() {
     <button type="button" data-dir="W" aria-label="Left">←</button>
     <button type="button" data-dir="E" aria-label="Right">→</button>
     <button type="button" data-dir="S" aria-label="Down">↓</button>`;
-  root.append(grid, pad);
+  const gate = document.createElement("div");
+  gate.className = `exit-gate dir-${puzzle.exit.dir}`;
+  gate.innerHTML = `<span class="glow">${arrowSvg(puzzle.exit.dir)}</span>`;
+  gate.setAttribute("aria-label", "Green exit gate");
+  frame.append(grid, gate);
+  root.append(frame, pad);
   board.append(root);
 }
 
