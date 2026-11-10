@@ -1636,6 +1636,73 @@ button, .btn, .pill, .icon-btn, .help-btn, .hub-card, .feature-card, .pipe-cell,
 .pasta-burst .bit { animation-timing-function: steps(4, end); }
 .feature-card { background: #fff1c8; }
 .hub-card { border-width: 4px; }
+
+.logo-mark { width: 22px; height: 22px; display: inline-block; vertical-align: -4px; margin-right: 6px; }
+.logo-mark-lg { width: 36px; height: 36px; vertical-align: -8px; }
+.pixel-logo { display: flex; align-items: center; gap: 8px; }
+.mascot, .mascot-hero { width: 96px; height: 80px; }
+.mascot-sm { width: 72px; height: 60px; }
+
+.pipe-grid { width: 100%; max-width: 100%; margin: 0 auto; box-sizing: border-box; }
+.pipe-cell {
+  background: #2c3544;
+  border: 2px solid #141820;
+  box-shadow: inset 0 0 0 2px #3e4a5c;
+}
+.arm.show, .hub.show {
+  background: linear-gradient(#f4f7fb, #9aa6b5 45%, #6d7886);
+  box-shadow: inset 0 0 0 2px #4d5866;
+}
+.arm.on, .hub.on {
+  background: #e23b2f !important;
+  background-image: repeating-linear-gradient(#ff6a55 0 3px, #b42318 3px 6px) !important;
+  box-shadow: inset 0 2px 0 #ffd0c4;
+}
+.glyph-pot {
+  background: linear-gradient(#ff6a55, #b42318);
+  border: 3px solid #1e2a2a;
+  box-shadow: inset 0 6px 0 #7a120c;
+}
+.glyph-plate {
+  background: #fff8ea;
+  border: 3px solid #1e2a2a;
+  box-shadow: inset 0 0 0 4px #f6c945, inset 0 0 0 8px #e23b2f;
+}
+.board-slot { padding: 2px 6px; overflow: hidden; }
+.slip-board, .pipe-grid, .twirl-board, .pips-board { max-width: 100%; }
+
+#undo.pill, #reset.pill, #hint.pill { opacity: 1; color: #fff8ea; border-color: #0b1016; }
+#undo.pill { background: #2f6fe0; }
+#undo.pill:disabled { background: #2458b8; color: #e7eefc; opacity: 1; }
+#reset.pill { background: #e23b2f; }
+#hint.pill { background: #2f8f4e; }
+#pause.pill { background: #f6c945; color: #1e2a2a; }
+
+.feature-card {
+  background: #e23b2f;
+  color: #fff8ea;
+  border-color: #f6c945;
+  box-shadow: 8px 8px 0 #7a120c;
+}
+.feature-card .kicker, .feature-card .game-name, .feature-card .goal, .feature-card .byline { color: #fff8ea; }
+.feature-card .game-name { font-size: 18px; }
+.home-hub { background: transparent; }
+body.is-home { background: #0c1424; }
+body.is-home .topbar { background: #0c1424; }
+.hub-card { border-color: #1e2a2a; box-shadow: 5px 5px 0 #000; }
+.hub-card.tomato { background: #ff5a4a; color: #fff8ea; }
+.hub-card.lasagne { background: #ff8a3d; color: #1e2a2a; }
+.hub-card.basil { background: #3cba6a; color: #102016; }
+.hub-card.pasta { background: #f6c945; color: #1e2a2a; }
+.hub-card.blush { background: #ff7aa2; color: #1e2a2a; }
+.hub-card.ink { background: #4aa0d8; color: #071820; }
+.hub-card strong, .hub-card em, .hub-card .hub-meta,
+.hub-card.tomato strong, .hub-card.tomato em, .hub-card.tomato .hub-meta { color: inherit; }
+.splash.tomato { background: #e23b2f; color: #fff8ea; }
+.splash.tomato .goal, .splash.tomato .byline, .splash.tomato .game-name { color: #fff8ea; }
+.splash .diffs { background: #1e2a2a; }
+.splash .diffs button { color: #fff8ea; }
+.piece .body.meat { inset: 4%; }
 .sheet-actions { display: grid; gap: 10px; margin-top: 8px; }
 .win-time { font-family: var(--display); font-size: 18px; text-align: center; margin: 4px 0; }
 .feature-card { text-decoration: none; color: inherit; cursor: pointer; }

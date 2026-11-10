@@ -59,7 +59,7 @@ function shell({ activeId, page }) {
   return `
     <header class="topbar">
       <button type="button" class="menu-btn" id="menu-open" aria-label="Open menu" aria-expanded="false">Menu</button>
-      <a class="brand" href="index.html">SPIQUIZZY</a>
+      <a class="brand" href="index.html"><img class="logo-mark" src="/logo-mark.svg" alt="">SPIQUIZZY</a>
       <span class="top-spacer" aria-hidden="true"></span>
     </header>
     <div class="frame">
@@ -195,9 +195,9 @@ function gameStage(game, diff) {
       <div class="board-slot"><div id="board" class="board"></div></div>
       <div class="pause-screen"><p>Paused</p><button type="button" id="resume" class="btn btn-tomato">Resume</button></div>
       <div class="action-bar">
-        <button type="button" id="undo" class="pill" disabled>Undo</button>
-        <button type="button" id="reset" class="pill">Reset</button>
-        <button type="button" id="hint" class="pill">Hint</button>
+        <button type="button" id="undo" class="pill pill-undo" disabled>Undo</button>
+        <button type="button" id="reset" class="pill pill-reset">Reset</button>
+        <button type="button" id="hint" class="pill pill-hint">Hint</button>
       </div>
     </article>
     <p id="live" class="sr-only" aria-live="polite"></p>
@@ -325,7 +325,7 @@ export function openHome() {
     <section class="home-hub">
       <header class="hero-hub">
         <div class="hero-lockup">
-          <p class="pixel-logo">SPIQUIZZY</p>
+          <p class="pixel-logo"><img class="logo-mark logo-mark-lg" src="/logo-mark.svg" alt="">SPIQUIZZY</p>
           <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
         </div>
         <p class="hero-when">${formatLong(today)}, puzzle ${puzzleNumber(today)}</p>
