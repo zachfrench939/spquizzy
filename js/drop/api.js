@@ -42,15 +42,28 @@ async function rpc(name, body, session) {
 }
 
 export function serveQuestion(index, session) {
-  return rpc("serve_question", { p_index: index }, session);
+  return rpc("dd_serve_question", { p_index: index }, session);
 }
 
 export function lockIn(index, dist, timeout, session) {
-  return rpc("lock_in", { p_index: index, p_dist: dist, p_timeout: timeout }, session);
+  return rpc("dd_lock_in", { p_index: index, p_dist: dist, p_timeout: timeout }, session);
+}
+
+export function gradeQuestion(packIndex, position, dist, timeout) {
+  return rpc("dd_grade_question", {
+    p_pack: packIndex,
+    p_position: position,
+    p_dist: dist,
+    p_timeout: timeout,
+  }, null);
+}
+
+export function weeklyLeague(session) {
+  return rpc("dd_weekly_league", {}, session);
 }
 
 export function forfeitRun(session) {
-  return rpc("forfeit_run", {}, session);
+  return rpc("dd_forfeit_run", {}, session);
 }
 
 export async function sendMagicLink(email) {

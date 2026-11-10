@@ -1,5 +1,5 @@
 import { LAUNCH_DATE } from "../config.js";
-import { captureHashSession, clearSession, forfeitRun, lockIn, oauthUrl, readSession, sendMagicLink, serveQuestion } from "./api.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, oauthUrl, readSession, sendMagicLink, serveQuestion, weeklyLeague } from "./api.js";
 import { addRest, allIn, canManualLock, QUESTION_MS, timeoutCoins } from "./rules.js";
 
 const COIN = "/assets/drop/coin-fusilli-64.png";
@@ -751,20 +751,34 @@ async function lockQuestion(timeout, emptyBust = false) {
   if (!run || run.phase === "reveal") return;
   stopTimer();
   run.phase = "reveal";
-  const item = currentQuestion();
   const dist = [0, 1, 2, 3].map((index) => run.coins.filter((coin) => coin.loc === index).length);
   let correct = 0;
   let server = null;
   try {
-    if (session && !SHOT) {
+    if (SHOT === "drop") {
+      correct = 2;
+    } else if (session) {
       server = await lockIn(run.q, dist, timeout, session);
       correct = server.correctIndex;
       offline = false;
-    } else throw new Error("local");
+    } else {
+      server = await gradeQuestion(dropNumber(londonToday()) - 1, run.q, dist, timeout);
+      correct = server.correctIndex;
+      offline = false;
+    }
   } catch {
     offline = true;
-    const res = await fetch(`/data/checks/${item.id}.json`);
-    correct = (await res.json()).correct;
+    run.phase = "question";
+    const note = document.querySelector("#offline-note");
+    if (note) {
+      note.hidden = false;
+      note.textContent = "Offline, not ranked. This question can’t be checked until the server answers.";
+    }
+    if (!timeout) {
+      const left = Math.max(0, QUESTION_MS - (Date.now() - (run.servedAt || Date.now())));
+      if (left > 0) startTimer(left, false);
+    }
+    return;
   }
   const wiped = emptyBust || server?.pending === 0 && timeout && server?.timedOut && dist.every((count) => count === 0) || run.coins.length === 0 || run.coins.every((coin) => coin.loc !== correct);
   const kept = run.coins.filter((coin) => coin.loc === correct);
@@ -944,18 +958,39 @@ function tickCountdown() {
   if (!SHOT) window.setInterval(paint, 30000);
 }
 
-function paintLeague(which) {
-  document.querySelector("#league-meta").textContent = `${which === "Weekly" ? "Fusilli League" : which} · coins banked · example until the server tables are applied`;
+function paintLeagueRows(rows) {
   const list = document.querySelector("#rank-list");
   list.replaceChildren();
-  EXAMPLE.forEach(([pos, name, score]) => {
+  rows.forEach((row) => {
+    const pos = row.rank ?? row[0];
+    const name = row.name ?? row[1];
+    const score = row.coins ?? row[2];
     const item = document.createElement("li");
     if (pos <= 10) item.classList.add("zone-up");
     if (pos >= 21) item.classList.add("zone-down");
-    if (name === "You") item.classList.add("is-you");
+    if (row.you || name === "You") item.classList.add("is-you");
     item.append(el("span", "pos", String(pos)), el("span", null, name), el("span", null, String(score)));
     list.append(item);
   });
+}
+
+async function paintLeague(which) {
+  const banner = document.querySelector("#view-league .example-banner");
+  document.querySelector("#league-meta").textContent = `${which === "Weekly" ? "Fusilli League" : which} · coins banked this period`;
+  if (which === "Weekly" && !SHOT) {
+    try {
+      const rows = await weeklyLeague(session);
+      if (Array.isArray(rows) && rows.length) {
+        if (banner) banner.hidden = true;
+        paintLeagueRows(rows);
+        return;
+      }
+    } catch {
+      /* tables are not applied yet */
+    }
+  }
+  if (banner) banner.hidden = false;
+  paintLeagueRows(EXAMPLE.map(([rank, name, coins]) => ({ rank, name, coins, you: name === "You" })));
 }
 
 function paintBank() {
