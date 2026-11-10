@@ -1107,6 +1107,14 @@ body.is-home .stage { width: min(980px, 100%); padding: 8px 16px 32px; }
   padding: 12px 14px;
 }
 .mascot-hero { width: 108px; height: 92px; }
+.hero-line {
+  margin: 0;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.2;
+  color: #fff8ea;
+}
 .hero-when { font-weight: 800; font-size: 16px; }
 .feature-card {
   display: grid;
@@ -1871,6 +1879,22 @@ body.is-home {
 .piece.ball .eye.l { left: 12%; }
 .piece.ball .eye.r { right: 12%; }
 .piece.ball .mouth { top: 64%; border-bottom-width: 3px; left: 26%; right: 26%; }
+
+body.is-play .play { flex: 0 1 auto; }
+body.is-play .board-slot { flex: 0 0 auto; }
+body.is-play .rule-bar { display: none; }
+.play .icon-btn {
+  color: #1e2a2a;
+  background: #f6c945;
+  opacity: 1;
+  border-color: #1e2a2a;
+  box-shadow: 3px 3px 0 #000;
+  font-family: var(--body);
+  font-size: 22px;
+  font-weight: 800;
+}
+#win .done-stats { justify-content: center; width: 100%; flex-wrap: nowrap; }
+#win .done-stats li { white-space: nowrap; }
 
 body.is-doc {
   overflow: auto;

@@ -143,7 +143,7 @@ export function createKit(gameId) {
     document.querySelector("#win-detail").textContent = `${streak} ${compared}`;
     const statList = document.querySelector("#win-stats");
     if (statList) {
-      statList.innerHTML = `<li>${moves} ${nounLabel(game.noun, moves).toLowerCase()}</li><li>${formatTime(seconds)}</li><li>Streak ${archive ? 0 : record.streak || 0}</li>`;
+      statList.innerHTML = `<li>${moves} ${nounLabel(game.noun, moves).toLowerCase()}</li><li>Streak ${archive ? 0 : record.streak || 0}</li>`;
     }
     const nextLink = document.querySelector("#win-next");
     if (nextLink) {

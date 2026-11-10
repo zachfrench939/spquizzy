@@ -109,7 +109,7 @@ function render(flash = -1) {
     board.append(btn);
   });
   if (open) kit.note("The sauce reached the plate.");
-  else if (hint) kit.note("Tap the pulsing pipe. Each tap turns it.");
+  else if (hint) kit.note("Tap the pulsing pipe.");
   else if (board.querySelector(".pipe.on")) kit.note("Red shows where the sauce can flow.");
   else kit.note("Turn pipes until the red sauce leaves the pot.");
 }

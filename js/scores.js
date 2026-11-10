@@ -17,8 +17,10 @@ export function rankMessage(rank) {
   if (players <= 1) return "You're the first to solve today!";
   const slower = Number(rank.slower) || 0;
   const pct = Math.round((slower / (players - 1)) * 100);
-  const median = formatTime(Number(rank.median_seconds) || 0);
-  return `Faster than ${pct}% of players today. ${players} players. Median ${median}.`;
+  const line = `Faster than ${pct}% of players today. ${players} players.`;
+  const medianSeconds = Number(rank.median_seconds) || 0;
+  if (players < 30 || medianSeconds <= 0) return line;
+  return `${line} Median ${formatTime(medianSeconds)}.`;
 }
 
 export async function submitAndRank({ slug, difficulty, date, seconds, moves }) {

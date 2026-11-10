@@ -153,7 +153,6 @@ function resultsSheet(game, run) {
       <p class="trophy-row"><span class="trophy">${trophySvg()}</span><span id="rank-line" class="rank-line">Checking today's times…</span></p>
       <ul class="done-stats" id="win-stats">
         <li>${run?.moves || 0} ${word}</li>
-        <li>${formatTime(run?.seconds || 0)}</li>
         <li>Streak ${streak}</li>
       </ul>
       <p id="win-detail">${game.cheer}</p>
@@ -335,16 +334,14 @@ export function openHome() {
     return `<a class="hub-card ${game.cart}" href="${game.href}">
       <span class="hub-icon">${iconSvg(game.id)}</span>
       <span class="hub-copy"><strong>${game.name}</strong><em>${game.blurb}</em></span>
-      <span class="hub-meta"><span>${formatShort(today)} #${puzzleNumber(today)}</span><span>${statusFor(game.id, today)}</span><span>Streak ${stats.streak || 0}</span></span>
+      <span class="hub-meta"><span>${statusFor(game.id, today)}</span><span>Streak ${stats.streak || 0}</span></span>
     </a>`;
   }).join("");
   document.querySelector("#stage").innerHTML = `
     <section class="home-hub">
       <header class="hero-hub">
-        <div class="hero-lockup">
-          <p class="pixel-logo"><img class="logo-mark logo-mark-lg" src="/logo-mark.svg" alt="">SPIQUIZZY</p>
-          <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
-        </div>
+        <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
+        <h1 class="hero-line">Today's pasta puzzles</h1>
         <p class="hero-when">${formatLong(today)}, puzzle ${puzzleNumber(today)}</p>
       </header>
       <a class="feature-card" href="${main.href}">
@@ -353,7 +350,6 @@ export function openHome() {
           <p class="kicker">Today's main game</p>
           <h1 class="game-name">${main.name}</h1>
           <p class="goal">${main.blurb}</p>
-          <p class="byline">${formatShort(today)}, puzzle ${puzzleNumber(today)}</p>
         </div>
         <span class="btn btn-tomato">Play</span>
       </a>

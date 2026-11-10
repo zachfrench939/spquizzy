@@ -92,9 +92,8 @@ function render() {
   board.append(row, pool);
   if (even) kit.note("The totals match.");
   else if (placed) kit.note("Those totals do not match yet. Tap a number to move it.");
-  else if (hint && selected < 0) kit.note("Tap the pulsing number.");
   else if (selected >= 0) kit.note("Now tap a bowl.");
-  else kit.note("Tap a number, then tap a bowl.");
+  else kit.note(`Each bowl adds up to ${puzzle.target}.`);
 }
 
 function tileButton(i, hint) {
