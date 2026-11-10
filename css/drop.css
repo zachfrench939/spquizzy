@@ -399,15 +399,24 @@ body.is-reveal .play-actions, body.is-reveal .adjust, body.is-reveal .hint, body
 .door.is-open .quick, body.is-reveal .quick{visibility:hidden;}
 .offline-note{font-weight:700;font-size:13px;color:var(--muted);margin:0 0 8px;}
 .consent{
-  position:static;z-index:45;margin:12px;background:var(--white);
-  border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);padding:12px;
-  display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:8px;
+  margin:0;padding:4px 8px;min-height:0;
+  background:var(--cream);color:var(--ink);
+  border:0;border-top:2px solid var(--ink);box-shadow:none;
+  font-weight:700;font-size:12px;line-height:1.2;
 }
-.consent p{font-weight:700;font-size:14px;margin:0;flex:1 1 220px;}
-.consent .pair{display:flex;gap:8px;flex:1 1 220px;}
-.consent .pair button{flex:1;min-height:44px;border:3px solid var(--ink);font-family:var(--display);font-size:14px;text-transform:uppercase;}
-.consent .accept{background:var(--ink);color:var(--cheese);}
-.consent .reject{background:var(--white);color:var(--ink);}
+.consent p{margin:0;font-weight:700;font-size:12px;line-height:1.25;flex:1 1 auto;min-width:0;}
+.consent a{font-weight:700;font-size:12px;color:var(--ink);}
+.consent .pair{display:flex;gap:6px;flex:0 0 auto;}
+.consent .pair button{
+  flex:1 1 auto;min-width:68px;height:26px;min-height:26px;padding:0 8px;
+  border:2px solid var(--ink);background:var(--white);color:var(--ink);
+  font-family:var(--body);font-weight:700;font-size:12px;line-height:1;
+  text-transform:none;box-shadow:none;letter-spacing:0;
+}
+html.has-consent body{padding-bottom:40px;}
+html.has-consent #view-play{height:calc(100dvh - 40px);}
 .signin-form{display:grid;gap:10px;max-width:360px;margin:0 auto;text-align:left;}
 .signin-form input{height:48px;border:3px solid var(--ink);padding:0 12px;font:inherit;font-weight:700;background:var(--white);}
 .history{list-style:none;border:3px solid var(--ink);background:var(--white);}

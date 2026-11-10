@@ -28,15 +28,17 @@
 
   </main>
   <aside class="consent" id="consent">
-    <p>Optional analytics stay off until you agree. Reject is the same size as Accept.</p>
-    <div class="pair"><button class="reject" type="button" id="consent-no">Reject</button><button class="accept" type="button" id="consent-yes">Accept</button></div>
+    <p>We use cookies only for ads, never for the game. <a href="/cookies/">Cookie policy</a></p>
+    <div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>
   </aside>
   <script>
     const key = "spquizzy.consent";
     const bar = document.querySelector("#consent");
-    if (localStorage.getItem(key)) bar.hidden = true;
-    document.querySelector("#consent-yes").onclick = () => { localStorage.setItem(key, "accept"); bar.hidden = true; };
-    document.querySelector("#consent-no").onclick = () => { localStorage.setItem(key, "reject"); bar.hidden = true; };
+    const hide = () => { bar.hidden = true; document.documentElement.classList.remove("has-consent"); };
+    if (localStorage.getItem(key)) hide();
+    else document.documentElement.classList.add("has-consent");
+    document.querySelector("#consent-yes").onclick = () => { localStorage.setItem(key, "accept"); hide(); };
+    document.querySelector("#consent-no").onclick = () => { localStorage.setItem(key, "reject"); hide(); };
   </script>
   <script type="module" src="/js/analytics.js"></script>
 </body>

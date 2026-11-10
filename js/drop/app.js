@@ -467,7 +467,7 @@ function leaveModal() {
 function consentBar() {
   const bar = el("aside", "consent");
   bar.id = "consent";
-  bar.innerHTML = `<p>We only use optional analytics after you agree. Reject is the same size as Accept. Play is never blocked.</p><div class="pair"><button class="reject" type="button" id="consent-no">Reject</button><button class="accept" type="button" id="consent-yes">Accept</button></div>`;
+  bar.innerHTML = `<p>We use cookies only for ads, never for the game. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
   return bar;
 }
 
@@ -1078,6 +1078,7 @@ function onClick(event) {
   if (event.target.id === "consent-yes" || event.target.id === "consent-no") {
     localStorage.setItem(CONSENT_KEY, event.target.id === "consent-yes" ? "accept" : "reject");
     document.querySelector("#consent").hidden = true;
+    document.documentElement.classList.remove("has-consent");
     return;
   }
   if (event.target.id === "clear-local") {
@@ -1234,7 +1235,9 @@ function applyShot() {
 async function boot() {
   saveSettings();
   const consent = localStorage.getItem(CONSENT_KEY);
-  document.querySelector("#consent").hidden = consent === "accept" || consent === "reject";
+  const showConsent = consent !== "accept" && consent !== "reject";
+  document.querySelector("#consent").hidden = !showConsent;
+  document.documentElement.classList.toggle("has-consent", showConsent);
   pack = await (await fetch("/data/questions.public.json")).json();
   document.querySelector("#magic-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
