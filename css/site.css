@@ -1730,6 +1730,11 @@ body.is-home {
 #win .sheet-body, #win p { color: #fff8ea; }
 #win .done-stats li { background: #fff8ea; color: #1e2a2a; }
 #win .mascot { width: 128px; height: 108px; }
+.hub-card { grid-template-columns: 80px 1fr; }
+.hub-copy strong { font-size: 11px; line-height: 1.5; }
+.hub-copy em { display: block; margin-top: 4px; }
+.play .half, .play .domino-btn, .play .region-cell, .play .face { color: #1e2a2a; }
+#how h2 { font-family: var(--body); font-size: 22px; font-weight: 800; line-height: 1.2; color: #1e2a2a; }
 .sheet-actions { display: grid; gap: 10px; margin-top: 8px; }
 .win-time { font-family: var(--display); font-size: 18px; text-align: center; margin: 4px 0; }
 .feature-card { text-decoration: none; color: inherit; cursor: pointer; }
