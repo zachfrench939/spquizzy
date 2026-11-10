@@ -52,7 +52,6 @@ function render(flash = -1) {
       arm.className = `arm ${name}`;
       if (mask & bit) arm.classList.add("show");
       if (sauced & bit) arm.classList.add("on");
-      else if (flow.reached.has(index) && mask & bit) arm.classList.add("leak");
       btn.append(arm);
     }
     const hub = document.createElement("span");
@@ -69,7 +68,7 @@ function render(flash = -1) {
     board.append(btn);
   });
   const open = sauceReaches(tiles, puzzle.rows, puzzle.cols, puzzle.pot, puzzle.plate);
-  kit.note(open ? "The sauce made it." : "Turn the pipes that stop the sauce.");
+  kit.note(open ? "The sauce reached the plate." : "Red shows where the sauce can flow.");
 }
 
 function turn(index) {

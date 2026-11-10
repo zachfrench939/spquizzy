@@ -20,7 +20,7 @@ import {
 import { wombatSvg } from "./art.js";
 
 function nounLabel(noun, n) {
-  const word = n === 1 ? noun : noun === "try" ? "tries" : `${noun}s`;
+  const word = n === 1 ? noun : noun === "try" ? "tries" : noun === "domino" ? "dominoes" : `${noun}s`;
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
@@ -54,7 +54,7 @@ export function createKit(gameId) {
   const solvedFlag = document.querySelector("#solved-flag");
 
   function paintHud() {
-    stat.textContent = `${nounLabel(game.noun, moves)} ${moves}  ·  Par ${par}`;
+    stat.textContent = `${nounLabel(game.noun, moves)} ${moves}`;
     timerEl.textContent = formatTime(seconds);
   }
 
@@ -115,12 +115,10 @@ export function createKit(gameId) {
     shareBtn.disabled = false;
     document.querySelector("#board").classList.add("is-solved");
     if (solvedFlag) solvedFlag.hidden = false;
-    const note = moves < par ? "Under par. The wombat is impressed." : moves === par ? "Right on par." : "Over par, and still plated.";
-    const streak = archive
-      ? "Archive clear. Streaks count on today's puzzle."
-      : `Streak ${stats.streak}. Best ${stats.bestStreak}.`;
+    const compared = moves < par ? "Better than the goal." : moves === par ? "Right on the goal." : "A little over the goal.";
+    const streak = archive ? "This was an older puzzle." : `Streak ${stats.streak}. Best ${stats.bestStreak}.`;
     document.querySelector("#win-title").textContent = game.win;
-    document.querySelector("#win-detail").textContent = `${nounLabel(game.noun, moves)} ${moves} · Par ${par} · ${formatTime(seconds)}. ${note} ${streak}`;
+    document.querySelector("#win-detail").textContent = `You used ${moves} ${nounLabel(game.noun, moves).toLowerCase()}. Goal was ${par}. Time ${formatTime(seconds)}. ${compared} ${streak}`;
     const burst = document.querySelector("#win-burst");
     if (burst) {
       const colors = ["#f6c945", "#e23b2f", "#2f8f4e", "#fff8ea", "#e07a4c"];
@@ -160,7 +158,7 @@ export function createKit(gameId) {
       btn.setAttribute("aria-pressed", btn.dataset.diff === diff ? "true" : "false");
     });
     const when = document.querySelector("#when");
-    if (when) when.textContent = `${formatShort(date)} · #${puzzleNumber(date)}`;
+    if (when) when.textContent = `${formatShort(date)}, puzzle ${puzzleNumber(date)}`;
     const banner = document.querySelector("#archive-note");
     if (banner) {
       if (archive) {

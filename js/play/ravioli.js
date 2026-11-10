@@ -65,7 +65,7 @@ function render() {
     words.append(chip);
   }
   board.append(grid, words);
-  kit.note(`${puzzle.words.length - locked.length} pairs left.`);
+  kit.note(`${puzzle.words.length - locked.length} words still to make.`);
 }
 
 board.addEventListener("click", (event) => {

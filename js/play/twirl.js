@@ -96,7 +96,8 @@ function render() {
   }
   board.append(root);
   const left = puzzle.rows * puzzle.cols - filledCount();
-  kit.note(left ? `${left} squares left to fill.` : "Grid full.");
+  const joined = paths.filter(Boolean).length;
+  kit.note(left ? `${joined} of ${puzzle.pairs.length} pairs joined. ${left} squares open.` : "Every square is covered.");
 }
 
 function paintLinks() {

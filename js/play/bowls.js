@@ -68,9 +68,9 @@ function render() {
   });
   pool.append(label, tiles);
   board.append(row, pool);
-  if (even) kit.note("The bowls match.");
-  else if (placed) kit.note("Not even yet.");
-  else kit.note("Tap a number, then a bowl.");
+  if (even) kit.note("The totals match.");
+  else if (placed) kit.note("Those totals do not match yet.");
+  else kit.note("Tap a number, then tap a bowl.");
 }
 
 function tileButton(i) {

@@ -94,12 +94,8 @@ function contiguous(cells, cols) {
 
 function pickConstraint(vals, rng) {
   const total = vals.reduce((a, b) => a + b, 0);
-  const options = [{ type: "sum", n: total, w: 6 }];
+  const options = [{ type: "sum", n: total, w: 5 }];
   if (vals.length > 1 && vals.every((v) => v === vals[0])) options.push({ type: "equal", w: 4 });
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  if (min >= 2) options.push({ type: "gt", n: min - 1, w: 2 });
-  if (max <= 4) options.push({ type: "lt", n: max + 1, w: 2 });
   const weight = options.reduce((s, o) => s + o.w, 0);
   let roll = rng() * weight;
   for (const option of options) {
@@ -119,11 +115,11 @@ export function constraintHolds(constraint, vals) {
 }
 
 export function constraintLabel(constraint) {
-  if (constraint.type === "sum") return String(constraint.n);
-  if (constraint.type === "equal") return "==";
-  if (constraint.type === "gt") return ">" + constraint.n;
-  if (constraint.type === "lt") return "<" + constraint.n;
-  return "?";
+  if (constraint.type === "sum") return `Add to ${constraint.n}`;
+  if (constraint.type === "equal") return "All same";
+  if (constraint.type === "gt") return `Over ${constraint.n}`;
+  if (constraint.type === "lt") return `Under ${constraint.n}`;
+  return "Any";
 }
 
 export function regionStates(puzzle, values) {

@@ -89,7 +89,7 @@ function render() {
   root.append(grid);
   board.append(root);
   const out = ballOnExit(pieces, puzzle.exit);
-  kit.note(out ? "Meatball on the arrow." : "Drag a tray. One drag is one move.");
+  kit.note(out ? "The meatball is on the arrow." : "Drag a tray toward an empty square.");
 }
 
 function tryMove(index, dir, maxSteps) {

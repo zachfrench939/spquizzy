@@ -1,7 +1,7 @@
 import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
-import { loadStats, loadRun, todayString, formatLong, isValidDate, compareDates, diffKey, getStorage } from "./core.js";
+import { loadStats, loadRun, clearRun, todayString, formatLong, formatTime, plural, isValidDate, compareDates, diffKey, getStorage } from "./core.js";
 import { iconSvg } from "./art.js";
 import { renderArchive } from "./archive.js";
 
@@ -116,15 +116,21 @@ function mountChrome(activeId) {
 function gameStage(game) {
   return `
     <article class="play">
-      <p id="when" class="when"></p>
-      <h1 class="game-name">${game.name}</h1>
+      <div class="play-head">
+        <div>
+          <p id="when" class="when"></p>
+          <h1 class="game-name">${game.name}</h1>
+          <p class="goal">${game.goal}</p>
+        </div>
+        <button type="button" id="how-open" class="help-btn" aria-label="How to play">?</button>
+      </div>
       <div class="diffs" role="group" aria-label="Difficulty">
         <button type="button" data-diff="easy">Easy</button>
         <button type="button" data-diff="medium">Medium</button>
         <button type="button" data-diff="hard">Hard</button>
       </div>
       <div class="hud">
-        <p id="stat-line">Dealing the board</p>
+        <p id="stat-line">Ready</p>
         <p id="timer">0:00</p>
       </div>
       <p id="solved-flag" class="solved-flag" hidden>Solved</p>
@@ -133,7 +139,6 @@ function gameStage(game) {
       <div id="board" class="board"></div>
       ${adSlot("below-board", "ad-below")}
       <div class="tool-row">
-        <button type="button" id="how-open" class="tool">How to play</button>
         <button type="button" id="reset" class="tool">Reset</button>
         <button type="button" id="share" class="tool" disabled>Share</button>
       </div>
@@ -141,8 +146,9 @@ function gameStage(game) {
     <p id="live" class="sr-only" aria-live="polite"></p>
     <dialog id="how">
       <h2>How to play</h2>
+      <p class="goal">${game.goal}</p>
       <div class="how-list">${HELP[game.id] || ""}</div>
-      <div class="actions"><button type="button" id="how-close" class="btn">Close</button></div>
+      <div class="actions"><button type="button" id="how-close" class="btn btn-tomato">Got it</button></div>
     </dialog>
     <dialog id="win">
       <div class="burst" id="win-burst" aria-hidden="true"></div>
@@ -172,6 +178,46 @@ function initialDiff(gameId) {
   return DIFFICULTIES.includes(stored) ? stored : "easy";
 }
 
+function countdownText() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const minutes = Math.max(1, Math.round((next - now) / 60000));
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours <= 0) return `A new puzzle in ${rest} minutes.`;
+  return `A new puzzle in ${hours} hours ${rest} minutes.`;
+}
+
+function nextGame(game) {
+  const index = GAMES.findIndex((item) => item.id === game.id);
+  return GAMES[(index + 1) % GAMES.length];
+}
+
+function doneStage(game, run, diff) {
+  const choices = DIFFICULTIES.map((name) => {
+    const label = name.charAt(0).toUpperCase() + name.slice(1);
+    return `<button type="button" data-diff="${name}" aria-pressed="${name === diff ? "true" : "false"}">${label}</button>`;
+  }).join("");
+  const next = nextGame(game);
+  const word = plural(game.noun, run.moves || 0);
+  return `
+    <section class="done">
+      <div class="intro-icon">${iconSvg(game.id)}</div>
+      <p class="done-kicker">Solved</p>
+      <h1 class="game-name">You solved today's puzzle</h1>
+      <p class="goal">${game.name}. ${game.goal}</p>
+      <ul class="done-stats">
+        <li>${run.moves} ${word}</li>
+        <li>Goal ${run.par}</li>
+        <li>${formatTime(run.seconds || 0)}</li>
+      </ul>
+      <p class="countdown">${countdownText()}</p>
+      <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
+      <a class="btn btn-tomato" href="${next.href}">Next game: ${next.name}</a>
+      <button type="button" class="tool" id="play-again">Play this one again</button>
+    </section>`;
+}
+
 function introStage(game, { landing, diff, cta }) {
   const choices = DIFFICULTIES.map((name) => {
     const label = name.charAt(0).toUpperCase() + name.slice(1);
@@ -181,7 +227,7 @@ function introStage(game, { landing, diff, cta }) {
     <section class="intro">
       <div class="intro-icon">${iconSvg(game.id)}</div>
       <h1 class="game-name">${game.name}</h1>
-      <p class="tagline">${game.tagline}</p>
+      <p class="goal">${game.goal}</p>
       <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
       <button type="button" class="btn btn-tomato" id="start-game">${cta}</button>
       ${landing ? "" : adSlot("intro", "ad-intro")}
@@ -194,32 +240,57 @@ export async function openGame(gameId) {
   document.title = landing ? "Spiquizzy · Daily pasta puzzles" : `${game.name} · Spiquizzy`;
   mountChrome(game.id);
   let diff = initialDiff(game.id);
-  const run = loadRun(game.id, diff, puzzleDate());
-  const cta = run && !run.won && run.moves > 0 ? "Continue" : "Play now";
   const stage = document.querySelector("#stage");
-  stage.innerHTML = introStage(game, { landing, diff, cta });
-  stage.querySelectorAll("[data-diff]").forEach((button) => {
-    button.addEventListener("click", () => {
-      diff = button.dataset.diff;
-      stage.querySelectorAll("[data-diff]").forEach((other) => {
-        other.setAttribute("aria-pressed", other === button ? "true" : "false");
+
+  function showEntry() {
+    const run = loadRun(game.id, diff, puzzleDate());
+    if (run?.won) {
+      stage.innerHTML = doneStage(game, run, diff);
+      stage.querySelectorAll("[data-diff]").forEach((button) => {
+        button.addEventListener("click", () => {
+          diff = button.dataset.diff;
+          showEntry();
+        });
       });
-      const next = loadRun(game.id, diff, puzzleDate());
-      document.querySelector("#start-game").textContent = next && !next.won && next.moves > 0 ? "Continue" : "Play now";
+      document.querySelector("#play-again").addEventListener("click", () => {
+        clearRun(game.id, diff, puzzleDate());
+        location.reload();
+      });
+      return;
+    }
+    const cta = run && run.moves > 0 ? "Continue" : "Play now";
+    stage.innerHTML = introStage(game, { landing, diff, cta });
+    stage.querySelectorAll("[data-diff]").forEach((button) => {
+      button.addEventListener("click", () => {
+        diff = button.dataset.diff;
+        showEntry();
+      });
     });
-  });
-  document.querySelector("#start-game").addEventListener("click", async (event) => {
-    event.currentTarget.disabled = true;
-    const url = new URL(location.href);
-    url.searchParams.set("diff", diff);
-    history.replaceState(null, "", url);
-    getStorage().setItem(diffKey(game.id), diff);
-    stage.innerHTML = gameStage(game);
-    const side = document.querySelector("#side-ad");
-    if (side) side.innerHTML = adSlot("sidebar", "ad-side");
-    const mod = await LOADERS[game.id]();
-    if (typeof mod.mount === "function") mod.mount();
-  });
+    document.querySelector("#start-game").addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      const url = new URL(location.href);
+      url.searchParams.set("diff", diff);
+      history.replaceState(null, "", url);
+      getStorage().setItem(diffKey(game.id), diff);
+      stage.innerHTML = gameStage(game);
+      const side = document.querySelector("#side-ad");
+      if (side) side.innerHTML = adSlot("sidebar", "ad-side");
+      const mod = await LOADERS[game.id]();
+      if (typeof mod.mount === "function") mod.mount();
+      const how = document.querySelector("#how");
+      const seenKey = `spquizzy.how.v1:${game.id}`;
+      if (how && !getStorage().getItem(seenKey)) {
+        how.showModal();
+        how.addEventListener("close", () => getStorage().setItem(seenKey, "1"), { once: true });
+      }
+      document.querySelector("#win")?.addEventListener("close", () => {
+        const finished = loadRun(game.id, diff, puzzleDate());
+        if (finished?.won) showEntry();
+      });
+    });
+  }
+
+  showEntry();
 }
 
 export function openDirectory() {
@@ -237,7 +308,7 @@ export function openDirectory() {
           <div class="icon-slot">${iconSvg(game.id)}</div>
           <div>
             <h2>${game.name}</h2>
-            <p class="tagline">${game.tagline}</p>
+            <p class="goal">${game.goal}</p>
           </div>
         </div>
         <p class="card-meta"><span>${statusFor(game.id, today)}</span><span class="streak">Streak ${loadStats(game.id).streak || 0}</span></p>

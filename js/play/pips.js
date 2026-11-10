@@ -153,7 +153,8 @@ function render() {
   }
   board.append(grid, tray);
   const left = remaining().length;
-  kit.note(left ? `${left} dominoes left. Left half goes on the first square.` : "All dominoes are down.");
+  const ready = states.filter((region) => region.ok).length;
+  kit.note(left ? `${left} dominoes left. ${ready} of ${puzzle.regions.length} areas are correct.` : "Check every colored area.");
 }
 
 function lift(cell) {

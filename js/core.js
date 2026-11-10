@@ -100,19 +100,18 @@ export function formatTime(seconds) {
 export function plural(noun, n) {
   if (n === 1) return noun;
   if (noun === "try") return "tries";
+  if (noun === "domino") return "dominoes";
   return noun + "s";
 }
 
 export function buildShare({ title, date, diff, noun, moves, par, seconds }) {
   const n = puzzleNumber(date);
   const label = diff.charAt(0).toUpperCase() + diff.slice(1);
-  const mark = moves < par ? "🟩" : moves === par ? "🟨" : "🟥";
   return [
-    `Spiquizzy ${title} #${n}`,
-    `${label} 🍝`,
-    `${moves} ${plural(noun, moves)} (par ${par})`,
-    `⏱ ${formatTime(seconds)}`,
-    mark,
+    `Spiquizzy ${title} ${n}`,
+    label,
+    `${moves} ${plural(noun, moves)}. Goal ${par}.`,
+    formatTime(seconds),
   ].join("\n");
 }
 

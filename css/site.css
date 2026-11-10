@@ -14,7 +14,7 @@
   --line: 3px;
   --shadow: 4px 4px 0 var(--charcoal);
   --display: "Press Start 2P", ui-monospace, monospace;
-  --body: "Silkscreen", ui-monospace, monospace;
+  --body: "Nunito", system-ui, sans-serif;
   color-scheme: only light;
 }
 
@@ -137,7 +137,7 @@ h1, h2, h3, p { margin: 0; }
 }
 .card-top { display: flex; gap: 12px; align-items: center; }
 .icon-slot { width: 64px; height: 64px; flex: 0 0 auto; background: var(--cream); border: 3px solid var(--charcoal); }
-.game-card h2 { font-family: var(--display); font-size: 13px; line-height: 1.6; }
+.game-card h2 { font-family: var(--body); font-weight: 800; font-size: 22px; line-height: 1.2; }
 .game-card .tagline { font-size: 15px; margin-top: 4px; }
 .card-meta { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 14px; align-items: baseline; }
 .card-meta .streak { color: var(--basil-dark); white-space: nowrap; }
@@ -210,7 +210,7 @@ h1, h2, h3, p { margin: 0; }
   margin: 4px 0 10px;
   font-weight: 700;
 }
-#timer { font-family: var(--display); font-size: 12px; }
+#timer { font-family: var(--body); font-weight: 800; font-size: 18px; }
 .note { min-height: 1.4em; text-align: center; font-weight: 700; margin: 0 0 8px; }
 .archive-note {
   background: var(--paper);
@@ -242,7 +242,7 @@ h1, h2, h3, p { margin: 0; }
   aspect-ratio: 1;
   background: var(--paper);
   border: 3px solid var(--charcoal);
-  box-shadow: 3px 3px 0 var(--charcoal);
+  box-shadow: none;
   padding: 0;
   cursor: pointer;
   overflow: hidden;
@@ -380,7 +380,7 @@ h1, h2, h3, p { margin: 0; }
 
 .bowl-row { display: grid; grid-template-columns: repeat(var(--bowls), minmax(0, 1fr)); gap: 10px; }
 .bowl { text-align: center; }
-.bowl-name { font-family: var(--display); font-size: 10px; margin-bottom: 6px; }
+.bowl-name { font-family: var(--body); font-weight: 800; font-size: 16px; margin-bottom: 6px; }
 .bowl-bin {
   width: 100%;
   min-height: 148px;
@@ -401,8 +401,9 @@ h1, h2, h3, p { margin: 0; }
   margin-top: 8px;
   padding-top: 6px;
   border-top: 4px dashed var(--charcoal);
-  font-family: var(--display);
-  font-size: 12px;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 20px;
 }
 .bowl.is-even .bowl-sum { color: var(--basil-dark); }
 .pool { margin-top: 16px; }
@@ -415,8 +416,9 @@ h1, h2, h3, p { margin: 0; }
   min-width: 46px;
   height: 46px;
   padding: 0 6px;
-  font-family: var(--display);
-  font-size: 12px;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 20px;
   cursor: pointer;
 }
 .num.is-selected { background: #fff8ea; outline: 3px dashed var(--tomato); }
@@ -475,12 +477,15 @@ h1, h2, h3, p { margin: 0; }
 .region-cell .rule {
   position: absolute;
   z-index: 3;
-  top: 1px;
-  left: 3px;
-  font-weight: 700;
+  top: 3px;
+  left: 4px;
+  right: 4px;
+  font-family: var(--body);
+  font-weight: 800;
   font-size: 12px;
   pointer-events: none;
-  line-height: 1;
+  line-height: 1.15;
+  text-align: left;
 }
 .region-cell.is-good { box-shadow: inset 0 0 0 3px var(--basil); }
 .region-cell.is-bad { box-shadow: inset 0 0 0 3px var(--tomato); }
@@ -539,7 +544,7 @@ dialog {
   padding: 16px;
 }
 dialog::backdrop { background: rgba(30, 42, 42, 0.62); }
-dialog h2 { font-family: var(--display); font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+dialog h2 { font-family: var(--body); font-weight: 800; font-size: 26px; line-height: 1.2; margin-bottom: 8px; }
 dialog p { margin: 8px 0; }
 dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
 .how-list { display: grid; gap: 8px; }
@@ -584,7 +589,7 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
   margin-bottom: 14px;
 }
 .shelf header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-.shelf h2 { font-family: var(--display); font-size: 11px; line-height: 1.6; color: var(--cream); }
+.shelf h2 { font-family: var(--body); font-weight: 800; font-size: 18px; line-height: 1.2; color: var(--cream); }
 .shelf.is-today { outline: 4px solid var(--pasta); outline-offset: 2px; }
 .badge {
   background: var(--pasta);
@@ -614,8 +619,9 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
   justify-content: center;
   gap: 4px;
   text-align: center;
-  font-family: var(--display);
-  font-size: 7px;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 13px;
   line-height: 1.45;
   padding: 4px;
 }
@@ -693,7 +699,7 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
   text-underline-offset: 4px;
 }
 .tool:disabled { opacity: 0.35; cursor: default; text-decoration: none; }
-.play .game-name { font-size: 14px; margin: 2px 0 8px; }
+.play .game-name { font-size: 22px; margin: 0; }
 .intro { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 18px 0 8px; }
 .intro-icon { width: 88px; height: 88px; padding: 10px; background: var(--paper); border: 3px solid var(--charcoal); }
 .intro .btn { min-width: min(100%, 240px); min-height: 52px; }
@@ -707,12 +713,48 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
 .play { display: flex; flex-direction: column; gap: 2px; width: 100%; align-items: stretch; }
 .board { width: 100%; }
 .game-name {
-  font-family: var(--display);
-  font-size: clamp(15px, 4.4vw, 22px);
-  line-height: 1.55;
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: clamp(26px, 6vw, 36px);
+  line-height: 1.15;
   text-align: center;
-  margin: 8px 0 4px;
+  margin: 4px 0;
 }
+.goal { font-size: 18px; line-height: 1.35; text-align: center; max-width: 36rem; margin: 0 auto 8px; }
+.play .game-name { font-size: 22px; text-align: left; margin: 0; }
+.play .goal { text-align: left; margin: 4px 0 0; font-size: 16px; }
+.play-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.help-btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 3px solid var(--charcoal);
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--charcoal);
+  font-family: var(--body);
+  font-weight: 800;
+  font-size: 22px;
+  cursor: pointer;
+}
+.how-steps { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 14px; }
+.how-step { display: flex; gap: 12px; align-items: flex-start; text-align: left; }
+.how-n {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--pasta);
+  border: 3px solid var(--charcoal);
+  font-weight: 800;
+}
+.how-step p { margin: 2px 0 0; }
+.how-fig { width: 140px; height: 48px; margin-top: 8px; }
+.done { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 12px 0 24px; }
+.done-kicker { font-weight: 800; color: var(--basil-dark); letter-spacing: 0.04em; text-transform: uppercase; }
+.done-stats { list-style: none; display: flex; gap: 8px; padding: 0; margin: 4px 0; flex-wrap: wrap; justify-content: center; }
+.done-stats li { background: var(--paper); border: 3px solid var(--charcoal); padding: 8px 12px; font-weight: 800; }
+.countdown { font-weight: 700; }
 .page-intro { margin-bottom: 16px; }
 .page-intro .lede, .about p { margin: 10px 0; }
 .about code { font-family: var(--body); background: var(--paper); border: 2px solid var(--charcoal); padding: 0 4px; }
