@@ -178,6 +178,9 @@ function finishDraw(event) {
     return;
   }
   render();
+  kit.note(cells.length < 2
+    ? "Press a picture and drag to the matching picture."
+    : "The line has to end on the matching picture.");
 }
 
 window.addEventListener("pointerup", finishDraw);

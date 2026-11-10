@@ -110,7 +110,8 @@ function render(flash = -1) {
   });
   if (open) kit.note("The sauce reached the plate.");
   else if (hint) kit.note("Tap the pulsing pipe. Each tap turns it.");
-  else kit.note("Red shows where the sauce can flow.");
+  else if (board.querySelector(".pipe.on")) kit.note("Red shows where the sauce can flow.");
+  else kit.note("Turn pipes until the red sauce leaves the pot.");
 }
 
 function turn(index) {
