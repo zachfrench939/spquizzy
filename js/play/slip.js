@@ -2,7 +2,7 @@ import { createKit } from "../playkit.js";
 import { generateSlip, slidePiece, ballOnExit, clonePieces } from "../engines/slip.js";
 import { arrowSvg } from "../art.js";
 
-const COLORS = ["#f08a6a", "#7eb6d6", "#8fbf8a", "#d7a0c4", "#f2c14e", "#c4b49a", "#e07a4c", "#9aa5b1"];
+const FILLS = ["#e23b2f", "#e07a4c", "#c4483a", "#f08a6a", "#d4562e"];
 const kit = createKit("slip");
 const board = document.querySelector("#board");
 let puzzle = null;
@@ -47,6 +47,7 @@ function start() {
   kit.setPar(puzzle.par);
   kit.begin(saved);
   kit.remember(snapshot());
+  board.replaceChildren();
   render();
 }
 
@@ -71,7 +72,44 @@ function clearHint() {
   }
 }
 
+function face(p, i) {
+  if (p.ball) {
+    return `<span class="body meat"><span class="gloss"></span><span class="eye l"></span><span class="eye r"></span><span class="mouth"></span></span>`;
+  }
+  if (p.w > 1 && p.h > 1) {
+    return `<span class="body ravi"><span class="gloss"></span><span class="crimp"></span></span>`;
+  }
+  if (p.h > p.w) {
+    return `<span class="body tube"><span class="gloss"></span></span>`;
+  }
+  return `<span class="body lasagna" style="--fill:${FILLS[i % FILLS.length]}"><span class="gloss"></span><span class="stripe"></span><span class="stripe s2"></span></span>`;
+}
+
+function paintPiece(el, p, i) {
+  const hint = showHint();
+  el.className = `piece${p.ball ? " ball" : ""}${i === selected ? " is-selected" : ""}${hint && i === selected ? " is-hint" : ""}${i === flash ? " pop" : ""}`;
+  el.style.left = `${(p.c / puzzle.cols) * 100}%`;
+  el.style.top = `${(p.r / puzzle.rows) * 100}%`;
+  el.style.width = `${(p.w / puzzle.cols) * 100}%`;
+  el.style.height = `${(p.h / puzzle.rows) * 100}%`;
+  el.setAttribute("aria-pressed", i === selected ? "true" : "false");
+}
+
 function render() {
+  const grid = board.querySelector(".slip-grid");
+  if (!grid || grid.querySelectorAll(".piece").length !== pieces.length) build();
+  else sync();
+  const out = ballOnExit(pieces, puzzle.exit);
+  const hint = showHint();
+  const pad = board.querySelector(".move-pad");
+  if (pad) pad.classList.toggle("is-hint", hint);
+  if (out) kit.note("The yellow ball is on the green arrow.");
+  else if (hint && pieces[selected]?.ball) kit.note("The yellow ball is selected. Tap an arrow to slide it one square.");
+  else if (hint) kit.note("This block can move. Tap an arrow to slide it one square.");
+  else kit.note("Tap a block, then an arrow.");
+}
+
+function build() {
   board.className = "board";
   board.replaceChildren();
   const root = document.createElement("div");
@@ -86,30 +124,23 @@ function render() {
       slot.className = "slot";
       if (r === puzzle.exit.r && c === puzzle.exit.c) {
         slot.classList.add("is-exit");
-        slot.innerHTML = arrowSvg(puzzle.exit.dir);
+        slot.innerHTML = `<span class="gate">${arrowSvg(puzzle.exit.dir)}</span>`;
         slot.setAttribute("aria-label", "Green arrow. Put the yellow ball here.");
       }
       grid.append(slot);
     }
   }
-  const hint = showHint();
-  const hintIndex = hint ? selected : -1;
   pieces.forEach((p, i) => {
     const el = document.createElement("button");
     el.type = "button";
-    el.className = `piece${p.ball ? " ball" : ""}${i === selected ? " is-selected" : ""}${i === hintIndex ? " is-hint" : ""}${i === flash ? " pop" : ""}`;
     el.dataset.piece = String(i);
-    el.style.setProperty("--c", p.c + 1);
-    el.style.setProperty("--r", p.r + 1);
-    el.style.setProperty("--w", p.w);
-    el.style.setProperty("--h", p.h);
-    el.innerHTML = `<span class="body" style="--fill:${p.ball ? "#f6c945" : COLORS[(i - 1) % COLORS.length]}"></span>`;
-    el.setAttribute("aria-label", p.ball ? "Yellow ball" : `Block ${i}`);
-    el.setAttribute("aria-pressed", i === selected ? "true" : "false");
+    el.innerHTML = face(p, i);
+    el.setAttribute("aria-label", p.ball ? "Yellow meatball" : `Pasta block ${i}`);
+    paintPiece(el, p, i);
     grid.append(el);
   });
   const pad = document.createElement("div");
-  pad.className = `move-pad${hint ? " is-hint" : ""}`;
+  pad.className = "move-pad";
   pad.setAttribute("role", "group");
   pad.setAttribute("aria-label", "Slide the selected block one square");
   pad.innerHTML = `
@@ -119,11 +150,13 @@ function render() {
     <button type="button" data-dir="S" aria-label="Down">↓</button>`;
   root.append(grid, pad);
   board.append(root);
-  const out = ballOnExit(pieces, puzzle.exit);
-  if (out) kit.note("The yellow ball is on the green arrow.");
-  else if (hint && pieces[selected]?.ball) kit.note("The yellow ball is selected. Tap an arrow to slide it one square.");
-  else if (hint) kit.note("This block can move. Tap an arrow to slide it one square.");
-  else kit.note("Tap a block, then an arrow.");
+}
+
+function sync() {
+  pieces.forEach((p, i) => {
+    const el = board.querySelector(`[data-piece="${i}"]`);
+    if (el) paintPiece(el, p, i);
+  });
 }
 
 function tryMove(index, dir, maxSteps) {

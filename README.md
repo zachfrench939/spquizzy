@@ -32,7 +32,7 @@ Puzzle #1 is 1 January 2026.
 
 The home page, the all-games list, the archive, and the about page have no ad slots.
 
-A game that is not the home page shows one placeholder, on its Play now screen, before the board opens. Nothing sits under the board, in the sidebar, or on the results. The home page stays clear even though it opens Sauce Pipes. No ad script is loaded.
+A game page opens on a start screen: one ad placeholder, then a looping how-to clip, then difficulty, then Play. Nothing sits under the board, in the sidebar, or on the results. The home page is an ad-free hub. No ad script is loaded.
 
 `ADSENSE_CLIENT` in `js/config.js` is the place for a publisher id later. Leave it empty for now.
 

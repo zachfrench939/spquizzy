@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Spiquizzy · Daily pasta puzzles</title>
-  <meta name="description" content="Spiquizzy is six daily pasta puzzles. Today's board opens straight away.">
+  <meta name="description" content="Spiquizzy is six daily pasta puzzles. Pick today's plate.">
   <meta name="theme-color" content="#1E2A2A">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,9 +17,8 @@
   <noscript><p class="fine" style="text-align:center;padding:24px">Spiquizzy needs JavaScript to deal today's puzzles.</p></noscript>
 
   <script type="module">
-    import { PRIMARY_GAME } from "./js/config.js";
-    import { openGame } from "./js/app.js";
-    openGame(PRIMARY_GAME);
+    import { openHome } from "./js/app.js";
+    openHome();
   </script>
 </body>
 </html>

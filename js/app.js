@@ -1,8 +1,10 @@
 import { ADSENSE_CLIENT, PRIMARY_GAME } from "./config.js";
 import { GAMES, DIFFICULTIES, gameById } from "./catalog.js";
 import { HELP } from "./help.js";
-import { loadStats, loadRun, clearRun, todayString, formatLong, formatTime, plural, isValidDate, compareDates, diffKey, getStorage } from "./core.js";
+import { loadStats, loadRun, clearRun, todayString, formatLong, formatTime, plural, isValidDate, compareDates, diffKey, getStorage, puzzleNumber } from "./core.js";
 import { iconSvg, wombatSvg, pastaBurstHtml } from "./art.js";
+import { clipHtml, restartClip } from "./clips.js";
+import { submitAndRank, rankMessage } from "./scores.js";
 import { renderArchive } from "./archive.js";
 
 const LOADERS = {
@@ -106,7 +108,8 @@ function bindDrawer() {
   });
 }
 
-function mountChrome(activeId) {
+function mountChrome(activeId, { home = false } = {}) {
+  document.body.classList.toggle("is-home", home);
   const app = document.querySelector("#app");
   app.innerHTML = shell({ activeId });
   bindDrawer();
@@ -152,6 +155,7 @@ function gameStage(game) {
         </div>
       </div>
       <p class="goal">${game.goal}</p>
+      <div class="how-clip">${clipHtml(game.id)}</div>
       <div class="how-list">${HELP[game.id] || ""}</div>
       <div class="actions"><button type="button" id="how-close" class="btn btn-tomato">Got it</button></div>
     </dialog>
@@ -214,9 +218,9 @@ function doneStage(game, run, diff) {
       <p class="goal">${game.name}. ${game.goal}</p>
       <ul class="done-stats">
         <li>${run.moves} ${word}</li>
-        <li>Goal ${run.par}</li>
         <li>${formatTime(run.seconds || 0)}</li>
       </ul>
+      <p id="rank-line" class="rank-line">Checking today's times…</p>
       <p class="countdown">${countdownText()}</p>
       <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
       <a class="btn btn-tomato" href="${next.href}">Next game: ${next.name}</a>
@@ -224,31 +228,89 @@ function doneStage(game, run, diff) {
     </section>`;
 }
 
-function introStage(game, { landing, diff, cta }) {
+function introStage(game, { diff, cta }) {
   const choices = DIFFICULTIES.map((name) => {
     const label = name.charAt(0).toUpperCase() + name.slice(1);
     return `<button type="button" data-diff="${name}" aria-pressed="${name === diff ? "true" : "false"}">${label}</button>`;
   }).join("");
   return `
     <section class="intro">
-      <div class="mascot-row">
-        <div class="mascot">${wombatSvg("ready")}</div>
-        <div class="intro-icon">${iconSvg(game.id)}</div>
-      </div>
       <p class="kicker">${game.kicker}</p>
       <h1 class="game-name">${game.name}</h1>
       <p class="goal">${game.goal}</p>
+      ${adSlot("intro", "ad-intro")}
+      <div class="clip-wrap">
+        <button type="button" id="clip-replay" class="help-btn" aria-label="Replay how to play">?</button>
+        ${clipHtml(game.id)}
+      </div>
       <div class="diffs" role="group" aria-label="Difficulty">${choices}</div>
       <button type="button" class="btn btn-tomato" id="start-game">${cta}</button>
-      <button type="button" class="tool more-games" id="more-games">Other games</button>
-      ${landing ? "" : adSlot("intro", "ad-intro")}
+    </section>`;
+}
+
+function paintRank(game, diff, run) {
+  const line = document.querySelector("#rank-line");
+  if (!line) return;
+  submitAndRank({
+    slug: game.slug,
+    difficulty: diff,
+    date: puzzleDate(),
+    seconds: run.seconds || 0,
+    moves: run.moves || 0,
+  }).then((rank) => {
+    if (!line.isConnected) return;
+    const text = rankMessage(rank);
+    if (!text) {
+      line.hidden = true;
+      return;
+    }
+    line.textContent = text;
+  });
+}
+
+export function openHome() {
+  const today = todayString();
+  const main = gameById(PRIMARY_GAME);
+  document.title = "Spiquizzy · Daily pasta puzzles";
+  mountChrome(null, { home: true });
+  const cards = GAMES.map((game) => {
+    const stats = loadStats(game.id);
+    return `<a class="hub-card ${game.cart}" href="${game.href}">
+      <span class="hub-icon">${iconSvg(game.id)}</span>
+      <span class="hub-copy"><strong>${game.name}</strong><em>${game.blurb}</em></span>
+      <span class="hub-meta"><span>${statusFor(game.id, today)}</span><span>Streak ${stats.streak || 0}</span></span>
+    </a>`;
+  }).join("");
+  document.querySelector("#stage").innerHTML = `
+    <section class="home-hub">
+      <header class="hero-hub">
+        <div class="hero-lockup">
+          <p class="pixel-logo">SPIQUIZZY</p>
+          <div class="mascot mascot-hero">${wombatSvg("ready")}</div>
+        </div>
+        <p class="hero-when">${formatLong(today)} · Puzzle ${puzzleNumber(today)}</p>
+      </header>
+      <article class="feature-card">
+        <div class="feature-icon">${iconSvg(main.id)}</div>
+        <div>
+          <p class="kicker">Today's main game</p>
+          <h1 class="game-name">${main.name}</h1>
+          <p class="goal">${main.blurb}</p>
+        </div>
+        <a class="btn btn-tomato" href="${main.href}">Play</a>
+      </article>
+      <h2 class="hub-title">Every plate</h2>
+      <div class="hub-grid">${cards}</div>
+      <nav class="hub-links" aria-label="More">
+        <a href="archive.html">Archive</a>
+        <a href="about.html">About</a>
+      </nav>
     </section>`;
 }
 
 export async function openGame(gameId) {
   const game = gameById(gameId) || gameById(PRIMARY_GAME);
-  const landing = currentFile() === "index.html";
-  document.title = landing ? "Spiquizzy · Daily pasta puzzles" : `${game.name} · Spiquizzy`;
+  document.title = `${game.name} · Spiquizzy`;
   mountChrome(game.id);
   let diff = initialDiff(game.id);
   const stage = document.querySelector("#stage");
@@ -267,18 +329,19 @@ export async function openGame(gameId) {
         clearRun(game.id, diff, puzzleDate());
         location.reload();
       });
+      paintRank(game, diff, run);
       return;
     }
-    const cta = run && run.moves > 0 ? "Continue" : "Play now";
-    stage.innerHTML = introStage(game, { landing, diff, cta });
+    const cta = run && run.moves > 0 ? "Continue" : "Play";
+    stage.innerHTML = introStage(game, { diff, cta });
     stage.querySelectorAll("[data-diff]").forEach((button) => {
       button.addEventListener("click", () => {
         diff = button.dataset.diff;
         showEntry();
       });
     });
-    document.querySelector("#more-games")?.addEventListener("click", () => {
-      document.querySelector("#menu-open")?.click();
+    document.querySelector("#clip-replay")?.addEventListener("click", () => {
+      restartClip(stage);
     });
     document.querySelector("#start-game").addEventListener("click", async (event) => {
       event.currentTarget.disabled = true;
@@ -289,12 +352,9 @@ export async function openGame(gameId) {
       stage.innerHTML = gameStage(game);
       const mod = await LOADERS[game.id]();
       if (typeof mod.mount === "function") mod.mount();
-      const how = document.querySelector("#how");
-      const seenKey = `spquizzy.how.v1:${game.id}`;
-      if (how && !getStorage().getItem(seenKey)) {
-        how.showModal();
-        how.addEventListener("close", () => getStorage().setItem(seenKey, "1"), { once: true });
-      }
+      document.querySelector("#how-open")?.addEventListener("click", () => {
+        restartClip(document.querySelector("#how"));
+      });
       document.querySelector("#win")?.addEventListener("close", () => {
         const finished = loadRun(game.id, diff, puzzleDate());
         if (finished?.won) showEntry();
