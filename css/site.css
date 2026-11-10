@@ -88,14 +88,14 @@ h1, h2, h3, p { margin: 0; }
 .tiles span, .title-block .tiles span {
   display: grid;
   place-items: center;
-  min-width: 32px;
-  height: 38px;
+  min-width: 40px;
+  height: 48px;
   padding: 0 4px;
   background: var(--pasta);
   border: 3px solid var(--charcoal);
   box-shadow: 3px 3px 0 var(--charcoal);
   font-family: var(--display);
-  font-size: 13px;
+  font-size: 16px;
   font-style: normal;
 }
 .title-block { display: grid; gap: 6px; justify-content: center; margin: 8px 0 10px; }
@@ -224,7 +224,8 @@ h1, h2, h3, p { margin: 0; }
 .solved-flag {
   text-align: center;
   font-family: var(--display);
-  font-size: 11px;
+  font-size: 16px;
+  line-height: 1.45;
   color: var(--basil-dark);
   margin-bottom: 8px;
 }
@@ -848,24 +849,10 @@ dialog ol, dialog ul { margin: 8px 0; padding-left: 18px; }
 .ground { margin-bottom: 8px; }
 
 @media (min-width: 960px) {
-  .topbar { grid-template-columns: 1fr; justify-items: start; padding-left: 22px; }
-  .brand { justify-self: start; }
   .menu-btn, .top-spacer, .bottom-nav { display: none; }
-  .frame {
-    display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 18px;
-    align-items: start;
-    padding: 8px 16px 24px;
-  }
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-    position: sticky;
-    top: 72px;
-    padding: 8px 4px 16px;
-  }
-  .stage { width: min(680px, 100%); padding-top: 4px; }
+  .frame { display: block; }
+  .sidebar { display: none; }
+  .stage { width: min(680px, 100%); margin-inline: auto; padding-top: 4px; }
   .more-games { display: none; }
   .drawer, .backdrop { display: none; }
 }
@@ -1627,7 +1614,8 @@ body::before, body::after { content: none; display: none; }
 .hud, .play-title, .when, .note { color: #f6ecd1; }
 .sidebar .nav-copy, .sidebar .nav-copy em, .sidebar .nav-copy strong { color: #f6ecd1; }
 .sidebar .nav-copy small { color: #8fbf8a; }
-dialog h2, .sheet h2 { font-size: 12px; line-height: 1.6; }
+dialog h2, .sheet h2 { font-size: 16px; line-height: 1.45; }
+#settings h2 { font-family: var(--display); font-size: 16px; line-height: 1.45; }
 .glyph-plate, .glyph-plate::before, .glyph-plate::after, .pip { border-radius: 0 !important; }
 .btn, .pill, .diffs button, .icon-btn, .help-btn, #timer, .win-time, .done-stats, .play-title,
 .splash .game-name, .feature-card .game-name, .hub-copy strong, .pixel-logo, .brand, dialog h2 {
@@ -2005,6 +1993,9 @@ body.is-doc .doc-links a { text-decoration: none; }
   image-rendering: auto;
 }
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--body);
   font-size: 15px;
   font-weight: 800;
@@ -2042,12 +2033,21 @@ body.is-doc .doc-links a { text-decoration: none; }
 #win-title, .win-time { font-family: var(--display); font-size: 32px; line-height: 1.4; }
 .splash .game-name { font-size: 24px; }
 .move-pad button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 48px;
   min-width: 48px;
   font-size: 32px;
   font-weight: 800;
   color: #1e2a2a;
   background: #FBBF36;
+}
+.move-pad button img {
+  width: 21px;
+  height: 21px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 .exit-gate { width: 44px; height: 44px; }
 .exit-gate .glow {
@@ -2580,9 +2580,27 @@ body.is-play .stage { padding-top: 0; }
   .hero-line { font-size: 28px; }
   .feature-card { grid-template-columns: minmax(220px, 42%) 1fr; }
   .feature-cover { height: auto; min-height: 220px; }
+  .feature-body .btn-play { width: max-content; min-width: 148px; padding: 0 36px; }
   .feature-body h2, .feature-body .game-name { font-size: 34px; }
   .home-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (min-width: 1040px) {
   .home-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 800px) {
+  .feature-cover { height: 132px; }
+  .feature-cover img, .splash-preview img {
+    object-fit: contain;
+    object-position: center;
+    background: #18222c;
+  }
+}
+@media (max-height: 700px) {
+  .home-page { padding-top: 4px; }
+  .hero-hub { gap: 2px; }
+  .hero-line { font-size: 22px; line-height: 1.15; }
+  .feature-card { margin-top: 8px; }
+  .feature-cover { height: 96px; }
+  .feature-body { padding: 8px 14px 10px; gap: 4px; }
+  .feature-body .game-name, .feature-body h2 { font-size: 24px; }
 }

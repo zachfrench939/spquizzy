@@ -218,7 +218,13 @@ function mountSlip(root, { interactive, solved, onSolved }) {
       button.type = "button";
       button.dataset.dir = dir;
       button.setAttribute("aria-label", label);
-      button.textContent = { N: "⌃", W: "〈", E: "〉", S: "⌄" }[dir];
+      const glyph = document.createElement("img");
+      glyph.className = "pixel-art";
+      glyph.alt = "";
+      glyph.width = 21;
+      glyph.height = 21;
+      glyph.src = `/assets/art/slip/chevron-${dir.toLowerCase()}.svg`;
+      button.append(glyph);
       button.disabled = !interactive;
       button.addEventListener("click", () => {
         const moved = slidePiece(pieces, rows, cols, selected, dir, 1);

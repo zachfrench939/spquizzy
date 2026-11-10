@@ -42,6 +42,7 @@ export function shuffle(arr, rng) {
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function todayString(date = new Date()) {
@@ -74,7 +75,7 @@ export function compareDates(a, b) {
 export function formatLong(dateStr) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  return `${WEEKDAYS[dt.getDay()]} ${d} ${MONTHS[m - 1]} ${y}`;
+  return `${WEEKDAYS[dt.getDay()]} ${d} ${MONTHS_LONG[m - 1]} ${y}`;
 }
 
 export function formatShort(dateStr) {

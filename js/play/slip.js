@@ -143,10 +143,10 @@ function build() {
   pad.setAttribute("role", "group");
   pad.setAttribute("aria-label", "Slide the selected block one square");
   pad.innerHTML = `
-    <button type="button" data-dir="N" aria-label="Up">⌃</button>
-    <button type="button" data-dir="W" aria-label="Left">〈</button>
-    <button type="button" data-dir="E" aria-label="Right">〉</button>
-    <button type="button" data-dir="S" aria-label="Down">⌄</button>`;
+    <button type="button" data-dir="N" aria-label="Up"><img class="pixel-art" alt="" src="/assets/art/slip/chevron-n.svg" width="21" height="21"></button>
+    <button type="button" data-dir="W" aria-label="Left"><img class="pixel-art" alt="" src="/assets/art/slip/chevron-w.svg" width="21" height="21"></button>
+    <button type="button" data-dir="E" aria-label="Right"><img class="pixel-art" alt="" src="/assets/art/slip/chevron-e.svg" width="21" height="21"></button>
+    <button type="button" data-dir="S" aria-label="Down"><img class="pixel-art" alt="" src="/assets/art/slip/chevron-s.svg" width="21" height="21"></button>`;
   const gate = document.createElement("div");
   gate.className = `exit-gate is-art dir-${puzzle.exit.dir}`;
   gate.innerHTML = `<img class="pixel-art" alt="" src="${gateUrl(puzzle.exit.dir)}">`;
