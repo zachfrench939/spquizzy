@@ -96,9 +96,9 @@ function render(flash = -1) {
       const local = unrot(sauced, rot);
       const sauce = [1, 2, 4, 8]
         .filter((bit) => local & bit)
-        .map((bit) => `<img class="pipe on" alt="" src="${TILE}/${file}-sauce.webp" style="clip-path:${SAUCE_CLIP[bit]}">`)
+        .map((bit) => `<img class="pipe on" alt="" src="${TILE}/${file}-sauce.svg" style="clip-path:${SAUCE_CLIP[bit]}">`)
         .join("");
-      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/board.webp"><span class="spin" style="--turn:${rot * 90}deg"><img class="pipe" alt="" src="${TILE}/${file}.webp">${sauce}</span>`;
+      btn.innerHTML = `<img class="bg" alt="" src="${TILE}/board.webp"><span class="spin" style="--turn:${rot * 90}deg"><img class="pipe" alt="" src="${TILE}/${file}.svg">${sauce}</span>`;
     }
     if (index === flash) btn.classList.add("pop");
     if (hint && !tile.fixed && !hinted) {

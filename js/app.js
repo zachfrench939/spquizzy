@@ -73,7 +73,7 @@ function shell({ activeId, page }) {
   return `
     <header class="topbar">
       <button type="button" class="menu-btn" id="menu-open" aria-label="Open menu" aria-expanded="false">Menu</button>
-      <a class="brand" href="index.html"><img class="logo-mark" src="/logo-mark.svg" alt="">SPIQUIZZY</a>
+      <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.svg" alt="">SPIQUIZZY</a>
       <span class="top-spacer" aria-hidden="true"></span>
     </header>
     <div class="frame">
@@ -81,7 +81,7 @@ function shell({ activeId, page }) {
         <p class="side-kicker">${formatLong(today)}</p>
         <nav class="side-games" aria-label="Games">${games}</nav>
         <nav class="side-links" aria-label="More">
-          ${link("games.html", "All games")}
+          ${link("/games/", "All games")}
           ${link("/archive/", "Archive")}
           ${link("/about/", "About")}
           ${howLinks()}
@@ -95,7 +95,7 @@ function shell({ activeId, page }) {
         </div>
         <nav class="side-games">${games}</nav>
         <nav class="side-links">
-          ${link("games.html", "All games")}
+          ${link("/games/", "All games")}
           ${link("/archive/", "Archive")}
           ${link("/about/", "About")}
           ${howLinks()}
@@ -193,7 +193,7 @@ function gameStage(game, diff) {
   return `
     <article class="play">
       <header class="play-bar">
-        <a class="icon-btn" href="index.html" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a class="icon-btn" href="/" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         <h1 class="play-title">${game.name}</h1>
         <button type="button" id="how-open" class="icon-btn" aria-label="How to play">?</button>
         <button type="button" id="settings-open" class="icon-btn" aria-label="Settings"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
@@ -287,7 +287,7 @@ function doneStage(game, run, diff) {
 function introStage(game, { diff, cta, date }) {
   return `
     <section class="splash ${game.cart}">
-      <a class="icon-btn splash-back" href="index.html" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="icon-btn splash-back" href="/" aria-label="Back to games"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       <div class="splash-body">
         <div class="splash-icon">${iconSvg(game.id)}</div>
         <h1 class="game-name">${game.name}</h1>

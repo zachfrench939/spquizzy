@@ -1,7 +1,7 @@
 :root {
-  --tomato: #e23b2f;
+  --tomato: #E63326;
   --tomato-dark: #b42318;
-  --pasta: #f6c945;
+  --pasta: #FBBF36;
   --pasta-deep: #e0a82e;
   --cream: #f6ecd1;
   --paper: #fff8e6;
@@ -1566,7 +1566,8 @@ body::after {
   mix-blend-mode: multiply;
 }
 .stage, .play, .splash, .sidebar, .home-hub { position: relative; z-index: 1; }
-.home-hub, .sidebar, .side-links a, .hero-when, .hub-title { color: #f6ecd1; }
+.home-hub, .sidebar, .sidebar .side-links a, .hero-when, .hub-title { color: #f6ecd1; }
+.drawer, .drawer .side-links a, .drawer .side-kicker, .drawer .nav-copy, .drawer .nav-copy strong, .drawer .nav-copy em, .drawer .nav-copy small { color: #1e2a2a; }
 .hub-card, .feature-card, .splash, .sheet, .rule-bar { color: #1e2a2a; }
 .feature-card .game-name, .feature-card .goal, .feature-card .byline, .feature-card .kicker,
 .hub-card strong, .hub-card em, .hub-card .hub-meta { color: #1e2a2a; }
@@ -1603,9 +1604,9 @@ button, .btn, .pill, .icon-btn, .help-btn, .hub-card, .feature-card, .pipe-cell,
   transform: translate(4px, 4px);
   box-shadow: 0 0 0 #0b1016;
 }
-#start-game { animation: insert-coin 0.9s steps(2, end) infinite; }
+#start-game { animation: insert-coin 1.6s ease-in-out infinite; }
 @keyframes insert-coin {
-  50% { background: #f6c945; color: #1e2a2a; }
+  50% { box-shadow: 4px 4px 0 #0b1016, 0 0 0 3px #FBBF36; }
 }
 .pipe-cell.pop, .piece.pop, .num.pop { animation: pop 180ms steps(3, end); }
 @keyframes pop { 50% { transform: translateY(-3px); } }
@@ -1689,8 +1690,8 @@ button, .btn, .pill, .icon-btn, .help-btn, .hub-card, .feature-card, .pipe-cell,
 #pause.pill { background: #f6c945; color: #1e2a2a; }
 
 .feature-card {
-  background: #e23b2f;
-  color: #fff8ea;
+  background: var(--tomato);
+  color: #fff;
   border-color: #f6c945;
   box-shadow: 8px 8px 0 #7a120c;
 }
@@ -1700,7 +1701,7 @@ button, .btn, .pill, .icon-btn, .help-btn, .hub-card, .feature-card, .pipe-cell,
 body.is-home { background: #0c1424; }
 body.is-home .topbar { background: #0c1424; }
 .hub-card { border-color: #1e2a2a; box-shadow: 5px 5px 0 #000; }
-.hub-card.tomato { background: #ff5a4a; color: #fff8ea; }
+.hub-card.tomato { background: var(--tomato); color: #fff; }
 .hub-card.lasagne { background: #ff8a3d; color: #1e2a2a; }
 .hub-card.basil { background: #3cba6a; color: #102016; }
 .hub-card.pasta { background: #f6c945; color: #1e2a2a; }
@@ -1708,7 +1709,7 @@ body.is-home .topbar { background: #0c1424; }
 .hub-card.ink { background: #4aa0d8; color: #071820; }
 .hub-card strong, .hub-card em, .hub-card .hub-meta,
 .hub-card.tomato strong, .hub-card.tomato em, .hub-card.tomato .hub-meta { color: inherit; }
-.splash.tomato { background: #e23b2f; color: #fff8ea; }
+.splash.tomato { background: var(--tomato); color: #fff; }
 .splash.tomato .goal, .splash.tomato .byline, .splash.tomato .game-name { color: #fff8ea; }
 .splash .diffs { background: #1e2a2a; }
 .splash .diffs button { color: #fff8ea; }
@@ -1942,3 +1943,10 @@ body.is-doc .doc-links {
   font-weight: 800;
 }
 body.is-doc .doc-links a { text-decoration: none; }
+
+.pipe-grid { gap: 0; }
+.pipe-cell {
+  background: #2e3848;
+  border: 0;
+  box-shadow: none;
+}

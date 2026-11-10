@@ -1,7 +1,7 @@
 export const GAMES = [
   {
     id: "sauce",
-    href: "sauce-pipes.html",
+    href: "/sauce-pipes/",
     name: "Sauce Pipes",
     lines: ["SAUCE", "PIPES"],
     short: "Pipes",
@@ -16,7 +16,7 @@ export const GAMES = [
   },
   {
     id: "slip",
-    href: "slip.html",
+    href: "/slip/",
     name: "Slip",
     lines: ["SLIP"],
     short: "Slip",
@@ -31,7 +31,7 @@ export const GAMES = [
   },
   {
     id: "twirl",
-    href: "twirl.html",
+    href: "/twirl/",
     name: "Twirl",
     lines: ["TWIRL"],
     short: "Twirl",
@@ -46,7 +46,7 @@ export const GAMES = [
   },
   {
     id: "bowls",
-    href: "even-bowls.html",
+    href: "/even-bowls/",
     name: "Even Bowls",
     lines: ["EVEN", "BOWLS"],
     short: "Bowls",
@@ -61,7 +61,7 @@ export const GAMES = [
   },
   {
     id: "ravioli",
-    href: "ravioli.html",
+    href: "/ravioli/",
     name: "Ravioli",
     lines: ["RAVIOLI"],
     short: "Words",
@@ -76,7 +76,7 @@ export const GAMES = [
   },
   {
     id: "pips",
-    href: "pasta-pips.html",
+    href: "/pasta-pips/",
     name: "Pasta Pips",
     lines: ["PASTA", "PIPS"],
     short: "Pips",
