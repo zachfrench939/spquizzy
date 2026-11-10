@@ -1737,9 +1737,10 @@ img.sprite, .mascot img, .hub-icon img, .splash-icon img, .feature-icon img, .na
 .piece .body { border: 0; background: transparent; box-shadow: none; overflow: hidden; }
 .piece .body img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .piece.ball .body { background: transparent; }
-.board-slot { position: relative; }
-.react { position: absolute; left: 6px; bottom: 6px; width: 84px; z-index: 4; pointer-events: none; }
-.react img { width: 84px; height: auto; }
+.note-row { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.note-row .note { flex: 1; }
+.react { width: 56px; flex: 0 0 56px; }
+.react img { width: 56px; height: auto; display: block; }
 
 body.is-home {
   background-color: #0c1424;
