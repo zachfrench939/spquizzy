@@ -14,9 +14,6 @@ function device() {
 export function track(event) {
   try {
     if (navigator.doNotTrack === "1") return;
-    let consent = null;
-    try { consent = localStorage.getItem("spquizzy.consent"); } catch { /* private mode */ }
-    if (consent !== "accept") return;
     const q = new URLSearchParams(location.search);
     let referrer = "";
     try {

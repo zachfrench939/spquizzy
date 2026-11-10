@@ -3,41 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Terms — Spiquizzy</title>
-  <link rel="canonical" href="https://spiquizzy.com/terms/">
+  <title>Terms of use | Spiquizzy</title>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <meta name="theme-color" content="#FBBF36">
-  <link rel="stylesheet" href="/css/drop.css">
+  <meta name="description" content="Free to play, as is, under the law of England and Wales. Not affiliated with The New York Times.">
+  <link rel="canonical" href="https://spiquizzy.com/terms/">
+  <meta name="theme-color" content="#1E2A2A">
+  <link rel="stylesheet" href="/css/site.css">
 </head>
-<body>
-  <header class="app-header">
-    <a class="brand" href="/"><img class="logo" src="/assets/drop/logo-red.png" width="36" height="36" alt=""> <span class="wordmark">Spiquizzy</span></a>
+<body class="is-doc">
+  <header class="topbar">
+    <a class="brand" href="/"><img class="logo-mark" src="/logo-mark.png" width="32" height="32" alt="">SPIQUIZZY</a>
   </header>
   <main class="doc">
-  
-<h1>Terms of use</h1>
-<p>Last updated 11 November 2026.</p>
-<p>The Daily Drop is free to play. Coins are banked only when you finish all 10 questions. Leaving early or running out of coins banks 0 for that day.</p>
-<p>An account is optional. If you sign in, you keep one official run per UK day. Do not try to replay a closed day or to send a score the server did not award.</p>
-<p>Spiquizzy Plus is not on sale. The buttons on that page do not take payment.</p>
-<p>These terms use the law of England and Wales. Questions: <a href="mailto:contact@spiquizzy.com">contact@spiquizzy.com</a>.</p>
-
+    <h1>Terms of use</h1>
+    <p>Last updated 10 November 2026.</p>
+    <p>Spiquizzy is free to play. It is provided as is, without a promise that a puzzle, a score or the site will always be available.</p>
+    <p>Do not cheat, and do not scrape the site or the daily boards.</p>
+    <p>The games, the words, the art and the text belong to Spiquizzy.</p>
+    <p>Spiquizzy is not affiliated with The New York Times. These puzzles are not Times puzzles, and this site does not publish Times answers.</p>
+    <p>These terms are governed by the law of England and Wales.</p>
+    <p>Questions: <a data-contact href="mailto:contact@spiquizzy.com">contact@spiquizzy.com</a>.</p>
   </main>
-  <aside class="consent" id="consent">
-    <p>Optional analytics stay off until you agree. Reject is the same size as Accept.</p>
-    <div class="pair"><button class="reject" type="button" id="consent-no">Reject</button><button class="accept" type="button" id="consent-yes">Accept</button></div>
-  </aside>
-  <script>
-    const key = "spquizzy.consent";
-    const bar = document.querySelector("#consent");
-    if (localStorage.getItem(key)) bar.hidden = true;
-    document.querySelector("#consent-yes").onclick = () => { localStorage.setItem(key, "accept"); bar.hidden = true; };
-    document.querySelector("#consent-no").onclick = () => { localStorage.setItem(key, "reject"); bar.hidden = true; };
-  </script>
+  <p class="wick-line"><a href="https://wickquiz.com" target="_blank" rel="noopener">Test your general knowledge → Try Wick, a 1-minute daily quiz</a></p>
+  <footer class="doc-links" aria-label="More on Spiquizzy"><a href="/">Home</a><a href="/sauce-pipes/">Sauce Pipes</a><a href="/slip/">Slip</a><a href="/twirl/">Twirl</a><a href="/even-bowls/">Even Bowls</a><a href="/ravioli/">Ravioli</a><a href="/pasta-pips/">Pasta Pips</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/cookies/">Cookies</a><a href="/terms/">Terms</a></footer>
   <script type="module" src="/js/analytics.js"></script>
+  <script type="module">
+    import { CONTACT_EMAIL } from "/js/config.js";
+    document.querySelectorAll("[data-contact]").forEach((el) => {
+      el.textContent = CONTACT_EMAIL;
+      if (el.tagName === "A") el.href = "mailto:" + CONTACT_EMAIL;
+    });
+  </script>
 </body>
 </html>

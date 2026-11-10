@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /data/checks/
-Disallow: /supabase/
 
 Sitemap: https://spiquizzy.com/sitemap.xml

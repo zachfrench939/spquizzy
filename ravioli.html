@@ -1,11 +1,73 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <link rel="canonical" href="https://spiquizzy.com/">
-  <meta http-equiv="refresh" content="0; url=/">
-  <title>The Daily Drop — Spiquizzy</title>
-  <script>location.replace("/");</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ravioli, a join-halves word game | Spiquizzy</title>
+  <meta name="description" content="Ravioli is a free daily join-halves word game. Join two halves into one real word. A new list every day.">
+  <link rel="canonical" href="https://spiquizzy.com/ravioli/">
+  <meta name="theme-color" content="#1E2A2A">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Spiquizzy">
+  <meta property="og:title" content="Ravioli, a join-halves word game | Spiquizzy">
+  <meta property="og:description" content="Ravioli is a free daily join-halves word game. Join two halves into one real word. A new list every day.">
+  <meta property="og:url" content="https://spiquizzy.com/ravioli/">
+  <meta property="og:image" content="https://spiquizzy.com/og/ravioli.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Ravioli, a free daily puzzle on Spiquizzy">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ravioli, a join-halves word game | Spiquizzy">
+  <meta name="twitter:description" content="Ravioli is a free daily join-halves word game. Join two halves into one real word. A new list every day.">
+  <meta name="twitter:image" content="https://spiquizzy.com/og/ravioli.png">
+  <meta name="twitter:image:alt" content="Ravioli, a free daily puzzle on Spiquizzy">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Press+Start+2P&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Press+Start+2P&display=swap"></noscript>
+  <link rel="stylesheet" href="css/site.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://spiquizzy.com/#website",
+      "name": "Spiquizzy",
+      "url": "https://spiquizzy.com/",
+      "description": "Free daily puzzle games. Six pasta puzzles, a new board every day."
+    },
+    {
+      "@type": "Game",
+      "name": "Ravioli",
+      "url": "https://spiquizzy.com/ravioli/",
+      "description": "Ravioli is a free daily join-halves word game. Join two halves into one real word. A new list every day.",
+      "genre": "Puzzle",
+      "gamePlatform": "Web browser",
+      "image": "https://spiquizzy.com/og/ravioli.png",
+      "isPartOf": { "@id": "https://spiquizzy.com/#website" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+  ]
+}
+  </script>
 </head>
-<body><p><a href="/">Today’s drop</a></p></body>
+<body>
+  <header class="sr-only">
+    <h1>Ravioli, a join-halves word game</h1>
+    <p>Tap two halves that join into one real word. Ravioli is a free daily join-halves word game, with a fresh list of words every day.</p>
+  </header>
+  <div id="app"></div>
+  <noscript><p class="fine" style="text-align:center;padding:24px">Spiquizzy needs JavaScript to deal today's puzzles. Tap two halves that join into one real word. Ravioli is a free daily join-halves word game, with a fresh list of words every day.</p></noscript>
+  <script type="module">
+    import { openGame } from "./js/app.js";
+    openGame("ravioli");
+  </script>
+  <script type="module" src="/js/analytics.js"></script>
+</body>
 </html>

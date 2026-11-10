@@ -1,11 +1,79 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <link rel="canonical" href="https://spiquizzy.com/">
-  <meta http-equiv="refresh" content="0; url=/">
-  <title>The Daily Drop — Spiquizzy</title>
-  <script>location.replace("/");</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archive of free daily puzzles | Spiquizzy</title>
+  <meta name="description" content="Play past Spiquizzy puzzles. Every free daily puzzle stays on the shelf.">
+  <link rel="canonical" href="https://spiquizzy.com/archive/">
+  <meta name="theme-color" content="#1E2A2A">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Spiquizzy">
+  <meta property="og:title" content="Archive of free daily puzzles | Spiquizzy">
+  <meta property="og:description" content="Play past Spiquizzy puzzles. Every free daily puzzle stays on the shelf.">
+  <meta property="og:url" content="https://spiquizzy.com/archive/">
+  <meta property="og:image" content="https://spiquizzy.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Spiquizzy, six free daily puzzles, with the wombat mascot">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Archive of free daily puzzles | Spiquizzy">
+  <meta name="twitter:description" content="Play past Spiquizzy puzzles. Every free daily puzzle stays on the shelf.">
+  <meta name="twitter:image" content="https://spiquizzy.com/og-image.png">
+  <meta name="twitter:image:alt" content="Spiquizzy, six free daily puzzles, with the wombat mascot">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&amp;family=Press+Start+2P&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&amp;family=Press+Start+2P&amp;display=swap"></noscript>
+  <link rel="stylesheet" href="/css/site.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://spiquizzy.com/#website",
+      "name": "Spiquizzy",
+      "url": "https://spiquizzy.com/",
+      "description": "Free daily puzzle games. Six pasta puzzles, a new board every day."
+    },
+    {
+      "@type": "WebPage",
+      "name": "Archive of free daily puzzles | Spiquizzy",
+      "url": "https://spiquizzy.com/archive/",
+      "description": "Play past Spiquizzy puzzles. Every free daily puzzle stays on the shelf.",
+      "isPartOf": { "@id": "https://spiquizzy.com/#website" }
+    }
+  ]
+}
+  </script>
 </head>
-<body><p><a href="/">Today’s drop</a></p></body>
+<body>
+  <div id="app">
+    <article id="static-copy" class="page-intro">
+      <h1 class="game-name">Archive</h1>
+      <p class="lede">Past plates, still warm. Easy, Medium and Hard light up when that difficulty is cleared on this device.</p>
+      <p>Every local date has a board for each game. Use the date box to open an older puzzle. The shelves fill in on this device.</p>
+      <ul>
+        <li><a href="/sauce-pipes/">Sauce Pipes</a></li>
+        <li><a href="/pasta-pips/">Pasta Pips</a></li>
+        <li><a href="/ravioli/">Ravioli</a></li>
+        <li><a href="/slip/">Slip</a></li>
+        <li><a href="/twirl/">Twirl</a></li>
+        <li><a href="/even-bowls/">Even Bowls</a></li>
+      </ul>
+    </article>
+  </div>
+  <noscript><p class="fine" style="text-align:center;padding:24px">The words above are the page. The menu needs JavaScript.</p></noscript>
+  <script type="module" src="/js/analytics.js"></script>
+  <script type="module">
+    import { openArchive } from "/js/app.js";
+    openArchive();
+  </script>
+</body>
 </html>

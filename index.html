@@ -2,34 +2,71 @@
 <html lang="en-GB">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>The Daily Drop — Spiquizzy</title>
-  <meta name="description" content="Start with 10 coins. Put them on the answers you trust. Finish all 10 questions to bank what’s left.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spiquizzy, free daily puzzle games</title>
+  <meta name="description" content="Spiquizzy is a free daily puzzle site. Six pasta games, a new board every day, and no account to play.">
   <link rel="canonical" href="https://spiquizzy.com/">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Spiquizzy">
-  <meta property="og:title" content="The Daily Drop — Spiquizzy">
-  <meta property="og:description" content="Start with 10 coins. Put them on the answers you trust. Finish all 10 questions to bank what’s left.">
-  <meta property="og:url" content="https://spiquizzy.com/">
-  <meta property="og:image" content="https://spiquizzy.com/og-image.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="The Daily Drop — Spiquizzy">
-  <meta name="twitter:description" content="Start with 10 coins. Put them on the answers you trust. Finish all 10 questions to bank what’s left.">
-  <meta name="twitter:image" content="https://spiquizzy.com/og-image.png">
-
+  <meta name="theme-color" content="#1E2A2A">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <meta name="theme-color" content="#FBBF36">
-  <link rel="stylesheet" href="/css/drop.css">
-
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Spiquizzy">
+  <meta property="og:title" content="Spiquizzy, free daily puzzle games">
+  <meta property="og:description" content="Spiquizzy is a free daily puzzle site. Six pasta games, a new board every day, and no account to play.">
+  <meta property="og:url" content="https://spiquizzy.com/">
+  <meta property="og:image" content="https://spiquizzy.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Spiquizzy, six free daily puzzles, with the wombat mascot">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Spiquizzy, free daily puzzle games">
+  <meta name="twitter:description" content="Spiquizzy is a free daily puzzle site. Six pasta games, a new board every day, and no account to play.">
+  <meta name="twitter:image" content="https://spiquizzy.com/og-image.png">
+  <meta name="twitter:image:alt" content="Spiquizzy, six free daily puzzles, with the wombat mascot">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Press+Start+2P&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Press+Start+2P&display=swap"></noscript>
+  <link rel="stylesheet" href="css/site.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://spiquizzy.com/#website",
+      "name": "Spiquizzy",
+      "url": "https://spiquizzy.com/",
+      "description": "Free daily puzzle games. Six pasta puzzles, a new board every day."
+    },
+    {
+      "@type": "WebApplication",
+      "name": "Spiquizzy",
+      "url": "https://spiquizzy.com/",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "description": "Free daily puzzle games. Six pasta puzzles, a new board every day.",
+      "image": "https://spiquizzy.com/og-image.png",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+  ]
+}
+  </script>
 </head>
-<body data-route="home">
+<body>
+  <header class="sr-only">
+    <h1>Spiquizzy, free daily puzzle games</h1>
+    <p>Play six free daily puzzles: pipe turning, a sliding meatball, matching paths, a daily maths puzzle, a join-halves word game, and domino regions. A new board every day.</p>
+  </header>
   <div id="app"></div>
-  
+  <noscript><p class="fine" style="text-align:center;padding:24px">Spiquizzy needs JavaScript to deal today's puzzles. Six free daily puzzles, a new board every day.</p></noscript>
+  <script type="module">
+    import { openHome } from "./js/app.js";
+    openHome();
+  </script>
   <script type="module" src="/js/analytics.js"></script>
-  <script type="module" src="/js/drop/app.js"></script>
 </body>
 </html>
