@@ -56,7 +56,7 @@ let floater = null;
 let timerId = 0;
 let audioCtx = null;
 let howtoStep = 0;
-let offline = true;
+let offline = false;
 
 function londonToday(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -627,7 +627,13 @@ function renderQuestion() {
       document.querySelector("#offline-note").hidden = false;
     });
   } else if (!SHOT) {
-    serveGuest(guestId(), run.q).catch(() => {});
+    serveGuest(guestId(), run.q).then(() => {
+      offline = false;
+      document.querySelector("#offline-note").hidden = true;
+    }).catch(() => {
+      offline = true;
+      document.querySelector("#offline-note").hidden = false;
+    });
   }
 }
 

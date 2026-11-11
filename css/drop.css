@@ -683,3 +683,6 @@ html.has-consent #view-play{height:calc(100dvh - 40px);}
 .doc h2{font-family:var(--title);font-weight:800;font-size:22px;margin:18px 0 8px;}
 .doc p,.doc li{font-weight:600;font-size:16px;line-height:1.45;margin:0 0 10px;}
 .doc a{color:var(--ink);}
+
+/* No ads are live yet: keep reserved slots out of sight until an ad network is wired up. */
+.ad-slot{display:none !important;}
