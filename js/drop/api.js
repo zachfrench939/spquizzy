@@ -88,7 +88,7 @@ export function forfeitRun(session) {
 export function magicLinkErrorMessage(status, body = "") {
   const text = String(body || "");
   if (status === 429 || text.includes("over_email_send_rate_limit")) {
-    return "Too many sign-in emails right now, try again in a few minutes. You can still play as a guest.";
+    return "Email sign-in is having trouble right now. You can still play as a guest and your coins stay on this device.";
   }
   return "We couldn’t send the sign-in email. You can still play as a guest.";
 }
