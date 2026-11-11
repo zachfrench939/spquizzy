@@ -11,7 +11,7 @@ let nextResponse = new Response("", { status: 200 });
 const { magicLinkErrorMessage, readAuthHash, sendMagicLink, oauthUrl } = await import("../js/drop/api.js");
 
 test("a rate limit gets a friendly guest message", () => {
-  const message = "Too many sign-in emails right now, try again in a few minutes. You can still play as a guest.";
+  const message = "Email sign-in is having trouble right now. You can still play as a guest and your coins stay on this device.";
   assert.equal(magicLinkErrorMessage(429, ""), message);
   assert.equal(magicLinkErrorMessage(400, '{"error_code":"over_email_send_rate_limit"}'), message);
 });

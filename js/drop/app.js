@@ -11,6 +11,7 @@ import {
 const COIN = "/assets/drop/coin-fusilli-64.png";
 const BANK = "/assets/drop/bank-stack-64.png";
 const LOGO = "/assets/drop/logo-red.png";
+const GOOGLE_MARK = `<svg class="g-logo" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>`;
 const LETTERS = ["A", "B", "C", "D"];
 const FILLS = ["white", "cheese", "mint", "pink"];
 const RUN_KEY = "spquizzy.drop.run";
@@ -19,6 +20,7 @@ const HOW_KEY = "spquizzy.drop.howto";
 const SET_KEY = "spquizzy.drop.settings";
 const CONSENT_KEY = "spquizzy.consent";
 const PROMPT_KEY = "spquizzy.drop.signin-prompt";
+const SIGNED_OUT_KEY = "spquizzy.drop.just-signed-out";
 const NAME_LATER_KEY = "spquizzy.drop.username-later";
 const GUEST_KEY = "spquizzy.drop.guest";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
@@ -438,7 +440,7 @@ function profileView() {
   const view = el("section", "page");
   view.id = "view-profile";
   view.hidden = true;
-  view.innerHTML = `<h1>Stats</h1><p id="profile-copy"></p><p>Streaks are not part of this version. A zero day is not the only thing the page shows.</p>`;
+  view.innerHTML = `<h1>Stats</h1><p id="profile-copy"></p><p>Finish all 10 questions in a day to bank coins.</p>`;
   return view;
 }
 
@@ -447,7 +449,7 @@ function signinView() {
   view.id = "view-signin";
   view.hidden = true;
   const googleRow = GOOGLE_SIGN_IN ? "" : " hidden";
-  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto;border:2px solid #111"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="magic-note" style="font-weight:700;margin-top:12px"></p><p id="google-row" style="margin-top:12px"${googleRow}><a class="btn-ghost" id="google-link" href="#">Continue with Google</a></p>`;
+  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto;border:2px solid #111"><div id="signin-guest"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p><p id="magic-note" style="font-weight:700;margin-top:12px"></p></div><div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
   return view;
 }
 
@@ -524,6 +526,7 @@ function signInPrompt() {
       <input id="prompt-email" type="email" autocomplete="email" required>
       <button class="btn-primary" type="submit">Email me a link</button>
     </form>
+    <p id="prompt-google"${GOOGLE_SIGN_IN ? "" : " hidden"}><a class="btn-google" id="prompt-google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p>
     <p id="prompt-note"></p>
     <button class="btn-ghost" type="button" id="prompt-later">Not right now</button>
   </div>`;
@@ -538,6 +541,10 @@ function offerSignIn() {
   const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
   if (SHOT || session?.access_token || playingNow() || route === "signin" || route === "plus") return false;
   try {
+    if (sessionStorage.getItem(SIGNED_OUT_KEY)) {
+      sessionStorage.removeItem(SIGNED_OUT_KEY);
+      return false;
+    }
     if (sessionStorage.getItem(PROMPT_KEY)) return false;
   } catch {
     return false;
@@ -627,6 +634,7 @@ function signOut() {
   session = null;
   profile = null;
   signInNotice = "";
+  try { sessionStorage.setItem(SIGNED_OUT_KEY, "1"); } catch { /* private mode */ }
   location.reload();
 }
 
@@ -673,7 +681,7 @@ function trapDialog(event) {
     return;
   }
   if (event.key !== "Tab") return;
-  const items = [...card.querySelectorAll("input, button")].filter((node) => !node.disabled && !node.closest("[hidden]"));
+  const items = [...card.querySelectorAll("input, button, a")].filter((node) => !node.disabled && !node.closest("[hidden]"));
   if (!items.length) return;
   const first = items[0];
   const last = items[items.length - 1];
@@ -1418,18 +1426,15 @@ async function paintLeague(which) {
   if (title) title.textContent = which === "All-time" ? "All-time league" : `${which} league`;
   document.querySelector("#league-meta").textContent = "Global board · coins banked";
   const foot = document.querySelector("#league-foot");
-  if (foot) {
-    foot.textContent = session?.access_token
-      ? "You’re on the global board. Coins banked in the period, ranked against everyone."
-      : "Sign in to appear on the public board.";
-  }
+  const needsName = Boolean(session?.access_token && profile && !profile.username);
+  setLeagueFoot(foot, needsName);
   if (SHOT === "rank") {
     if (you) you.textContent = "You: #123 of 4,567";
     if (guest) guest.hidden = true;
     paintLeagueRows([]);
     const empty = document.querySelector("#league-empty");
     if (empty) empty.hidden = true;
-    if (foot) foot.textContent = "You’re on the global board. Coins banked in the period, ranked against everyone.";
+    setLeagueFoot(foot, false);
     return;
   }
   let board = null;
@@ -1444,17 +1449,48 @@ async function paintLeague(which) {
   paintLeagueRows(rows);
   const empty = document.querySelector("#league-empty");
   if (empty) empty.hidden = !(board && rows.length === 0);
+  const missingName = Boolean(session?.access_token && (board?.you?.needsUsername || (profile && !profile.username)));
+  setLeagueFoot(foot, missingName);
   if (!session?.access_token) {
-    if (you) you.textContent = "You’re unranked.";
+    if (you) {
+      you.classList.remove("is-link");
+      you.replaceChildren(document.createTextNode("You’re unranked."));
+    }
     if (guest) guest.hidden = false;
     return;
   }
   if (guest) guest.hidden = true;
-  if (!board) {
-    if (you) you.textContent = "The board isn’t available right now.";
+  if (missingName) {
+    showPickUsername(you);
     return;
   }
-  if (you) you.textContent = formatYouRank(board.you, board.total);
+  if (!board) {
+    if (you) {
+      you.classList.remove("is-link");
+      you.replaceChildren(document.createTextNode("The board isn’t available right now."));
+    }
+    return;
+  }
+  if (you) {
+    you.classList.remove("is-link");
+    you.replaceChildren(document.createTextNode(formatYouRank(board.you, board.total)));
+  }
+}
+
+function setLeagueFoot(foot, needsName) {
+  if (!foot) return;
+  if (!session?.access_token) foot.textContent = "Sign in to appear on the public board.";
+  else if (needsName) foot.textContent = "Pick a username in Profile to appear on the public board.";
+  else foot.textContent = "You’re on the global board. Coins banked in the period, ranked against everyone.";
+}
+
+function showPickUsername(you) {
+  if (!you) return;
+  you.classList.add("is-link");
+  you.replaceChildren();
+  const link = el("a", null, "Pick a username to join the board.");
+  link.href = "/settings/#set-username";
+  you.append(link);
 }
 
 function paintBank() {
@@ -1498,15 +1534,31 @@ function paintSettings() {
   if (!note.textContent) note.textContent = profile?.username ? "" : "3 to 16 characters: letters, numbers and underscores.";
 }
 
+function paintGoogle() {
+  if (!GOOGLE_SIGN_IN) return;
+  const href = oauthUrl("google");
+  document.querySelectorAll(".btn-google").forEach((link) => { link.href = href; });
+}
+
 function paintSignin() {
+  const signedIn = Boolean(session?.access_token);
+  const guest = document.querySelector("#signin-guest");
+  const signed = document.querySelector("#signin-signed");
+  if (guest) guest.hidden = signedIn;
+  if (signed) signed.hidden = !signedIn;
   const note = document.querySelector("#magic-note");
-  if (session?.access_token) note.textContent = "This browser has a sign-in session.";
-  else if (signInNotice) note.textContent = signInNotice;
-  else note.textContent = "";
-  const google = document.querySelector("#google-link");
+  if (note && !signedIn) note.textContent = signInNotice || "";
   const row = document.querySelector("#google-row");
   if (row) row.hidden = !GOOGLE_SIGN_IN;
-  if (google && GOOGLE_SIGN_IN) google.href = oauthUrl("google");
+  paintGoogle();
+}
+
+function focusUsernameField() {
+  if (location.hash !== "#set-username") return;
+  const input = document.querySelector("#set-username");
+  if (!input || input.disabled) return;
+  input.scrollIntoView({ block: "center" });
+  input.focus();
 }
 
 function openHow(step = 0) {
@@ -1611,7 +1663,7 @@ function onClick(event) {
     if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
     return;
   }
-  if (event.target.id === "sign-out" || event.target.id === "sign-out-bank") {
+  if (event.target.id === "sign-out" || event.target.id === "sign-out-bank" || event.target.id === "sign-out-page") {
     signOut();
     return;
   }
@@ -1787,6 +1839,7 @@ function applyShot() {
 }
 
 async function boot() {
+  paintGoogle();
   saveSettings();
   const consent = localStorage.getItem(CONSENT_KEY);
   const showConsent = consent !== "accept" && consent !== "reject";
@@ -1849,6 +1902,7 @@ async function boot() {
   } else if (!showConsent && route === "howto") openHow(0);
   else if (!seenHow() && !showConsent && route === "home") openHow(0);
   document.querySelector("#play-btn").addEventListener("click", () => { location.href = "/play/"; });
+  focusUsernameField();
 }
 
 shell();

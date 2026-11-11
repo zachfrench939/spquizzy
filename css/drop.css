@@ -657,8 +657,10 @@ body.reduce-motion .pending-float{display:none;}
 }
 .prompt-card > p{font-weight:700;font-size:16px;line-height:1.35;margin:0 0 14px;}
 #prompt-form{display:grid;gap:8px;text-align:left;}
+#user-form{display:grid;gap:8px;text-align:left;}
 #prompt-form label,#user-form label{font-weight:700;font-size:16px;}
 #prompt-form input,#user-form input{height:48px;border:3px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;font-weight:700;background:var(--white);}
+#user-form input{width:100%;box-sizing:border-box;}
 #prompt-note,#user-note{min-height:1.4em;font-weight:700;font-size:16px;margin:10px 0;}
 #prompt-later,#user-later{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:48px;}
 
@@ -718,6 +720,24 @@ html.has-consent #view-play{height:calc(100dvh - 96px);}
   background:var(--cheese);border:3px solid var(--ink);box-shadow:var(--shadow-sm);
   padding:12px 14px;margin:0 0 12px;font-weight:800;font-size:18px;
 }
+.you-rank.is-link{padding:0;}
+.you-rank a{
+  display:flex;align-items:center;min-height:48px;width:100%;
+  padding:12px 14px;font-weight:800;font-size:18px;color:var(--ink);
+  text-decoration:underline;text-underline-offset:3px;
+}
+.btn-google{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  width:100%;min-height:48px;height:48px;margin-top:10px;
+  background:#fff;color:#1f1f1f;
+  border:3px solid var(--ink);box-shadow:3px 3px 0 #111;
+  font-weight:700;font-size:16px;text-decoration:none;
+}
+.btn-google:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #111;}
+.btn-google .g-logo{width:18px;height:18px;flex:none;}
+#signin-signed{display:grid;gap:12px;max-width:360px;margin:12px auto 0;}
+#signin-signed .btn-primary{display:flex;align-items:center;justify-content:center;text-decoration:none;}
+#signin-signed .btn-keep{width:100%;}
 .league-guest{margin:0 0 16px;}
 .league-guest p{font-size:16px;}
 .league-guest .btn-primary{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:8px;}
