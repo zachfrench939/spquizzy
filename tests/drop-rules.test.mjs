@@ -13,6 +13,7 @@ import {
   minusStep,
   stackCount,
   submissionWindow,
+  timeoutFill,
   timeoutPots,
   totalInPlay,
   trayTokens,
@@ -83,6 +84,34 @@ test("a timeout drops only the coins still in the tray", () => {
   assert.deepEqual(left, { tray: 0, doors: [10, 20, 40, 0] });
   assert.equal(totalInPlay(left), 70);
   assert.equal(totalInPlay(timeoutPots(freshPots())), 0);
+});
+
+test("a timeout puts leftovers on the fullest answer", () => {
+  const filled = timeoutFill({ tray: 15, doors: [10, 20, 5, 50] });
+  assert.equal(filled.filled, true);
+  assert.equal(filled.letter, "D");
+  assert.deepEqual(filled.pots, { tray: 0, doors: [10, 20, 5, 65] });
+  assert.equal(filled.note, "Time's up, leftover coins went on D.");
+});
+
+test("a timeout tie keeps the earliest answer", () => {
+  const filled = timeoutFill({ tray: 10, doors: [20, 20, 0, 0] });
+  assert.equal(filled.letter, "A");
+  assert.deepEqual(filled.pots.doors, [30, 20, 0, 0]);
+});
+
+test("a timeout with nothing placed loses the tray", () => {
+  const filled = timeoutFill(freshPots());
+  assert.equal(filled.filled, false);
+  assert.equal(filled.note, "");
+  assert.deepEqual(filled.pots, { tray: 0, doors: [0, 0, 0, 0] });
+});
+
+test("a timeout with everything already placed changes nothing", () => {
+  const pots = { tray: 0, doors: [10, 20, 70, 0] };
+  const filled = timeoutFill(pots);
+  assert.equal(filled.filled, false);
+  assert.deepEqual(filled.pots, pots);
 });
 
 test("stacks stay between one and five coins", () => {

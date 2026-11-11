@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/games.test.mjs tests/drop-rules.test.mjs tests/drop-api.test.mjs tests/drop-nav.test.mjs"
+    "test": "node --test tests/games.test.mjs tests/drop-rules.test.mjs tests/drop-api.test.mjs tests/drop-nav.test.mjs tests/drop-signin.test.mjs"
   }
 }

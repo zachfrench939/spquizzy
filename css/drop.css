@@ -481,12 +481,12 @@ footer.fine{margin-top:22px;font-size:13px;color:var(--muted);font-weight:600;}
 }
 .fun-fact{
   position:relative;z-index:2;flex:0 0 auto;
-  margin:8px 0 4px;padding:2px 8px;
+  min-height:40px;margin:8px 0 4px;padding:2px 8px;
   background:var(--cream);
   font-weight:700;font-size:13px;line-height:1.3;color:var(--muted);text-align:center;
 }
 .hint{min-height:14px;margin:4px 0 6px;font-weight:700;font-size:13px;color:var(--muted);text-align:center;}
-.play-actions{flex-shrink:0;}
+.play-actions{flex-shrink:0;min-height:158px;}
 .amount-bar{display:flex;gap:6px;margin:0 0 8px;}
 .amount-bar button{
   flex:1;min-height:44px;padding:0 2px;
@@ -576,7 +576,9 @@ body.reduce-motion .pending-float{display:none;}
   background:var(--cheese);border:3px solid var(--ink);box-shadow:var(--shadow-sm);
   padding:12px;margin:12px 0;text-align:left;font-weight:700;font-size:14px;
 }
-.league-snip a{font-weight:800;}
+.league-snip a,.tap-link,#view-results .btn-ghost{
+  display:inline-flex;align-items:center;min-height:44px;font-weight:800;
+}
 .countdown{font-weight:700;font-size:15px;color:var(--muted);margin:10px 0 14px;}
 @media (max-height:700px){
   #result-title{font-size:32px;}
@@ -633,6 +635,31 @@ body.reduce-motion .pending-float{display:none;}
 .sheet-nav{display:flex;gap:10px;}
 .sheet-nav button{flex:1;}
 
+/* ——— guest sign-in prompt ——— */
+.prompt-back{
+  position:fixed;inset:0;z-index:75;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(17,17,17,.28);
+}
+.prompt-card{
+  width:min(360px,100%);
+  background:var(--cream);
+  border:3px solid var(--ink);
+  box-shadow:8px 8px 0 #111;
+  padding:20px;text-align:center;
+}
+.prompt-card img{margin:0 auto 10px;}
+.prompt-card h2{
+  font-family:var(--title);font-weight:800;font-size:26px;
+  letter-spacing:-0.04em;line-height:1.05;margin:0 0 8px;
+}
+.prompt-card > p{font-weight:700;font-size:16px;line-height:1.35;margin:0 0 14px;}
+#prompt-form{display:grid;gap:8px;text-align:left;}
+#prompt-form label{font-weight:700;font-size:14px;}
+#prompt-form input{height:48px;border:3px solid var(--ink);padding:0 12px;font:inherit;font-weight:700;background:var(--white);}
+#prompt-note{min-height:1.4em;font-weight:700;margin:10px 0;}
+#prompt-later{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:44px;}
+
 /* ——— leave confirm ——— */
 .modal-back{position:fixed;inset:0;background:rgba(17,17,17,.5);z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal{
@@ -649,14 +676,14 @@ body.reduce-motion .pending-float{display:none;}
 .price{font-family:var(--title);font-weight:800;font-size:28px;margin:8px 0;}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;border:3px solid var(--ink);background:var(--white);padding:12px;margin:0 0 10px;font-weight:700;}
 .tog button[aria-pressed="true"]{background:var(--ink);color:var(--cheese);}
-.tog .switch{width:52px;height:32px;border:3px solid var(--ink);background:var(--white);box-shadow:var(--shadow-sm);flex:none;position:relative;}
+.tog .switch{width:52px;height:44px;min-width:44px;min-height:44px;border:3px solid var(--ink);background:var(--white);box-shadow:var(--shadow-sm);flex:none;position:relative;}
 .tog .switch[aria-pressed="true"]{background:var(--cheese);}
 
 /* shot helpers */
 .share-card .trail{white-space:pre-wrap;}
 #howto-art{flex-wrap:nowrap;}
 .consent{
-  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  position:fixed;left:0;right:0;bottom:0;z-index:80;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
   margin:0;padding:8px;min-height:0;
   background:var(--cream);color:var(--ink);

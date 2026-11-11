@@ -1,9 +1,9 @@
-import { LAUNCH_DATE } from "../config.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, weeklyLeague } from "./api.js";
+import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, magicLinkErrorMessage, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, weeklyLeague } from "./api.js";
 import { navAction } from "./nav.js";
 import {
   START_COINS, LONG_PRESS_MS, addAmount, addRest, allIn, canManualLock, chipState,
-  clearDoor, clonePots, freshPots, minusStep, QUESTION_MS, stackCount, timeoutPots,
+  clearDoor, clonePots, freshPots, minusStep, QUESTION_MS, stackCount, timeoutFill, timeoutPots,
   totalInPlay, trayTokens,
 } from "./rules.js";
 
@@ -17,6 +17,7 @@ const BANK_KEY = "spquizzy.drop.bank";
 const HOW_KEY = "spquizzy.drop.howto";
 const SET_KEY = "spquizzy.drop.settings";
 const CONSENT_KEY = "spquizzy.consent";
+const PROMPT_KEY = "spquizzy.drop.signin-prompt";
 const GUEST_KEY = "spquizzy.drop.guest";
 
 const ROUTES = {
@@ -45,7 +46,9 @@ const app = document.querySelector("#app");
 const params = new URLSearchParams(location.search);
 const SHOT = params.get("shot");
 let pack = null;
-let session = captureHashSession() || readSession();
+const capturedAuth = captureHashSession();
+let session = capturedAuth?.access_token ? capturedAuth : readSession();
+let signInNotice = capturedAuth?.message || "";
 let settings = loadSettings();
 let bank = loadBank();
 let run = null;
@@ -194,7 +197,7 @@ function shell() {
   brand.append(logo, el("span", "wordmark", "Spiquizzy"));
   const nav = el("nav", "header-actions");
   nav.setAttribute("aria-label", "Site");
-  for (const [href, label] of [["/how-to-play/", "How to play"], ["/leagues/", "Leagues"], ["/bank/", "Bank"], ["/sign-in/", "Sign in"]]) {
+  for (const [href, label] of [["/how-to-play/", "How to play"], ["/leagues/", "Leagues"], ["/bank/", "Bank"], ["/sign-in/", "Sign in"], ["/settings/", "Settings"]]) {
     const link = el("a", "nav-link", label);
     link.href = href;
     nav.append(link);
@@ -214,7 +217,8 @@ function shell() {
 
   const main = el("main");
   main.append(homeView(), playView(), resultsView(), leagueView(), bankView(), profileView(), signinView(), plusView(), settingsView(), missingView());
-  app.append(header, main, howtoSheet(), leaveModal(), consentBar());
+  app.append(header, main, howtoSheet(), leaveModal(), signInPrompt(), consentBar());
+  document.addEventListener("keydown", trapSignPrompt);
   app.addEventListener("click", onClick);
   const stage = document.querySelector("#play-stage");
   stage.addEventListener("pointerdown", onDown);
@@ -321,7 +325,6 @@ function playView() {
   tray.setAttribute("aria-label", "Unplaced coins");
   const fact = el("p", "fun-fact");
   fact.id = "fun-fact";
-  fact.hidden = true;
   const hint = el("p", "hint");
   hint.id = "lock-hint";
   const actions = el("div", "play-actions");
@@ -434,7 +437,8 @@ function signinView() {
   const view = el("section", "simple-center");
   view.id = "view-signin";
   view.hidden = true;
-  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto;border:2px solid #111"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="magic-note" style="font-weight:700;margin-top:12px"></p><p style="margin-top:12px"><a class="btn-ghost" id="google-link" href="#">Continue with Google</a></p>`;
+  const googleRow = GOOGLE_SIGN_IN ? "" : " hidden";
+  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto;border:2px solid #111"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="magic-note" style="font-weight:700;margin-top:12px"></p><p id="google-row" style="margin-top:12px"${googleRow}><a class="btn-ghost" id="google-link" href="#">Continue with Google</a></p>`;
   return view;
 }
 
@@ -474,7 +478,7 @@ function howtoSheet() {
   back.hidden = true;
   back.innerHTML = `<div class="sheet" role="dialog" aria-labelledby="howto-title">
     <h2 id="howto-title">How to play</h2>
-    <div class="panel" data-panel="0"><p>Each day you get <strong>100 coins</strong> and <strong>25 seconds</strong> on every question. Tap an answer, then use +1, +10, +50, All or Rest. You can also drag tens from the tray. You must place every coin, and leave at least one answer empty. − takes 10 back; hold it to clear the card. When time runs out, coins still in the tray are lost and the rest lock in.</p><div class="panel-art" id="howto-art"></div></div>
+    <div class="panel" data-panel="0"><p>Each day you get <strong>100 coins</strong> and <strong>25 seconds</strong> on every question. Tap an answer, then use +1, +10, +50, All or Rest. You can also drag tens from the tray. You must place every coin, and leave at least one answer empty. − takes 10 back; hold it to clear the card. Run out of time? Leftover coins go on your biggest pick.</p><div class="panel-art" id="howto-art"></div></div>
     <div class="panel" data-panel="1" hidden><p><strong>Lock in.</strong> Trapdoors under the wrong answers open and those coins fall. The right answer gets a tick and +N Safe. Each wrong answer that had coins shows −N.</p><div class="panel-art"><span class="sticker ink">+N Safe</span><span class="sticker" style="background:#111;color:#FFF8E7">−N</span></div></div>
     <div class="panel" data-panel="2" hidden><p><strong>Finish all 10 questions to bank what’s left.</strong> If you leave early, or you run out of coins, you bank <strong>0</strong> for the day. Coins in play are not yours until the last question is done.</p><div class="panel-art"><img src="${BANK}" width="48" height="48" alt=""><strong>Banked only after Q10</strong></div></div>
     <div class="dots" id="howto-dots"><span class="on"></span><span></span><span></span></div>
@@ -489,6 +493,74 @@ function leaveModal() {
   back.hidden = true;
   back.innerHTML = `<div class="modal" role="dialog" aria-labelledby="leave-title"><h2 id="leave-title">Leave today’s drop?</h2><p>Leave now and you’ll bank 0 coins. Finish all 10 to bank what’s left. You can’t replay today’s official drop.</p><div class="modal-actions"><button class="btn-keep" type="button" id="leave-stay">Keep playing</button><button class="btn-danger" type="button" id="leave-go">Leave</button></div></div>`;
   return back;
+}
+
+function signInPrompt() {
+  const back = el("div", "prompt-back");
+  back.id = "signin-prompt";
+  back.hidden = true;
+  back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="prompt-title">
+    <img src="${BANK}" width="48" height="48" alt="">
+    <h2 id="prompt-title">Sign in to keep your progress</h2>
+    <p>Save your bank, join weekly leagues, play on any device.</p>
+    <form id="prompt-form">
+      <label for="prompt-email">Email</label>
+      <input id="prompt-email" type="email" autocomplete="email" required>
+      <button class="btn-primary" type="submit">Email me a link</button>
+    </form>
+    <p id="prompt-note"></p>
+    <button class="btn-ghost" type="button" id="prompt-later">Not right now</button>
+  </div>`;
+  return back;
+}
+
+function playingNow() {
+  return Boolean(run && run.status === "in_progress" && !document.querySelector("#view-play")?.hidden);
+}
+
+function offerSignIn() {
+  if (SHOT || session?.access_token || playingNow()) return false;
+  try {
+    if (sessionStorage.getItem(PROMPT_KEY)) return false;
+  } catch {
+    return false;
+  }
+  const card = document.querySelector("#signin-prompt");
+  if (!card) return false;
+  card.hidden = false;
+  try { sessionStorage.setItem(PROMPT_KEY, "1"); } catch { /* private mode */ }
+  document.querySelector("#prompt-email")?.focus();
+  return true;
+}
+
+function closeSignPrompt() {
+  const card = document.querySelector("#signin-prompt");
+  if (!card || card.hidden) return;
+  card.hidden = true;
+  const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
+  if (!seenHow() && (route === "home" || route === "howto")) openHow(0);
+}
+
+function trapSignPrompt(event) {
+  const card = document.querySelector("#signin-prompt");
+  if (!card || card.hidden) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeSignPrompt();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const items = [...card.querySelectorAll("input, button")].filter((node) => !node.disabled && !node.closest("[hidden]"));
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function consentBar() {
@@ -732,6 +804,7 @@ function renderStake() {
   const lock = document.querySelector("#lock");
   const hint = document.querySelector("#lock-hint");
   if (run.phase === "reveal") {
+    if (hint) hint.textContent = "";
     if (run.revealReady) {
       lock.textContent = nextLabel();
       lock.disabled = false;
@@ -835,9 +908,39 @@ function tick() {
 
 function onTimeout() {
   if (!run || run.phase === "reveal" || run.status !== "in_progress") return;
+  stopTimer();
+  const filled = timeoutFill(run.pots);
   run.timeoutFrom = totalInPlay(run.pots);
-  run.pots = timeoutPots(run.pots);
-  lockQuestion(true, run.timeoutFrom > 0 && totalInPlay(run.pots) === 0);
+  run.timeoutNote = filled.note || "";
+  const lockInFilled = () => {
+    run.pots = filled.pots;
+    const lostAll = run.timeoutFrom > 0 && totalInPlay(run.pots) === 0;
+    lockQuestion(true, lostAll);
+  };
+  if (!filled.filled || reduced()) {
+    lockInFilled();
+    return;
+  }
+  slideLeftovers(filled.door, lockInFilled);
+}
+
+function slideLeftovers(door, done) {
+  const card = document.querySelector(`.door[data-i="${door}"]`);
+  const tokens = [...document.querySelectorAll(".tray-token")];
+  if (!card || !tokens.length) {
+    window.setTimeout(done, 300);
+    return;
+  }
+  const target = card.getBoundingClientRect();
+  tokens.forEach((token) => {
+    const from = token.getBoundingClientRect();
+    const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
+    const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
+    token.style.transition = "transform 300ms ease-in";
+    token.style.transform = `translate(${dx}px, ${dy}px)`;
+    token.style.zIndex = "40";
+  });
+  window.setTimeout(done, 300);
 }
 
 function onLockClick() {
@@ -870,7 +973,7 @@ async function lockQuestion(timeout, emptyBust = false) {
   let correct = 0;
   let server = null;
   try {
-    if (SHOT === "falling" || SHOT === "next" || SHOT === "drop") {
+    if (SHOT === "falling" || SHOT === "next" || SHOT === "drop" || SHOT === "timeout") {
       correct = 2;
     } else if (session) {
       server = await lockIn(run.q, dist, timeout, session);
@@ -910,9 +1013,8 @@ async function lockQuestion(timeout, emptyBust = false) {
 function showFunFact(text) {
   const node = document.querySelector("#fun-fact");
   if (!node) return;
-  const fact = typeof text === "string" ? text.trim() : "";
-  node.hidden = !fact;
-  node.textContent = fact;
+  node.hidden = false;
+  node.textContent = typeof text === "string" ? text.trim() : "";
 }
 
 function beginDrop(correct, keptAmount, lostAmount) {
@@ -929,6 +1031,10 @@ function beginDrop(correct, keptAmount, lostAmount) {
   const bankHint = document.querySelector("#bank-hint");
   if (bankHint) bankHint.hidden = true;
   renderStake();
+  if (run.timeoutNote) {
+    const lockHint = document.querySelector("#lock-hint");
+    if (lockHint) lockHint.textContent = run.timeoutNote;
+  }
   document.querySelector("#pending-count").textContent = String(run.reveal.before);
   const float = document.querySelector("#pending-float");
   if (float) float.textContent = lostAmount ? `−${lostAmount}` : "";
@@ -1097,7 +1203,7 @@ function showResults() {
   snip.textContent = session
     ? "This week in Fusilli League: sign in is on, and live ranks appear once the league tables are applied."
     : "Sign in to keep this bank and join Fusilli League. Guest scores stay on this device.";
-  const link = el("a", null, " See the league");
+  const link = el("a", "tap-link", "See the league");
   link.href = "/leagues/";
   snip.append(link);
   tickCountdown();
@@ -1213,8 +1319,13 @@ function paintSettings() {
 
 function paintSignin() {
   const note = document.querySelector("#magic-note");
-  note.textContent = session ? "This browser has a sign-in session." : "";
-  document.querySelector("#google-link").href = oauthUrl("google");
+  if (session?.access_token) note.textContent = "This browser has a sign-in session.";
+  else if (signInNotice) note.textContent = signInNotice;
+  else note.textContent = "";
+  const google = document.querySelector("#google-link");
+  const row = document.querySelector("#google-row");
+  if (row) row.hidden = !GOOGLE_SIGN_IN;
+  if (google && GOOGLE_SIGN_IN) google.href = oauthUrl("google");
 }
 
 function openHow(step = 0) {
@@ -1284,6 +1395,10 @@ function onClick(event) {
     applyPots(next);
     return;
   }
+  if (event.target.id === "prompt-later") {
+    closeSignPrompt();
+    return;
+  }
   if (event.target.id === "howto-next") {
     if (howtoStep < 2) { howtoStep += 1; paintHow(); }
     else {
@@ -1305,6 +1420,9 @@ function onClick(event) {
     localStorage.setItem(CONSENT_KEY, event.target.id === "consent-yes" ? "accept" : "reject");
     document.querySelector("#consent").hidden = true;
     document.documentElement.classList.remove("has-consent");
+    const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
+    if (offerSignIn()) return;
+    if (!seenHow() && (route === "home" || route === "howto")) openHow(0);
     return;
   }
   if (event.target.id === "clear-local") {
@@ -1466,6 +1584,11 @@ function applyShot() {
   show("play");
   renderQuestion();
   if (SHOT === "leave") document.querySelector("#leave-modal").hidden = false;
+  if (SHOT === "timeout") {
+    run.pots = { tray: 15, doors: [10, 20, 5, 50] };
+    renderQuestion();
+    window.setTimeout(() => onTimeout(), 60);
+  }
   if (SHOT === "falling" || SHOT === "next" || SHOT === "drop") {
     window.setTimeout(() => lockQuestion(false), 60);
   }
@@ -1485,8 +1608,23 @@ async function boot() {
     try {
       await sendMagicLink(email);
       note.textContent = "Check your email for the sign-in link.";
-    } catch {
-      note.textContent = "The sign-in service did not answer. You can keep playing as a guest.";
+    } catch (error) {
+      note.textContent = error?.status
+        ? error.message
+        : magicLinkErrorMessage(error?.status, error?.message || "");
+    }
+  });
+  document.querySelector("#prompt-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = document.querySelector("#prompt-email").value.trim();
+    const note = document.querySelector("#prompt-note");
+    try {
+      await sendMagicLink(email);
+      note.textContent = "Check your inbox for the link";
+    } catch (error) {
+      note.textContent = error?.status
+        ? error.message
+        : magicLinkErrorMessage(error?.status, error?.message || "");
     }
   });
   if (SHOT) {
@@ -1496,9 +1634,12 @@ async function boot() {
   run = todayRun();
   const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
   if (route === "play") startOrResume();
-  else if (route === "howto") { show("home"); openHow(0); }
+  else if (route === "howto") show("home");
   else show(route === "missing" ? "missing" : route);
-  if (!seenHow() && route === "home") openHow(0);
+  const waiting = showConsent || playingNow();
+  if (!waiting && offerSignIn()) {
+    /* how-to waits until the card closes */
+  } else if (!seenHow() && !showConsent && (route === "home" || route === "howto")) openHow(0);
   document.querySelector("#play-btn").addEventListener("click", () => { location.href = "/play/"; });
 }
 

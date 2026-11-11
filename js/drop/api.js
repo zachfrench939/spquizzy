@@ -73,17 +73,51 @@ export function forfeitRun(session) {
   return rpc("dd_forfeit_run", {}, session);
 }
 
-export async function sendMagicLink(email) {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+export function magicLinkErrorMessage(status, body = "") {
+  const text = String(body || "");
+  if (status === 429 || text.includes("over_email_send_rate_limit")) {
+    return "Too many sign-in emails right now, try again in a few minutes. You can still play as a guest.";
+  }
+  return "We couldn’t send the sign-in email. You can still play as a guest.";
+}
+
+export function readAuthHash(hash) {
+  const params = new URLSearchParams(String(hash || "").replace(/^#/, ""));
+  const error = params.get("error");
+  const errorCode = params.get("error_code");
+  if (error || errorCode) {
+    const expired = errorCode === "otp_expired" || error === "access_denied";
+    return {
+      error,
+      error_code: errorCode,
+      message: expired
+        ? "That link has expired, send a new one."
+        : "That sign-in link didn’t work. Send a new one. You can still play as a guest.",
+    };
+  }
+  const access = params.get("access_token");
+  if (!access) return null;
+  return {
+    access_token: access,
+    refresh_token: params.get("refresh_token"),
+    expires_at: Number(params.get("expires_at") || 0),
+    token_type: params.get("token_type") || "bearer",
+  };
+}
+
+export async function sendMagicLink(email, redirectTo = `${location.origin}/sign-in/`) {
+  const redirect = encodeURIComponent(redirectTo);
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/otp?redirect_to=${redirect}`, {
     method: "POST",
     headers: headers(null),
-    body: JSON.stringify({
-      email,
-      create_user: true,
-      options: { email_redirect_to: `${location.origin}/sign-in/` },
-    }),
+    body: JSON.stringify({ email, create_user: true }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const text = await res.text();
+    const err = new Error(magicLinkErrorMessage(res.status, text));
+    err.status = res.status;
+    throw err;
+  }
 }
 
 export function oauthUrl(provider) {
@@ -92,16 +126,9 @@ export function oauthUrl(provider) {
 }
 
 export function captureHashSession() {
-  const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const access = hash.get("access_token");
-  if (!access) return null;
-  const session = {
-    access_token: access,
-    refresh_token: hash.get("refresh_token"),
-    expires_at: Number(hash.get("expires_at") || 0),
-    token_type: hash.get("token_type") || "bearer",
-  };
-  saveSession(session);
+  const parsed = readAuthHash(location.hash);
+  if (!parsed) return null;
   history.replaceState(null, "", location.pathname + location.search);
-  return session;
+  if (parsed.access_token) saveSession(parsed);
+  return parsed;
 }

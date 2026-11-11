@@ -105,3 +105,28 @@ export function chipState(pots, door) {
 export function timeoutPots(pots) {
   return { tray: 0, doors: pots.doors.slice() };
 }
+
+const DOOR_LETTERS = ["A", "B", "C", "D"];
+
+/**
+ * When time runs out, leftover tray coins move onto the fullest answer.
+ * A tie keeps the earliest letter. An empty board still loses the tray.
+ */
+export function timeoutFill(pots) {
+  const doors = pots.doors.slice();
+  const placed = doors.reduce((sum, count) => sum + count, 0);
+  if (!pots.tray || !placed) return { pots: { tray: 0, doors }, door: null, filled: false, note: "" };
+  let door = 0;
+  for (let i = 1; i < doors.length; i += 1) {
+    if (doors[i] > doors[door]) door = i;
+  }
+  doors[door] += pots.tray;
+  const letter = DOOR_LETTERS[door];
+  return {
+    pots: { tray: 0, doors },
+    door,
+    letter,
+    filled: true,
+    note: `Time's up, leftover coins went on ${letter}.`,
+  };
+}
