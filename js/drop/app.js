@@ -1,5 +1,5 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, setUsername } from "./api.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import {
@@ -25,6 +25,18 @@ const SIGNED_OUT_KEY = "spquizzy.drop.just-signed-out";
 const NAME_LATER_KEY = "spquizzy.drop.username-later";
 const GUEST_KEY = "spquizzy.drop.guest";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
+const AGE_NEED = "Tick the box to confirm you are 13 or over. Under 13s can play as a guest on this device.";
+const CLEAR_LOCAL_COPY = "Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), and the sign-in token (spquizzy.drop.session). It does not change your page-view choice, and it does not delete an account.";
+
+function ageFields(prefix) {
+  return `<p class="age-rule">You must be 13 or over to create an account. Under 13s can play as a guest on this device. <a href="/privacy/">Privacy notice</a></p><label class="age-check" for="${prefix}-age"><input id="${prefix}-age" data-age type="checkbox" required> <span>I am 13 or over</span></label>`;
+}
+
+function consentWord(value) {
+  if (value === "accept") return "Accepted";
+  if (value === "reject") return "Rejected";
+  return "not chosen";
+}
 
 const ROUTES = {
   "/": "home",
@@ -269,7 +281,11 @@ function homeView() {
   const ad = el("aside", "ad-slot slot-home");
   ad.setAttribute("aria-label", "Advertisement");
   ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Ad"));
-  const fine = el("footer", "fine", "Free to play · Same 10 questions for everyone · Resets at midnight UK time");
+  const fine = el("footer", "fine");
+  fine.append(document.createTextNode("Free to play · Same 10 questions for everyone · Resets at midnight UK time · "));
+  const privacy = el("a", null, "Privacy");
+  privacy.href = "/privacy/";
+  fine.append(privacy);
   view.append(art, el("p", "kicker", "Today’s daily quiz"), badge, title, date, pitch, endow, cta, how, ad, fine);
   return view;
 }
@@ -463,7 +479,7 @@ function signinView() {
   view.id = "view-signin";
   view.hidden = true;
   const googleRow = GOOGLE_SIGN_IN ? "" : " hidden";
-  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto"><div id="signin-guest"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p><p id="magic-note" style="font-weight:700;margin-top:12px"></p></div><div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
+  view.innerHTML = `<img class="logo" src="${LOGO}" width="48" height="48" alt="Spiquizzy" style="margin:0 auto"><div id="signin-guest"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 8px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form">${ageFields("magic")}<p id="magic-note"></p><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p></div><div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
   return view;
 }
 
@@ -490,9 +506,27 @@ function settingsView() {
     <div class="tog"><span>Sound</span><button class="switch" type="button" id="set-sound" aria-label="Sound"></button></div>
     <div class="tog"><span>Reduce motion</span><button class="switch" type="button" id="set-motion" aria-label="Reduce motion"></button></div>
     <div class="tog"><span>Safe and Dropped labels stay on</span><button class="switch" type="button" aria-pressed="true" disabled aria-label="Labels"></button></div>
-    <p class="settings-links"><a href="/privacy/">Privacy and cookies</a></p>
+    <div class="consent-choice">
+      <h2>Page views</h2>
+      <p id="consent-status">Page views: not chosen</p>
+      <p>We only count page views if you Accept. You can change that here.</p>
+      <div class="pair" role="group" aria-label="Page-view choice">
+        <button type="button" id="settings-reject">Reject</button>
+        <button type="button" id="settings-accept">Accept</button>
+      </div>
+    </div>
+    <p id="board-guest">Sign in to hide your username from the leagues board.</p>
+    <div class="tog" id="board-row" hidden>
+      <span id="board-label">Hide me from the leagues board</span>
+      <button class="switch" type="button" id="set-board" aria-labelledby="board-label" aria-pressed="false"></button>
+    </div>
+    <p id="board-note" hidden></p>
+    <p class="settings-links"><a href="/privacy/">Privacy notice</a></p>
+    <p class="settings-links"><a href="/cookies/">Cookie policy</a></p>
     <p class="settings-links"><a href="/plus/">Spiquizzy Plus</a></p>
+    <p class="clear-note" id="clear-note"></p>
     <p><button class="btn-danger" type="button" id="clear-local">Clear local data</button></p>`;
+  view.querySelector("#clear-note").textContent = CLEAR_LOCAL_COPY;
   return view;
 }
 
@@ -532,16 +566,18 @@ function signInPrompt() {
   back.id = "signin-prompt";
   back.hidden = true;
   back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="prompt-title">
-    <img src="${LOGO}" width="48" height="48" alt="Spiquizzy">
-    <h2 id="prompt-title">Sign in to keep your progress</h2>
-    <p>Save your bank, join weekly leagues, play on any device.</p>
-    <form id="prompt-form">
-      <label for="prompt-email">Email</label>
-      <input id="prompt-email" type="email" autocomplete="email" required>
-      <button class="btn-primary" type="submit">Email me a link</button>
-    </form>
-    <p id="prompt-google"${GOOGLE_SIGN_IN ? "" : " hidden"}><a class="btn-google" id="prompt-google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p>
-    <p id="prompt-note"></p>
+    <div class="prompt-scroll">
+      <h2 id="prompt-title">Sign in to keep your progress</h2>
+      <p>Save your bank, join weekly leagues, play on any device.</p>
+      <form id="prompt-form">
+        ${ageFields("prompt")}
+        <p id="prompt-note"></p>
+        <label for="prompt-email">Email</label>
+        <input id="prompt-email" type="email" autocomplete="email" required>
+        <button class="btn-primary" type="submit">Email me a link</button>
+      </form>
+      <p id="prompt-google"${GOOGLE_SIGN_IN ? "" : " hidden"}><a class="btn-google" id="prompt-google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p>
+    </div>
     <button class="btn-ghost" type="button" id="prompt-later">Not right now</button>
   </div>`;
   return back;
@@ -669,7 +705,7 @@ async function saveUsername(raw, note, done) {
     return;
   }
   try {
-    profile = await setUsername(raw.trim(), session);
+    profile = { ...(profile || {}), ...(await setUsername(raw.trim(), session)) };
     note.textContent = "Saved.";
     const field = document.querySelector("#set-username");
     if (field) field.value = profile.username || raw.trim();
@@ -1412,9 +1448,11 @@ function showResults() {
   line.append(el("span", "running", `Bank ${bank.balance}`));
   if (cleared) line.classList.add("banked-anim");
   const snip = document.querySelector("#league-snip");
-  snip.textContent = session
-    ? "Your rank is on the global board."
-    : "You’re unranked. Sign in to get on the board.";
+  snip.textContent = !session
+    ? "You’re unranked. Sign in to get on the board."
+    : profile?.opted_out_of_boards === true
+      ? "You’re hidden from the leagues board."
+      : "Your rank is on the global board.";
   const link = el("a", "tap-link", "See the league");
   link.href = "/leagues/";
   snip.append(link);
@@ -1528,6 +1566,13 @@ async function paintLeague(which) {
     return;
   }
   if (guest) guest.hidden = true;
+  if (profile?.opted_out_of_boards === true) {
+    if (you) {
+      you.classList.remove("is-link");
+      you.replaceChildren(document.createTextNode("You’re hidden from this board."));
+    }
+    return;
+  }
   if (missingName) {
     showPickUsername(you);
     return;
@@ -1548,6 +1593,7 @@ async function paintLeague(which) {
 function setLeagueFoot(foot, needsName) {
   if (!foot) return;
   if (!session?.access_token) foot.textContent = "Sign in to appear on the public board.";
+  else if (profile?.opted_out_of_boards === true) foot.textContent = "You’re hidden from the leagues board. You can show your username again in Settings.";
   else if (needsName) foot.textContent = "Pick a username in Profile to appear on the public board.";
   else foot.textContent = "You’re on the global board. Coins banked in the period, ranked against everyone.";
 }
@@ -1582,9 +1628,54 @@ function paintProfile() {
   document.querySelector("#profile-copy").textContent = `Played ${played}. Bank ${bank.balance}. Best day ${best} banked. Your global rank is on the league board once you have a username.`;
 }
 
+function paintConsentChoice() {
+  const status = document.querySelector("#consent-status");
+  if (!status) return;
+  let value = null;
+  try { value = localStorage.getItem(CONSENT_KEY); } catch { /* private mode */ }
+  status.textContent = `Page views: ${consentWord(value)}`;
+  document.querySelector("#settings-accept")?.setAttribute("aria-pressed", value === "accept" ? "true" : "false");
+  document.querySelector("#settings-reject")?.setAttribute("aria-pressed", value === "reject" ? "true" : "false");
+}
+
+function storeConsent(value) {
+  localStorage.setItem(CONSENT_KEY, value);
+  const bar = document.querySelector("#consent");
+  if (bar) bar.hidden = true;
+  document.documentElement.classList.remove("has-consent");
+  paintConsentChoice();
+}
+
+function paintBoardOpt() {
+  const signedIn = Boolean(session?.access_token);
+  const row = document.querySelector("#board-row");
+  const guest = document.querySelector("#board-guest");
+  const button = document.querySelector("#set-board");
+  const note = document.querySelector("#board-note");
+  if (row) row.hidden = !signedIn;
+  if (guest) guest.hidden = signedIn;
+  if (!signedIn || !button) {
+    if (note) {
+      note.hidden = true;
+      note.textContent = "";
+    }
+    return;
+  }
+  const known = typeof profile?.opted_out_of_boards === "boolean";
+  const hidden = profile?.opted_out_of_boards === true;
+  button.setAttribute("aria-pressed", hidden ? "true" : "false");
+  if (!note) return;
+  note.hidden = false;
+  if (!known) note.textContent = "We couldn’t read this setting yet. Email contact@spiquizzy.com if you need to be hidden now.";
+  else if (hidden) note.textContent = "You’re hidden. The board won’t show your username or the coins you banked.";
+  else note.textContent = "Your username and the coins you bank are on the public board if you have a username.";
+}
+
 function paintSettings() {
   document.querySelector("#set-sound").setAttribute("aria-pressed", settings.sound ? "true" : "false");
   document.querySelector("#set-motion").setAttribute("aria-pressed", settings.motion ? "true" : "false");
+  paintConsentChoice();
+  paintBoardOpt();
   const input = document.querySelector("#set-username");
   const note = document.querySelector("#set-username-note");
   const signOutBtn = document.querySelector("#sign-out");
@@ -1605,7 +1696,29 @@ function paintSettings() {
 function paintGoogle() {
   if (!GOOGLE_SIGN_IN) return;
   const href = oauthUrl("google");
-  document.querySelectorAll(".btn-google").forEach((link) => { link.href = href; });
+  document.querySelectorAll("a.btn-google").forEach((link) => {
+    const box = link.closest("#signin-guest, #signin-prompt")?.querySelector("[data-age]");
+    const open = Boolean(box?.checked);
+    link.href = open ? href : "#";
+  });
+}
+
+async function saveBoardOptOut(button) {
+  if (!session?.access_token || !button) return;
+  const next = button.getAttribute("aria-pressed") !== "true";
+  const note = document.querySelector("#board-note");
+  button.disabled = true;
+  try {
+    profile = { ...(profile || {}), ...(await setBoardOptOut(next, session)) };
+    paintBoardOpt();
+  } catch {
+    if (note) {
+      note.hidden = false;
+      note.textContent = "That didn’t save. Email contact@spiquizzy.com if you need to be hidden now.";
+    }
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function paintSignin() {
@@ -1722,10 +1835,26 @@ function onClick(event) {
     forfeit();
     return;
   }
+  const google = event.target.closest("a.btn-google");
+  if (google) {
+    const root = google.closest("#signin-guest, #signin-prompt");
+    const box = root?.querySelector("[data-age]");
+    if (!box?.checked) {
+      event.preventDefault();
+      const note = root?.querySelector("#magic-note, #prompt-note");
+      if (note) note.textContent = AGE_NEED;
+      box?.focus();
+      return;
+    }
+    google.href = oauthUrl("google");
+    return;
+  }
   if (event.target.id === "consent-yes" || event.target.id === "consent-no") {
-    localStorage.setItem(CONSENT_KEY, event.target.id === "consent-yes" ? "accept" : "reject");
-    document.querySelector("#consent").hidden = true;
-    document.documentElement.classList.remove("has-consent");
+    storeConsent(event.target.id === "consent-yes" ? "accept" : "reject");
+    return;
+  }
+  if (event.target.id === "settings-accept" || event.target.id === "settings-reject") {
+    storeConsent(event.target.id === "settings-accept" ? "accept" : "reject");
     return;
   }
   if (event.target.id === "sign-out" || event.target.id === "sign-out-bank" || event.target.id === "sign-out-page") {
@@ -1733,13 +1862,17 @@ function onClick(event) {
     return;
   }
   if (event.target.id === "clear-local") {
-    if (confirm("Clear this device’s drop, bank and settings?")) {
+    if (confirm(CLEAR_LOCAL_COPY)) {
       localStorage.removeItem(RUN_KEY);
       localStorage.removeItem(BANK_KEY);
       localStorage.removeItem(SET_KEY);
       clearSession();
       location.href = "/";
     }
+    return;
+  }
+  if (event.target.id === "set-board") {
+    void saveBoardOptOut(event.target);
     return;
   }
   if (event.target.id === "set-sound" || event.target.id === "set-motion") {
@@ -1910,11 +2043,19 @@ async function boot() {
   const showConsent = consent !== "accept" && consent !== "reject";
   document.querySelector("#consent").hidden = !showConsent;
   document.documentElement.classList.toggle("has-consent", showConsent);
-  pack = await (await fetch("/data/questions.public.json")).json();
+  document.querySelectorAll("[data-age]").forEach((box) => {
+    box.addEventListener("change", paintGoogle);
+  });
   document.querySelector("#magic-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const email = document.querySelector("#magic-email").value.trim();
+    const box = document.querySelector("#magic-age");
     const note = document.querySelector("#magic-note");
+    if (!box?.checked) {
+      if (note) note.textContent = AGE_NEED;
+      box?.focus();
+      return;
+    }
+    const email = document.querySelector("#magic-email").value.trim();
     try {
       await sendMagicLink(email);
       note.textContent = "Check your email for the sign-in link.";
@@ -1926,8 +2067,14 @@ async function boot() {
   });
   document.querySelector("#prompt-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const email = document.querySelector("#prompt-email").value.trim();
+    const box = document.querySelector("#prompt-age");
     const note = document.querySelector("#prompt-note");
+    if (!box?.checked) {
+      if (note) note.textContent = AGE_NEED;
+      box?.focus();
+      return;
+    }
+    const email = document.querySelector("#prompt-email").value.trim();
     try {
       await sendMagicLink(email);
       note.textContent = "Check your inbox for the link";
@@ -1947,6 +2094,7 @@ async function boot() {
     const note = document.querySelector("#set-username-note");
     await saveUsername(document.querySelector("#set-username").value, note);
   });
+  pack = await (await fetch("/data/questions.public.json")).json();
   if (session?.access_token && !SHOT) {
     try { profile = await myProfile(session); } catch { profile = null; }
   }

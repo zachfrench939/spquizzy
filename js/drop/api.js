@@ -77,6 +77,10 @@ export function setUsername(name, session) {
   return rpc("dd_set_username", { p_name: name }, session);
 }
 
+export function setBoardOptOut(hide, session) {
+  return rpc("dd_set_board_opt_out", { p_hide: hide }, session);
+}
+
 export function leaderboard(period, session) {
   return rpc("dd_leaderboard", { p_period: period }, session);
 }

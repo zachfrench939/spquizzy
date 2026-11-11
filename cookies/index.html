@@ -30,17 +30,36 @@
   
 <h1>Cookies</h1>
 <p>Last updated 11 November 2026.</p>
-<p>The game does not set a cookie. Sign-in, if you use it, keeps a session token in localStorage. Optional analytics run only after Accept, and they do not use a cookie.</p>
-<h2>localStorage</h2>
+<p>The Daily Drop does not set a cookie, and it does not use an advertising cookie. Sign-in, if you use it, keeps a session token in localStorage on this device. The same facts are in the <a href="/privacy/">privacy notice</a>.</p>
+<p>Page views are optional. We send one only after you press Accept. Reject, or leaving the choice unmade, means we do not send one. You can change that choice in <a href="/settings/">Settings</a>. Accept and Reject stay the same size, and neither one blocks Play.</p>
+
+<h2>Saved on this device</h2>
+<p>These keys live in localStorage. They stay until you clear them, or you clear the site in your browser.</p>
 <ul>
-<li><code>spquizzy.consent</code> — Accept or Reject.</li>
-<li><code>spquizzy.drop.run</code> — today’s official run, so a refresh can resume.</li>
-<li><code>spquizzy.drop.bank</code> — guest bank and day history.</li>
-<li><code>spquizzy.drop.howto</code> — you have closed How to play.</li>
-<li><code>spquizzy.drop.settings</code> — sound and reduce motion.</li>
-<li><code>spquizzy.drop.session</code> — sign-in token, if you asked for one.</li>
+<li><code>spquizzy.consent</code> — your page-view choice, Accept or Reject. Essential, so we can remember it. It is not a tracker. Page views stay off until the value is Accept.</li>
+<li><code>spquizzy.drop.run</code> — today’s official run, so a refresh can resume. Essential, on this device.</li>
+<li><code>spquizzy.drop.bank</code> — a guest coin bank and day history. Essential for guest play. It stays on this device. We do not receive it.</li>
+<li><code>spquizzy.drop.howto</code> — you have closed How to play. Essential preference.</li>
+<li><code>spquizzy.drop.settings</code> — sound and reduce motion. Essential preference.</li>
+<li><code>spquizzy.drop.session</code> — the sign-in token, if you signed in. Essential to stay signed in.</li>
+<li><code>spquizzy.drop.guest</code> — a random guest id for this browser. Essential for guest play. We do receive this id when a guest plays, with the question we served.</li>
+<li><code>spquizzy.drop.events</code> — the last 200 things the game did, on this device only. It is not sent as a page view.</li>
 </ul>
-<p>Clear local data lives in <a href="/settings/">Settings</a>. See also <a href="/privacy/">Privacy</a>.</p>
+
+<h2>This tab only</h2>
+<p>These keys live in sessionStorage. The browser drops them when the tab closes.</p>
+<ul>
+<li><code>spquizzy.drop.signin-prompt</code> — you already saw the sign-in prompt in this tab.</li>
+<li><code>spquizzy.drop.username-later</code> — you pressed Not now on the username prompt in this tab.</li>
+<li><code>spquizzy.drop.just-signed-out</code> — you just signed out, so we do not ask you to sign in again straight away.</li>
+</ul>
+
+<h2>Page views</h2>
+<p>A page view is not stored as its own key on this device. After Accept we send the page path, the referring host, <code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, a screen-size bucket (mobile, tablet or desktop), and the event name. A normal visit is “view”. The message has no account id and no guest id. See <a href="/privacy/">Privacy</a> for why, and for how long those rows are kept.</p>
+
+<h2>Clear local data</h2>
+<p>Clear local data, in <a href="/settings/">Settings</a>, removes four keys on this device: <code>spquizzy.drop.run</code>, <code>spquizzy.drop.bank</code>, <code>spquizzy.drop.settings</code>, and <code>spquizzy.drop.session</code>. It does not change <code>spquizzy.consent</code>. Use the page-view buttons in Settings for that. It does not remove the guest id, the event log, the How to play flag, or the tab-only keys. It does not delete an account.</p>
+<p><a href="/privacy/">Privacy notice</a> · <a href="/terms/">Terms</a></p>
 
   </main>
   <aside class="consent" id="consent">

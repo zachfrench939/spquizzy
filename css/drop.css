@@ -144,6 +144,7 @@ html.is-dragging{touch-action:none;}
 .ad-slot .ad-label{font-size:16px;}
 .ad-slot.leader{min-height:100px;}
 footer.fine{margin-top:22px;font-size:16px;color:var(--muted);font-weight:600;}
+footer.fine a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px;}
 #view-play .brand .wordmark{font-size:15px;letter-spacing:-0.04em;}
 @media (min-width:900px){
   #view-home h1{font-size:52px;}
@@ -748,6 +749,8 @@ body.reduce-motion .pending-float{display:none;}
   display:flex;align-items:flex-end;justify-content:center;
   padding:12px;background:rgba(17,17,17,.28);
 }
+html.has-consent .prompt-back{padding-bottom:96px;}
+html.has-consent .prompt-card{max-height:calc(100dvh - 120px);}
 .prompt-card{
   width:min(360px,100%);
   max-height:calc(100dvh - 16px);
@@ -758,24 +761,27 @@ body.reduce-motion .pending-float{display:none;}
   box-shadow:8px 8px 0 #111;
   padding:16px;text-align:center;
 }
+.prompt-card:has(.prompt-scroll){overflow:hidden;min-height:0;}
 .prompt-card img{margin:0 auto 10px;}
 .prompt-card h2{
   font-family:var(--title);font-weight:800;font-size:26px;
   letter-spacing:-0.04em;line-height:1.05;margin:0 0 8px;
 }
-.prompt-card > p{font-weight:700;font-size:16px;line-height:1.35;margin:0 0 14px;}
+.prompt-card > p,.prompt-scroll > p{font-weight:700;font-size:16px;line-height:1.35;margin:0 0 14px;}
 #prompt-form{display:grid;gap:8px;text-align:left;}
 #user-form{display:grid;gap:8px;text-align:left;}
 #prompt-form label,#user-form label{font-weight:700;font-size:16px;}
 #prompt-form input,#user-form input{height:48px;border:3px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;font-weight:700;background:var(--white);}
 #user-form input{width:100%;box-sizing:border-box;}
 #prompt-note,#user-note{min-height:1.4em;font-weight:700;font-size:16px;margin:10px 0;}
+.prompt-scroll{overflow:auto;min-height:0;flex:1 1 auto;}
 #prompt-later,#user-later{
   display:inline-flex;align-items:center;justify-content:center;
   width:100%;min-height:48px;flex:none;
   position:sticky;bottom:0;z-index:2;
   background:var(--cream);
 }
+#prompt-later{position:static;bottom:auto;z-index:auto;margin-top:8px;}
 
 /* ——— leave confirm ——— */
 .modal-back{position:fixed;inset:0;background:rgba(17,17,17,.5);z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -789,6 +795,12 @@ body.reduce-motion .pending-float{display:none;}
 
 /* ——— 404 / sign-in / premium / settings ——— */
 .simple-center{max-width:480px;margin:0 auto;padding:28px 20px 48px;text-align:center;}
+#view-signin.simple-center{padding-top:0;}
+#view-signin h1{margin:4px 0;}
+#view-signin .signin-form{gap:8px;}
+#view-signin .btn-google{margin-top:6px;}
+#magic-note,#prompt-note{min-height:0;margin:0;font-weight:700;font-size:16px;line-height:1.35;}
+#magic-note:empty,#prompt-note:empty{display:none;}
 .simple-center h1{font-family:var(--title);font-weight:800;font-size:32px;letter-spacing:-0.04em;margin:12px 0;}
 .price{font-family:var(--title);font-weight:800;font-size:28px;margin:8px 0;}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;border:3px solid var(--ink);background:var(--white);padding:12px;margin:0 0 10px;font-weight:700;}
@@ -816,11 +828,26 @@ body.reduce-motion .pending-float{display:none;}
   font-family:var(--body);font-weight:700;font-size:14px;line-height:1;
   text-transform:none;box-shadow:none;letter-spacing:0;
 }
+html.has-consent{scroll-padding-bottom:96px;}
 html.has-consent body{padding-bottom:80px;}
 html.has-consent #view-play{height:calc(100dvh - 72px);}
 html.has-consent #view-home footer.fine{display:none;}
 .signin-form{display:grid;gap:10px;max-width:360px;margin:0 auto;text-align:left;}
 .signin-form input{height:48px;border:3px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;font-weight:700;background:var(--white);}
+.age-rule{font-weight:700;font-size:16px;line-height:1.4;margin:0;text-align:left;}
+.age-rule a{font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:3px;}
+.age-check{
+  display:flex;align-items:center;gap:12px;
+  min-height:48px;margin:0;padding:4px 0;
+  font-weight:700;font-size:16px;line-height:1.35;text-align:left;cursor:pointer;
+}
+.signin-form .age-check input,
+#prompt-form .age-check input,
+.age-check input{
+  width:28px;height:28px;min-width:28px;min-height:28px;max-height:28px;
+  margin:0;padding:0;border:3px solid var(--ink);
+  accent-color:#111;flex:none;background:var(--white);
+}
 .history{list-style:none;border:3px solid var(--ink);background:var(--white);}
 .history li{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:2px solid var(--ink);font-weight:700;}
 .history li:last-child{border-bottom:0;}
@@ -828,6 +855,8 @@ html.has-consent #view-home footer.fine{display:none;}
 .doc h1{font-family:var(--title);font-weight:800;font-size:36px;letter-spacing:-0.04em;margin:8px 0 12px;}
 .doc h2{font-family:var(--title);font-weight:800;font-size:22px;margin:18px 0 8px;}
 .doc p,.doc li{font-weight:600;font-size:16px;line-height:1.45;margin:0 0 10px;}
+.doc ul{margin:0 0 12px;padding-left:1.2em;}
+.doc code{font-family:ui-monospace,monospace;font-size:0.92em;overflow-wrap:anywhere;}
 .doc a{color:var(--ink);}
 
 .you-rank{
@@ -862,6 +891,18 @@ html.has-consent #view-home footer.fine{display:none;}
 .name-form p{font-size:16px;}
 .name-form .btn-keep{width:100%;}
 .settings-links a{display:flex;align-items:center;min-height:48px;font-size:16px;font-weight:700;}
+.consent-choice{margin:8px 0 16px;}
+.consent-choice h2{font-family:var(--title);font-weight:800;font-size:22px;letter-spacing:-0.03em;margin:0 0 8px;}
+.consent-choice p{font-weight:700;font-size:16px;line-height:1.4;margin:0 0 10px;}
+.consent-choice .pair{display:flex;gap:8px;}
+.consent-choice .pair button,
+.consent-choice .pair button[aria-pressed="true"]{
+  flex:1 1 0;width:auto;min-width:0;height:48px;min-height:48px;padding:0 8px;
+  border:2px solid var(--ink);background:var(--white);color:var(--ink);
+  font-family:var(--body);font-weight:700;font-size:16px;line-height:1;
+  text-transform:none;box-shadow:none;letter-spacing:0;
+}
+.clear-note,#board-note,#board-guest{font-weight:700;font-size:16px;line-height:1.4;margin:0 0 12px;}
 .tabbar{display:none;}
 
 /* No ads are live yet. Slots take no space until an ad is actually enabled.

@@ -8,7 +8,7 @@ globalThis.fetch = async (url, options) => {
 };
 let nextResponse = new Response("", { status: 200 });
 
-const { magicLinkErrorMessage, readAuthHash, sendMagicLink, oauthUrl } = await import("../js/drop/api.js");
+const { magicLinkErrorMessage, readAuthHash, sendMagicLink, oauthUrl, setBoardOptOut } = await import("../js/drop/api.js");
 
 test("a rate limit gets a friendly guest message", () => {
   const message = "Email sign-in is having trouble right now. You can still play as a guest and your coins stay on this device.";
@@ -39,6 +39,17 @@ test("oauth still puts redirect_to on the query string", () => {
   globalThis.location = { origin: "https://spiquizzy.com" };
   const url = oauthUrl("google");
   assert.match(url, /\/auth\/v1\/authorize\?provider=google&redirect_to=https%3A%2F%2Fspiquizzy\.com%2Fsign-in%2F$/);
+});
+
+test("hiding from the board sends only the opt-out flag", async () => {
+  calls.length = 0;
+  nextResponse = new Response('{"username":"ada","opted_out_of_boards":true}', { status: 200 });
+  const saved = await setBoardOptOut(true, { access_token: "token" });
+  assert.equal(saved.opted_out_of_boards, true);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/rest\/v1\/rpc\/dd_set_board_opt_out$/);
+  assert.deepEqual(JSON.parse(calls[0].options.body), { p_hide: true });
+  assert.equal(calls[0].options.headers.Authorization, "Bearer token");
 });
 
 test("an expired link hash is a friendly message, and a token hash is a session", () => {
