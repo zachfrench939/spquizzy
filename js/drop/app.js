@@ -327,6 +327,8 @@ function playView() {
   const hint = el("p", "hint");
   hint.id = "lock-hint";
   const actions = el("div", "play-actions");
+  const meta = el("div", "bar-meta");
+  meta.innerHTML = `<div class="adding" id="adding" aria-live="polite"><span class="to">Adding to</span><span class="letter-chip" id="adding-letter">A</span><span class="name" id="adding-name"></span><span class="timeout-note" id="adding-note" hidden></span></div>`;
   const amounts = el("div", "amount-bar");
   amounts.setAttribute("role", "group");
   amounts.setAttribute("aria-label", "Add coins to the selected answer");
@@ -343,15 +345,19 @@ function playView() {
   rest.type = "button";
   rest.dataset.rest = "1";
   amounts.append(all, rest);
+  const lockRow = el("div", "lock-row");
   const lock = el("button", "btn-lock", "Lock in");
   lock.type = "button";
   lock.id = "lock";
   lock.disabled = true;
-  const undoBtn = el("button", "btn-ghost", "Undo");
+  const undoBtn = el("button", "btn-undo-icon");
   undoBtn.type = "button";
   undoBtn.id = "undo";
   undoBtn.disabled = true;
-  actions.append(amounts, lock, undoBtn);
+  undoBtn.setAttribute("aria-label", "Undo");
+  undoBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M8 8H3V3"/><path d="M3.6 8.2A9 9 0 1 1 3 12"/></svg>`;
+  lockRow.append(lock, undoBtn);
+  actions.append(meta, amounts, lockRow);
   stage.append(chrome, bankHint, offlineNote, question, board, tray, fact, hint, actions);
   view.append(bar, stage);
   return view;
@@ -802,6 +808,7 @@ function renderQuestion() {
   const item = currentQuestion();
   if (!item) return;
   clearDrop();
+  document.querySelector("#view-play")?.classList.remove("has-timeout-note");
   if (run.selected == null) run.selected = 0;
   document.querySelector("#q-text").textContent = item.q;
   document.querySelector("#bank-hint").hidden = run.q !== 0;
@@ -946,9 +953,8 @@ function renderStake() {
     else button.disabled = !chips.rest || run.phase === "reveal";
   });
   const lock = document.querySelector("#lock");
-  const hint = document.querySelector("#lock-hint");
+  paintAdding();
   if (run.phase === "reveal") {
-    if (hint) hint.textContent = "";
     if (run.revealReady) {
       lock.textContent = nextLabel();
       lock.disabled = false;
@@ -956,12 +962,29 @@ function renderStake() {
     return;
   }
   lock.textContent = "Lock in";
-  const ok = canManualLock(pots);
-  lock.disabled = !ok;
+  lock.disabled = !canManualLock(pots);
   document.querySelector("#undo").disabled = !run.undo.length;
-  if (!ok && pots.tray > 0) hint.textContent = "Place every coin, and leave one answer empty.";
-  else if (!ok && pots.doors.every((count) => count > 0)) hint.textContent = "Leave at least one answer empty.";
-  else hint.textContent = "";
+}
+
+function paintAdding() {
+  const adding = document.querySelector("#adding");
+  const bar = document.querySelector(".amount-bar");
+  if (!adding || !run) return;
+  const note = document.querySelector("#adding-note");
+  const showNote = run.phase === "reveal" && run.timeoutNote;
+  adding.classList.toggle("is-note", Boolean(showNote));
+  if (note) {
+    note.hidden = !showNote;
+    note.textContent = showNote ? run.timeoutNote : "";
+  }
+  const index = run.selected ?? 0;
+  const letter = LETTERS[index] || "A";
+  const name = currentQuestion()?.answers?.[index] || "";
+  const chip = document.querySelector("#adding-letter");
+  const label = document.querySelector("#adding-name");
+  if (chip) chip.textContent = letter;
+  if (label) label.textContent = name;
+  if (bar) bar.setAttribute("aria-label", `Add coins to ${letter}, ${name}`);
 }
 
 function nextLabel() {
@@ -1176,8 +1199,8 @@ function beginDrop(correct, keptAmount, lostAmount) {
   if (bankHint) bankHint.hidden = true;
   renderStake();
   if (run.timeoutNote) {
-    const lockHint = document.querySelector("#lock-hint");
-    if (lockHint) lockHint.textContent = run.timeoutNote;
+    document.querySelector("#view-play")?.classList.add("has-timeout-note");
+    paintAdding();
   }
   document.querySelector("#pending-count").textContent = String(run.reveal.before);
   const float = document.querySelector("#pending-float");
