@@ -614,6 +614,8 @@ footer.fine{margin-top:22px;font-size:16px;color:var(--muted);font-weight:600;}
 #view-play.is-closing #lock,
 #view-play.is-tagged #lock,
 #view-play.is-pending-tick #lock{visibility:hidden;}
+#view-play.is-next #lock,
+#view-play.is-done #lock{visibility:visible;}
 #view-play.is-next .btn-lock,
 #view-play.is-done .btn-lock{transform:none;box-shadow:6px 6px 0 var(--tomato);}
 #view-play.is-next #undo,
@@ -743,15 +745,18 @@ body.reduce-motion .pending-float{display:none;}
 /* ——— guest sign-in prompt ——— */
 .prompt-back{
   position:fixed;inset:0;z-index:75;
-  display:flex;align-items:center;justify-content:center;
-  padding:20px;background:rgba(17,17,17,.28);
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:12px;background:rgba(17,17,17,.28);
 }
 .prompt-card{
   width:min(360px,100%);
+  max-height:calc(100dvh - 16px);
+  overflow:auto;
+  display:flex;flex-direction:column;
   background:var(--cream);
   border:3px solid var(--ink);
   box-shadow:8px 8px 0 #111;
-  padding:20px;text-align:center;
+  padding:16px;text-align:center;
 }
 .prompt-card img{margin:0 auto 10px;}
 .prompt-card h2{
@@ -765,7 +770,12 @@ body.reduce-motion .pending-float{display:none;}
 #prompt-form input,#user-form input{height:48px;border:3px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;font-weight:700;background:var(--white);}
 #user-form input{width:100%;box-sizing:border-box;}
 #prompt-note,#user-note{min-height:1.4em;font-weight:700;font-size:16px;margin:10px 0;}
-#prompt-later,#user-later{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:48px;}
+#prompt-later,#user-later{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:100%;min-height:48px;flex:none;
+  position:sticky;bottom:0;z-index:2;
+  background:var(--cream);
+}
 
 /* ——— leave confirm ——— */
 .modal-back{position:fixed;inset:0;background:rgba(17,17,17,.5);z-index:70;display:flex;align-items:center;justify-content:center;padding:20px;}
