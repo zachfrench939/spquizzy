@@ -23,4 +23,4 @@ export const SUPABASE_KEY = "sb_publishable_mZ2gX2NpuBIJosiz97QjOw_AU-wQe6n";
 export const LAUNCH_DATE = "2026-11-11";
 
 /** Google sign-in stays off until that provider is configured in Supabase. */
-export const GOOGLE_SIGN_IN = false;
+export const GOOGLE_SIGN_IN = true;
