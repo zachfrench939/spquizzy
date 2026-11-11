@@ -1,6 +1,6 @@
 # Round 8 wording — for Legal
 
-Draft for review. Do not treat this as cleared to publish. The pages on this branch use the text below. Nothing here has been merged to `main`.
+This text matches the 11 November 2026 clearance replacements. The delete-job sentence stays in “How long we keep it” because those jobs are not running yet. Nothing here has been merged to `main`.
 
 Operator name on the pages: **Spiquizzy**. Contact: **contact@spiquizzy.com**. No personal name and no home address.
 
@@ -20,7 +20,7 @@ Spiquizzy runs this free quiz at spiquizzy.com. You can play as a guest on this 
 
 ### Who to contact
 
-Spiquizzy runs The Daily Drop. Email contact@spiquizzy.com. The operator name on this page is Spiquizzy. We do not publish a person’s name or a home address. A parent or a lawyer still has to confirm the legal name of the data controller. Until that is settled, use this email.
+Spiquizzy runs The Daily Drop in the United Kingdom. Email contact@spiquizzy.com. That is the name and contact we use on this page. We do not publish a person’s name or a home address. The legal name of the data controller will be confirmed and, if needed, added here.
 
 ### Age
 
@@ -30,7 +30,7 @@ You must be 13 or over to create an account. Under 13s can play as a guest on th
 
 Until you sign in, today’s run, your coin bank and your settings stay on this device. The guest bank stays in this browser. We do not receive that bank.
 
-We do keep a guest id. The browser stores it as `spquizzy.drop.guest`. When you play as a guest we send that id with the question we served. We store the guest id, the day’s pack, the question number, and the time. We use this to show the question and to mark that it was served. How a guest placed their coins stays on the device.
+We do keep a guest id. The browser stores it as `spquizzy.drop.guest`. When you play as a guest we send that id with the question we served. We store the guest id, the day’s pack, the question number, and the time. We use this to show the question and to mark that it was served. When you lock in, we also send how you placed the coins so we can mark the question. We do not keep that placement on the server. Your guest bank stays on this device.
 
 Why we’re allowed: legitimate interests (UK GDPR Article 6(1)(f)). We need the id to run the quiz you opened. You can object by email. If we have to stop using an id, guest play for that id may stop.
 
@@ -40,7 +40,7 @@ Signing in is optional. You can use an email link or Google.
 
 Email: you type an address and we send a one-time sign-in link. We store an account id and that email.
 
-Google: if you press Continue with Google, Google tells our sign-in service the email for that account. We use the email to open the account. We never show your real name, your email, or your Google photo to other players.
+Google: if you press Continue with Google, Google tells our sign-in service the email for that account. Google may also send a name or a profile photo. We use the email to open the account. We do not use a Google name or photo as your username, and we never show your real name, your email, or your Google photo to other players.
 
 Why we’re allowed: you asked us to keep an account (UK GDPR Article 6(1)(b)).
 
@@ -85,14 +85,15 @@ Quiz records in Supabase stay in London, in the UK. Resend sends mail from Irela
 
 ### How long we keep it
 
-The database does not delete this data on a timer. We keep it until you ask us to delete it, or until you clear it on your own device.
+We only keep data for as long as we need it.
 
 - On this device, saved game data stays until you use Clear local data, or you clear the site in your browser.
-- Your account, email, bank, runs and username stay until you ask us to delete them.
-- Guest ids, and the questions we served, stay until you ask us to delete them. We can find your guest rows if the id is still on your device, or if you send it to us.
-- Page views stay until you ask us to delete them. A page view is not tied to your account, so we may not be able to pick out yours.
+- Your account, email, bank, runs and username stay while the account is open. If you ask us to delete the account, we delete them. If an account is unused for 24 months, we will delete it.
+- Guest ids, and the questions we served, are kept for 30 days, then deleted. We can also delete them sooner if you ask and we can find the id (it is still on your device, or you send it to us).
+- Page views are kept for 12 months, then deleted. A page view is not tied to your account, so we may not be able to pick out yours before that.
+- Connection logs, such as an IP address, are kept only as long as our hosting and sign-in providers keep them.
 
-This notice does not give a number of days or months. The database does not enforce one.
+A delete job for the 30-day and 12-month periods, and for unused accounts, needs to be switched on in the database. Until that job is running, we still delete anything you ask us to delete, where we can find it.
 
 ### Deleting an account
 
@@ -136,6 +137,7 @@ These keys live in localStorage. They stay until you clear them, or you clear th
 - `spquizzy.drop.run` — today’s official run, so a refresh can resume. Essential, on this device.
 - `spquizzy.drop.bank` — a guest coin bank and day history. Essential for guest play. It stays on this device. We do not receive it.
 - `spquizzy.drop.howto` — you have closed How to play. Essential preference.
+- `spquizzy.drop.coach` — you have already seen the first-question coach. Essential preference.
 - `spquizzy.drop.settings` — sound and reduce motion. Essential preference.
 - `spquizzy.drop.session` — the sign-in token, if you signed in. Essential to stay signed in.
 - `spquizzy.drop.guest` — a random guest id for this browser. Essential for guest play. We do receive this id when a guest plays, with the question we served.
@@ -155,7 +157,7 @@ A page view is not stored as its own key on this device. After Accept we send th
 
 ### Clear local data
 
-Clear local data, in Settings, removes four keys on this device: `spquizzy.drop.run`, `spquizzy.drop.bank`, `spquizzy.drop.settings`, and `spquizzy.drop.session`. It does not change `spquizzy.consent`. Use the page-view buttons in Settings for that. It does not remove the guest id, the event log, the How to play flag, or the tab-only keys. It does not delete an account.
+Clear local data, in Settings, removes four keys on this device: `spquizzy.drop.run`, `spquizzy.drop.bank`, `spquizzy.drop.settings`, and `spquizzy.drop.session`. It does not change `spquizzy.consent`. Use the page-view buttons in Settings for that. It does not remove the guest id, the event log, the How to play flag, the coach flag, or the tab-only keys. It does not delete an account.
 
 Links: Privacy notice · Terms
 
@@ -287,18 +289,18 @@ The visible home pitch is unchanged: “Start with 100 coins. Put them on the an
 
 ## Open points for Legal
 
-1. **Not cleared.** This wording is a draft. Do not merge it to `main`, and do not treat it as live, until Legal signs it off.
-2. **Controller.** The pages name Spiquizzy and contact@spiquizzy.com only. No personal name and no home address. Who the legal controller is (the student, a parent, or someone else) is not decided here.
-3. **Retention is “until you ask”, because nothing deletes on a timer.** `spiquizzy_pageviews`, `dd_guest_serves`, accounts, banks, and runs have no cleanup job in the applied migrations. A 12-month page-view delete was only a proposal in the baseline review. This notice does not invent a number of days or months. Do not add a period to the notice until a matching job is actually applied.
+1. **Clearance.** The five must-change replacements from the 11 November 2026 note are in the pages above. The notice is still not on `main`.
+2. **Controller.** The pages name Spiquizzy and contact@spiquizzy.com only. No personal name and no home address. The legal name is still to be confirmed and, if needed, added later.
+3. **Retention periods are now in the notice, with the caveat.** Device data stays until the player clears it. Account data stays for the life of the account, and an unused account is to be deleted after 24 months. Guest ids and served questions are 30 days. Page views are 12 months. Provider connection logs last only as long as those providers keep them. The 30-day, 12-month, and unused-account delete jobs are not running, so the caveat paragraph stays.
 4. **Erasure may not find a row.** Guest serve rows can be found only if the person still has `spquizzy.drop.guest` or sends the id. Page views have no account id. IP addresses may sit in Supabase, GitHub Pages, or Fastly logs; those log periods are not confirmed.
 5. **No response deadline** is promised for access or deletion emails. Deletion is a person reading contact@spiquizzy.com. There is no in-app delete, and this change does not delete any data.
 6. **Guest id basis.** The notice uses legitimate interests (Article 6(1)(f)) for the guest id and served-question rows. There is no written legitimate-interests assessment, and the likely audience is under 18.
 7. **Account basis.** The notice uses Article 6(1)(b) for the account, email, bank, runs, and stake rows. Legal should confirm that basis for under-18 accounts.
 8. **Transfers.** Supabase is described as London (eu-west-2). Resend as Ireland (eu-west-1). Google, GitHub Pages, and Fastly as possibly the United States or elsewhere. No IDTA, addendum, or transfer assessment is published. Ireland is outside the UK.
-9. **Google profile fields.** The notice says the real name, email, and Google photo are never shown. It does not say Google never sends a name or photo. Scopes were not checked in Google Cloud (baseline item S13, left alone). Supabase may still store them on the auth user.
+9. **Google profile fields.** The notice now says Google may also send a name or a profile photo, that we do not use either as the username, and that we never show the real name, email, or Google photo to other players. Scopes were not checked in Google Cloud.
 10. **Older league function.** The live board calls `dd_leaderboard`, which returns username and coins and skips `opted_out_of_boards`. An older `dd_weekly_league` is still granted in the migrations, is not called by the app, and would show `display_name` if that column were filled. It was not revoked (baseline item S10, left alone).
-11. **`spquizzy.drop.coach`** is named in the baseline review and is not written by the current code, so the cookie page does not list it.
-12. **Clear local data** removes only the four keys named above. It leaves consent, the guest id, the event log, and the How to play flag. That is deliberate so consent stays on its own control.
-13. **Board switch needs SQL before it can save.** Migration `supabase/migrations/20261111000700_dd_board_opt_out.sql` is in the repo and has not been applied. Until it is applied, Settings cannot read or write the flag through the app, and the notice’s promise of the switch will not work. `dd_leaderboard` already excludes opted-out players. The RLS policy `dd_profiles_update` already allows a user to update their own row, but `authenticated` has SELECT only, not UPDATE. The migration adds `dd_set_board_opt_out` so the client can set that one column without a table-wide update grant (which would also expose `is_plus`).
+11. **`spquizzy.drop.coach`** is written by the app and is now listed on the cookie page as an essential preference.
+12. **Clear local data** removes only the four keys named in Settings. The cookie page says it does not remove the guest id, the event log, the How to play flag, the coach flag, or the tab-only keys, and it does not change `spquizzy.consent`.
+13. **Board switch.** `dd_set_board_opt_out` is applied in production. The Settings email line remains only if a save fails. `dd_leaderboard` already excludes opted-out players.
 14. **Shared Supabase project** with another app is not described in the notice (baseline item S11). Zach still needs to decide whether the notice must mention it.
 15. **ICO fee, a children’s DPIA, and who signs the vendor contracts** are unchanged solicitor flags from the baseline review. This round does not decide them.
