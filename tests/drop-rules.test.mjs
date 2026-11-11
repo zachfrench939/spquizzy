@@ -18,10 +18,10 @@ import {
   trayTokens,
 } from "../js/drop/rules.js";
 
-test("a late lock-in is clamped after 20 seconds plus grace", () => {
-  assert.equal(submissionWindow(19000), "accept");
-  assert.equal(submissionWindow(22000), "accept");
-  assert.equal(submissionWindow(22001), "clamp");
+test("a late lock-in is clamped after 25 seconds plus grace", () => {
+  assert.equal(submissionWindow(24000), "accept");
+  assert.equal(submissionWindow(27000), "accept");
+  assert.equal(submissionWindow(27001), "clamp");
 });
 
 test("a day starts with 100 coins in the tray", () => {

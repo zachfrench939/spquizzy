@@ -576,18 +576,18 @@ These two rules are part of phase 1. They override the earlier “no timer” li
 
 ### 16.1 Twenty-second question timer
 
-Every question lasts **20 seconds**, so a player cannot look the answer up.
+Every question lasts **25 seconds**, so a player cannot look the answer up.
 
 - Show a thick neo-brutalist bar across the top of the board. It starts full and shrinks toward empty.
 - For the last **5 seconds** the fill turns tomato `#E63326`.
 - If sound is on, play a light tick once per second. Sound stays off by default.
 - When the bar hits zero, lock in immediately. Coins already on answers are judged. Coins still in the tray are **lost**. The empty-door rule is not re-checked on a timeout, because the player may not have finished placing.
 - If the tray still holds every coin, the question drops them all and the run banks 0.
-- Pause the timer while the trapdoors and the fall play. Start a fresh 20 seconds on the next question.
-- A refresh resumes the same deadline. It does not grant another 20 seconds.
+- Pause the timer while the trapdoors and the fall play. Start a fresh 25 seconds on the next question.
+- A refresh resumes the same deadline. It does not grant another 25 seconds.
 - Honour reduced motion: the bar still shrinks, with no tick animation beyond the width change.
 
-**Server.** Record `question_served_at` when that question is served. Do not reset it if the client asks again for the same index. A lock-in is valid when it arrives within 20 seconds plus about **2 seconds** of network grace (22 seconds). A later submission is clamped: the client’s distribution is ignored and every coin still pending on that question is lost. Manual lock-in inside the window still requires every coin placed and at least one empty answer. A timeout inside the window judges only the coins on answers.
+**Server.** Record `question_served_at` when that question is served. Do not reset it if the client asks again for the same index. A lock-in is valid when it arrives within 25 seconds plus about **2 seconds** of network grace (27 seconds). A later submission is clamped: the client’s distribution is ignored and every coin still pending on that question is lost. Manual lock-in inside the window still requires every coin placed and at least one empty answer. A timeout inside the window judges only the coins on answers.
 
 ### 16.2 All in and Add rest
 

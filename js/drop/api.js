@@ -31,7 +31,7 @@ function headers(session) {
   };
 }
 
-async function rpc(name, body, session) {
+export async function rpc(name, body, session) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: headers(session),

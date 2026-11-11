@@ -1,7 +1,7 @@
 /** Pure stake rules for The Daily Drop. No DOM. */
 
 export const START_COINS = 100;
-export const QUESTION_MS = 20000;
+export const QUESTION_MS = 25000;
 export const GRACE_MS = 2000;
 export const MINUS_STEP = 10;
 export const LONG_PRESS_MS = 550;

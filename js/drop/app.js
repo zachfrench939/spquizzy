@@ -1,5 +1,6 @@
 import { LAUNCH_DATE } from "../config.js";
 import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, weeklyLeague } from "./api.js";
+import { navAction } from "./nav.js";
 import {
   START_COINS, LONG_PRESS_MS, addAmount, addRest, allIn, canManualLock, chipState,
   clearDoor, clonePots, freshPots, minusStep, QUESTION_MS, stackCount, timeoutPots,
@@ -233,18 +234,13 @@ function homeView() {
   const view = el("section");
   view.id = "view-home";
   const art = el("div", "hero-art");
-  const wombat = document.createElement("img");
-  wombat.className = "wombat";
-  wombat.src = "/assets/drop/wombat-idle.png";
-  wombat.alt = "The Spiquizzy wombat";
-  wombat.width = 140;
   const stake = el("div", "hero-stake");
   const stack = el("div", "hero-stack");
   for (let i = 0; i < 5; i += 1) stack.append(coinImg(32));
   const figure = el("strong", null, "100");
   const words = el("span", null, "coins today");
   stake.append(stack, figure, words);
-  art.append(wombat, stake);
+  art.append(stake);
   const badge = el("span", "sticker cheese");
   badge.id = "drop-badge";
   const title = el("h1", null, "The Daily Drop");
@@ -363,11 +359,6 @@ function resultsView() {
   const view = el("section");
   view.id = "view-results";
   view.hidden = true;
-  const wombat = document.createElement("img");
-  wombat.className = "wombat";
-  wombat.id = "result-wombat";
-  wombat.alt = "";
-  wombat.width = 130;
   const title = el("h1");
   title.id = "result-title";
   const sub = el("p");
@@ -392,7 +383,7 @@ function resultsView() {
   ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Reserved"));
   const plus = el("a", "btn-ghost", "Skip ads with Spiquizzy Plus");
   plus.href = "/plus/";
-  view.append(wombat, title, sub, card, snip, count, share, ad, plus);
+  view.append(title, sub, card, snip, count, share, ad, plus);
   return view;
 }
 
@@ -400,8 +391,10 @@ function leagueView() {
   const view = el("section", "page");
   view.id = "view-league";
   view.hidden = true;
-  view.append(el("div", "example-banner", "Example data — not live scores"));
-  view.append(el("h1", null, "Weekly league"));
+  view.append(el("div", "example-banner", "Example data — sample rows for layout, not live scores"));
+  const heading = el("h1", null, "Weekly league");
+  heading.id = "league-title";
+  view.append(heading);
   const tabs = el("div", "tabs");
   tabs.id = "league-tabs";
   for (const name of ["Weekly", "Monthly", "Yearly", "All-time"]) {
@@ -481,7 +474,7 @@ function howtoSheet() {
   back.hidden = true;
   back.innerHTML = `<div class="sheet" role="dialog" aria-labelledby="howto-title">
     <h2 id="howto-title">How to play</h2>
-    <div class="panel" data-panel="0"><p>Each day you get <strong>100 coins</strong> and <strong>20 seconds</strong> on every question. Tap an answer, then use +1, +10, +50, All or Rest. You can also drag tens from the tray. You must place every coin, and leave at least one answer empty. − takes 10 back; hold it to clear the card. When time runs out, coins still in the tray are lost and the rest lock in.</p><div class="panel-art" id="howto-art"></div></div>
+    <div class="panel" data-panel="0"><p>Each day you get <strong>100 coins</strong> and <strong>25 seconds</strong> on every question. Tap an answer, then use +1, +10, +50, All or Rest. You can also drag tens from the tray. You must place every coin, and leave at least one answer empty. − takes 10 back; hold it to clear the card. When time runs out, coins still in the tray are lost and the rest lock in.</p><div class="panel-art" id="howto-art"></div></div>
     <div class="panel" data-panel="1" hidden><p><strong>Lock in.</strong> Trapdoors under the wrong answers open and those coins fall. The right answer gets a tick and +N Safe. Each wrong answer that had coins shows −N.</p><div class="panel-art"><span class="sticker ink">+N Safe</span><span class="sticker" style="background:#111;color:#FFF8E7">−N</span></div></div>
     <div class="panel" data-panel="2" hidden><p><strong>Finish all 10 questions to bank what’s left.</strong> If you leave early, or you run out of coins, you bank <strong>0</strong> for the day. Coins in play are not yours until the last question is done.</p><div class="panel-art"><img src="${BANK}" width="48" height="48" alt=""><strong>Banked only after Q10</strong></div></div>
     <div class="dots" id="howto-dots"><span class="on"></span><span></span><span></span></div>
@@ -501,7 +494,7 @@ function leaveModal() {
 function consentBar() {
   const bar = el("aside", "consent");
   bar.id = "consent";
-  bar.innerHTML = `<p>We use cookies only for ads, never for the game. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
+  bar.innerHTML = `<p>No ad network is live yet. Page views are counted only after Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
   return bar;
 }
 
@@ -798,7 +791,7 @@ function startTimer(left, frozen) {
     fill.style.width = `${(remain / QUESTION_MS) * 100}%`;
     bar.classList.toggle("is-low", remain <= 5000);
     const seconds = Math.ceil(remain / 1000);
-    bar.setAttribute("aria-label", `${seconds} seconds left of 20`);
+    bar.setAttribute("aria-label", `${seconds} seconds left of 25`);
     if (!frozen && remain <= 0) {
       stopTimer();
       onTimeout();
@@ -933,6 +926,8 @@ function beginDrop(correct, keptAmount, lostAmount) {
     } else door.classList.add("is-wrong");
   });
   document.querySelector("#undo").disabled = true;
+  const bankHint = document.querySelector("#bank-hint");
+  if (bankHint) bankHint.hidden = true;
   renderStake();
   document.querySelector("#pending-count").textContent = String(run.reveal.before);
   const float = document.querySelector("#pending-float");
@@ -941,7 +936,7 @@ function beginDrop(correct, keptAmount, lostAmount) {
     document.querySelector("#pending-count").textContent = String(keptAmount);
     document.querySelector("#play-coins")?.setAttribute("aria-label", `${keptAmount} coins in play. Bank ${bank.balance}. Show bank.`);
     view.classList.add("is-next", "is-done");
-    view.classList.remove("is-pressing");
+    view.classList.remove("is-pressing", "is-suspense", "is-dropping");
     run.revealReady = true;
     const lock = document.querySelector("#lock");
     lock.textContent = nextLabel();
@@ -1066,11 +1061,8 @@ function showResults() {
   const cleared = run.status === "completed" && run.banked > 0;
   const wiped = run.status === "completed" && run.banked === 0;
   const left = run.status === "forfeited";
-  const wombat = document.querySelector("#result-wombat");
   const title = document.querySelector("#result-title");
   const sub = document.querySelector("#result-sub");
-  wombat.src = cleared ? "/assets/drop/wombat-cheering.png" : (wiped ? "/assets/drop/wombat-thinking.png" : "/assets/drop/wombat-sad.png");
-  wombat.alt = cleared ? "Cheering wombat" : "Wombat";
   if (cleared) {
     title.textContent = "Banked!";
     sub.textContent = "You finished all 10 questions.";
@@ -1078,7 +1070,7 @@ function showResults() {
     title.textContent = "All 10, none left";
     sub.textContent = "You finished the drop, but no coins survived the last question.";
   } else if (left) {
-    title.textContent = "0 banked";
+    title.textContent = "Zero banked";
     sub.textContent = "You left early, so nothing was banked today.";
   } else {
     title.textContent = "Dropped!";
@@ -1098,7 +1090,7 @@ function showResults() {
   icon.alt = "";
   icon.width = 36;
   icon.height = 36;
-  line.append(icon, document.createTextNode(` Banked ${run.banked || 0}`));
+  line.append(icon, document.createTextNode(" Banked "), el("span", "count", String(run.banked || 0)));
   line.append(el("span", "running", `Bank ${bank.balance}`));
   if (cleared) line.classList.add("banked-anim");
   const snip = document.querySelector("#league-snip");
@@ -1178,6 +1170,8 @@ function paintLeagueRows(rows) {
 
 async function paintLeague(which) {
   const banner = document.querySelector("#view-league .example-banner");
+  const title = document.querySelector("#league-title");
+  if (title) title.textContent = which === "All-time" ? "All-time league" : `${which} league`;
   document.querySelector("#league-meta").textContent = `${which === "Weekly" ? "Fusilli League" : which} · coins banked this period`;
   if (which === "Weekly" && !SHOT) {
     try {
@@ -1354,9 +1348,21 @@ function onClick(event) {
   if (!nav) return;
   const href = nav.getAttribute("href") || "";
   const dest = nav.dataset.nav || ROUTES[href] || "";
-  if ((dest === "home" || href === "/") && run && run.status === "in_progress" && !document.querySelector("#view-play").hidden) {
+  const inPlay = Boolean(run && run.status === "in_progress" && !document.querySelector("#view-play").hidden);
+  const action = navAction(dest, { inPlay });
+  if (action.type === "howto") {
+    event.preventDefault();
+    openHow(0);
+    return;
+  }
+  if (action.type === "leave") {
     event.preventDefault();
     document.querySelector("#leave-modal").hidden = false;
+    return;
+  }
+  if (action.type === "go" && nav.tagName !== "A") {
+    event.preventDefault();
+    location.href = action.href;
   }
 }
 
