@@ -38,7 +38,9 @@ async function rpc(name, body, session) {
     body: JSON.stringify(body || {}),
   });
   if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  if (res.status === 204) return null;
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 export function serveQuestion(index, session) {
