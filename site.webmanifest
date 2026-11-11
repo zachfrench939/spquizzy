@@ -1,6 +1,6 @@
 {
   "name": "The Daily Drop",
-  "short_name": "Daily Drop",
+  "short_name": "Spiquizzy",
   "description": "10 questions a day. Bet your coins.",
   "start_url": "/",
   "scope": "/",

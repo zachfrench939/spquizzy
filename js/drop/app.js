@@ -19,6 +19,7 @@ const BANK_KEY = "spquizzy.drop.bank";
 const HOW_KEY = "spquizzy.drop.howto";
 const SET_KEY = "spquizzy.drop.settings";
 const CONSENT_KEY = "spquizzy.consent";
+const COACH_KEY = "spquizzy.drop.coach";
 const PROMPT_KEY = "spquizzy.drop.signin-prompt";
 const SIGNED_OUT_KEY = "spquizzy.drop.just-signed-out";
 const NAME_LATER_KEY = "spquizzy.drop.username-later";
@@ -192,8 +193,12 @@ function shell() {
   logo.src = LOGO;
   logo.width = 36;
   logo.height = 36;
-  logo.alt = "";
+  logo.alt = "Spiquizzy";
   brand.append(logo, el("span", "wordmark", "Spiquizzy"));
+  const quiet = el("a", "header-signin", "Sign in");
+  quiet.id = "header-signin";
+  quiet.href = "/sign-in/";
+  quiet.dataset.nav = "signin";
   const nav = el("nav", "header-actions");
   nav.setAttribute("aria-label", "Site");
   for (const [href, label] of [["/how-to-play/", "How to play"], ["/leagues/", "Leagues"], ["/bank/", "Bank"], ["/sign-in/", "Sign in"], ["/settings/", "Settings"]]) {
@@ -212,7 +217,7 @@ function shell() {
   gear.setAttribute("aria-label", "Settings");
   gear.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>`;
   nav.append(leagues, gear);
-  header.append(brand, nav);
+  header.append(brand, quiet, nav);
 
   const main = el("main");
   main.append(homeView(), playView(), resultsView(), leagueView(), bankView(), profileView(), signinView(), plusView(), settingsView(), missingView());
@@ -283,11 +288,11 @@ function playView() {
   const brand = el("a", "brand");
   brand.href = "/";
   brand.dataset.nav = "home";
-  brand.setAttribute("aria-label", "The Daily Drop");
+  brand.setAttribute("aria-label", "Spiquizzy");
   const logo = document.createElement("img");
   logo.className = "logo";
   logo.src = LOGO;
-  logo.alt = "The Daily Drop";
+  logo.alt = "Spiquizzy";
   logo.width = 36;
   logo.height = 36;
   brand.append(logo);
@@ -316,6 +321,9 @@ function playView() {
   offlineNote.hidden = true;
   const question = el("h2");
   question.id = "q-text";
+  const coach = el("p", "coach", "Pick an answer, put coins on it, then Lock in.");
+  coach.id = "coach";
+  coach.hidden = true;
   const board = el("div", "board");
   board.id = "doors";
   board.setAttribute("aria-label", "Answers");
@@ -328,7 +336,7 @@ function playView() {
   hint.id = "lock-hint";
   const actions = el("div", "play-actions");
   const meta = el("div", "bar-meta");
-  meta.innerHTML = `<div class="adding" id="adding" aria-live="polite"><span class="to">Adding to</span><span class="letter-chip" id="adding-letter">A</span><span class="name" id="adding-name"></span><span class="timeout-note" id="adding-note" hidden></span></div>`;
+  meta.innerHTML = `<div class="adding" id="adding" aria-live="polite"><span class="to">Adding to</span><span class="letter-chip" id="adding-letter">A</span><span class="name" id="adding-name"></span><span class="timeout-note" id="adding-note" hidden></span></div><p class="lock-reason" id="lock-reason" hidden></p>`;
   const amounts = el("div", "amount-bar");
   amounts.setAttribute("role", "group");
   amounts.setAttribute("aria-label", "Add coins to the selected answer");
@@ -358,7 +366,7 @@ function playView() {
   undoBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M8 8H3V3"/><path d="M3.6 8.2A9 9 0 1 1 3 12"/></svg>`;
   lockRow.append(lock, undoBtn);
   actions.append(meta, amounts, lockRow);
-  stage.append(chrome, bankHint, offlineNote, question, board, tray, fact, hint, actions);
+  stage.append(chrome, bankHint, offlineNote, question, coach, board, tray, fact, hint, actions);
   view.append(bar, stage);
   return view;
 }
@@ -455,7 +463,7 @@ function signinView() {
   view.id = "view-signin";
   view.hidden = true;
   const googleRow = GOOGLE_SIGN_IN ? "" : " hidden";
-  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto;border:2px solid #111"><div id="signin-guest"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p><p id="magic-note" style="font-weight:700;margin-top:12px"></p></div><div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
+  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto"><div id="signin-guest"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 16px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form"><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p><p id="magic-note" style="font-weight:700;margin-top:12px"></p></div><div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
   return view;
 }
 
@@ -492,7 +500,7 @@ function missingView() {
   const view = el("section", "simple-center");
   view.id = "view-missing";
   view.hidden = true;
-  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto;border:2px solid #111"><h1>Page not found</h1><p style="font-weight:700">That page isn’t on Spiquizzy.</p><p><a class="btn-primary" href="/" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Back to today’s drop</a></p>`;
+  view.innerHTML = `<img class="logo" src="${LOGO}" width="64" height="64" alt="Spiquizzy" style="margin:0 auto"><h1>Page not found</h1><p style="font-weight:700">That page isn’t on Spiquizzy.</p><p><a class="btn-primary" href="/" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Back to today’s drop</a></p>`;
   return view;
 }
 
@@ -524,7 +532,7 @@ function signInPrompt() {
   back.id = "signin-prompt";
   back.hidden = true;
   back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="prompt-title">
-    <img src="${BANK}" width="48" height="48" alt="">
+    <img src="${LOGO}" width="48" height="48" alt="Spiquizzy">
     <h2 id="prompt-title">Sign in to keep your progress</h2>
     <p>Save your bank, join weekly leagues, play on any device.</p>
     <form id="prompt-form">
@@ -559,7 +567,6 @@ function offerSignIn() {
   if (!card) return false;
   card.hidden = false;
   try { sessionStorage.setItem(PROMPT_KEY, "1"); } catch { /* private mode */ }
-  document.querySelector("#prompt-email")?.focus();
   return true;
 }
 
@@ -567,8 +574,6 @@ function closeSignPrompt() {
   const card = document.querySelector("#signin-prompt");
   if (!card || card.hidden) return;
   card.hidden = true;
-  const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
-  if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
 }
 
 function tabBar() {
@@ -595,7 +600,7 @@ function usernameGate() {
   back.id = "username-gate";
   back.hidden = true;
   back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="user-title">
-    <img src="${BANK}" width="48" height="48" alt="">
+    <img src="${LOGO}" width="48" height="48" alt="Spiquizzy">
     <h2 id="user-title">Pick a username</h2>
     <p>This is your name on the global board. Letters, numbers and underscores.</p>
     <form id="user-form">
@@ -613,15 +618,12 @@ function openUsername() {
   const card = document.querySelector("#username-gate");
   if (!card) return;
   card.hidden = false;
-  document.querySelector("#user-name")?.focus();
 }
 
 function closeUsername() {
   const card = document.querySelector("#username-gate");
   if (!card || card.hidden) return;
   card.hidden = true;
-  const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
-  if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
 }
 
 function offerUsername() {
@@ -703,7 +705,7 @@ function trapDialog(event) {
 function consentBar() {
   const bar = el("aside", "consent");
   bar.id = "consent";
-  bar.innerHTML = `<p>No ad network is live yet. Page views are counted only after Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
+  bar.innerHTML = `<p>We only count page views if you Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
   return bar;
 }
 
@@ -721,6 +723,8 @@ function show(name) {
   }
   document.querySelector("#site-header").hidden = name === "play";
   paintTabs(name);
+  const headerSign = document.querySelector("#header-signin");
+  if (headerSign) headerSign.hidden = Boolean(session?.access_token);
   if (name === "home") paintHome();
   if (name === "league") paintLeague("Weekly");
   if (name === "bank") paintBank();
@@ -954,6 +958,8 @@ function renderStake() {
   });
   const lock = document.querySelector("#lock");
   paintAdding();
+  paintCoach();
+  paintLockReason();
   if (run.phase === "reveal") {
     if (run.revealReady) {
       lock.textContent = nextLabel();
@@ -964,6 +970,38 @@ function renderStake() {
   lock.textContent = "Lock in";
   lock.disabled = !canManualLock(pots);
   document.querySelector("#undo").disabled = !run.undo.length;
+}
+
+function coachingNow() {
+  if (!run || run.q !== 0 || run.phase === "reveal") return false;
+  try { return localStorage.getItem(COACH_KEY) !== "1"; } catch { return false; }
+}
+
+function paintCoach() {
+  const node = document.querySelector("#coach");
+  const view = document.querySelector("#view-play");
+  const on = coachingNow();
+  if (node) node.hidden = !on;
+  if (!view || !run) return;
+  const ready = on && canManualLock(run.pots);
+  view.classList.toggle("is-coach", on && !ready);
+  view.classList.toggle("is-ready", ready);
+}
+
+function paintLockReason() {
+  const node = document.querySelector("#lock-reason");
+  if (!node || !run) return;
+  if (run.phase === "reveal" || canManualLock(run.pots)) {
+    node.hidden = true;
+    node.textContent = "";
+    return;
+  }
+  const pots = run.pots;
+  const total = pots.tray + pots.doors.reduce((sum, count) => sum + count, 0);
+  node.hidden = false;
+  node.textContent = pots.tray > 0
+    ? `Place all ${total} coins to lock in`
+    : "Leave one answer empty to lock in";
 }
 
 function paintAdding() {
@@ -1186,6 +1224,12 @@ function showFunFact(text) {
 
 function beginDrop(correct, keptAmount, lostAmount) {
   const view = document.querySelector("#view-play");
+  if (run.q === 0) {
+    try { localStorage.setItem(COACH_KEY, "1"); } catch { /* private mode */ }
+    view?.classList.remove("is-coach", "is-ready");
+    const coach = document.querySelector("#coach");
+    if (coach) coach.hidden = true;
+  }
   document.querySelectorAll(".door").forEach((door) => {
     const index = Number(door.dataset.i);
     door.classList.remove("is-picked");
@@ -1208,13 +1252,13 @@ function beginDrop(correct, keptAmount, lostAmount) {
   const finish = () => {
     document.querySelector("#pending-count").textContent = String(keptAmount);
     document.querySelector("#play-coins")?.setAttribute("aria-label", `${keptAmount} coins in play. Bank ${bank.balance}. Show bank.`);
-    view.classList.add("is-next", "is-done");
-    view.classList.remove("is-pressing", "is-suspense", "is-dropping", "is-pending-tick");
     if (float) float.textContent = "";
     run.revealReady = true;
     const lock = document.querySelector("#lock");
     lock.textContent = nextLabel();
     lock.disabled = false;
+    view.classList.add("is-next", "is-done");
+    view.classList.remove("is-pressing", "is-suspense", "is-dropping", "is-pending-tick");
     showFunFact(run.reveal?.funFact);
   };
   if ((reduced() && !SHOT) || SHOT === "next") {
@@ -1375,6 +1419,7 @@ function showResults() {
   link.href = "/leagues/";
   snip.append(link);
   tickCountdown();
+  if (!session?.access_token) offerSignIn();
 }
 
 function shareText() {
@@ -1681,9 +1726,6 @@ function onClick(event) {
     localStorage.setItem(CONSENT_KEY, event.target.id === "consent-yes" ? "accept" : "reject");
     document.querySelector("#consent").hidden = true;
     document.documentElement.classList.remove("has-consent");
-    const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
-    if (offerSignIn()) return;
-    if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
     return;
   }
   if (event.target.id === "sign-out" || event.target.id === "sign-out-bank" || event.target.id === "sign-out-page") {
@@ -1918,12 +1960,9 @@ async function boot() {
   else if (route === "howto") show("home");
   else show(route === "missing" ? "missing" : route);
   const waiting = showConsent || playingNow();
-  if (!waiting && offerSignIn()) {
-    /* how-to waits until the card closes */
-  } else if (!waiting && offerUsername()) {
-    /* how-to waits until the username step closes */
+  if (!waiting && offerUsername()) {
+    /* username step waits for a signed-in player */
   } else if (!showConsent && route === "howto") openHow(0);
-  else if (!seenHow() && !showConsent && route === "home") openHow(0);
   document.querySelector("#play-btn").addEventListener("click", () => { location.href = "/play/"; });
   focusUsernameField();
 }
