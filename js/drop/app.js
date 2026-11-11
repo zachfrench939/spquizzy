@@ -1429,6 +1429,7 @@ async function paintLeague(which) {
     paintLeagueRows([]);
     const empty = document.querySelector("#league-empty");
     if (empty) empty.hidden = true;
+    if (foot) foot.textContent = "You’re on the global board. Coins banked in the period, ranked against everyone.";
     return;
   }
   let board = null;
