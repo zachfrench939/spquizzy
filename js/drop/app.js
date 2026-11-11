@@ -1,6 +1,7 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, lockIn, magicLinkErrorMessage, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, weeklyLeague } from "./api.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
+import { formatYouRank, usernameError } from "./names.js";
 import {
   START_COINS, LONG_PRESS_MS, addAmount, addRest, allIn, canManualLock, chipState,
   clearDoor, clonePots, freshPots, minusStep, QUESTION_MS, stackCount, timeoutFill, timeoutPots,
@@ -18,7 +19,9 @@ const HOW_KEY = "spquizzy.drop.howto";
 const SET_KEY = "spquizzy.drop.settings";
 const CONSENT_KEY = "spquizzy.consent";
 const PROMPT_KEY = "spquizzy.drop.signin-prompt";
+const NAME_LATER_KEY = "spquizzy.drop.username-later";
 const GUEST_KEY = "spquizzy.drop.guest";
+const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
 
 const ROUTES = {
   "/": "home",
@@ -33,18 +36,10 @@ const ROUTES = {
   "/404.html": "missing",
 };
 
-const EXAMPLE = [
-  [1, "Alex P.", 28], [2, "Sam T.", 24], [3, "Jordan K.", 23], [4, "Riley M.", 22], [5, "Chris L.", 21],
-  [6, "Pat O.", 20], [7, "Morgan S.", 19], [8, "You", 18], [9, "Jamie B.", 17], [10, "Taylor R.", 16],
-  [11, "Avery N.", 15], [12, "Quinn H.", 14], [13, "Drew C.", 13], [14, "Casey F.", 12], [15, "Reese W.", 11],
-  [16, "Skyler D.", 10], [17, "Cameron V.", 9], [18, "Harper J.", 8], [19, "Rowan E.", 7], [20, "Frankie Z.", 6],
-  [21, "Elliot A.", 5], [22, "Noah P.", 5], [23, "Ivy S.", 4], [24, "Blake Y.", 3], [25, "Parker U.", 3],
-  [26, "Shawn I.", 2], [27, "Leslie G.", 2], [28, "Dana X.", 1], [29, "Kerry Q.", 1], [30, "Guest 30", 0],
-];
-
 const app = document.querySelector("#app");
 const params = new URLSearchParams(location.search);
 const SHOT = params.get("shot");
+const ADS_PREVIEW = params.get("ads") === "preview";
 let pack = null;
 const capturedAuth = captureHashSession();
 let session = capturedAuth?.access_token ? capturedAuth : readSession();
@@ -61,6 +56,7 @@ let timerId = 0;
 let audioCtx = null;
 let howtoStep = 0;
 let offline = false;
+let profile = null;
 
 function londonToday(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -182,6 +178,7 @@ function reduced() {
 }
 
 function shell() {
+  if (ADS_PREVIEW) document.documentElement.classList.add("ads-preview");
   app.replaceChildren();
   const header = el("header", "app-header");
   header.id = "site-header";
@@ -217,8 +214,8 @@ function shell() {
 
   const main = el("main");
   main.append(homeView(), playView(), resultsView(), leagueView(), bankView(), profileView(), signinView(), plusView(), settingsView(), missingView());
-  app.append(header, main, howtoSheet(), leaveModal(), signInPrompt(), consentBar());
-  document.addEventListener("keydown", trapSignPrompt);
+  app.append(header, main, tabBar(), howtoSheet(), leaveModal(), signInPrompt(), usernameGate(), consentBar());
+  document.addEventListener("keydown", trapDialog);
   app.addEventListener("click", onClick);
   const stage = document.querySelector("#play-stage");
   stage.addEventListener("pointerdown", onDown);
@@ -262,9 +259,9 @@ function homeView() {
   const how = el("button", "btn-ghost howto-link", "How to play");
   how.type = "button";
   how.dataset.nav = "howto";
-  const ad = el("aside", "ad-slot");
+  const ad = el("aside", "ad-slot slot-home");
   ad.setAttribute("aria-label", "Advertisement");
-  ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Reserved"));
+  ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Ad"));
   const fine = el("footer", "fine", "Free to play · Same 10 questions for everyone · Resets at midnight UK time");
   view.append(art, el("p", "kicker", "Today’s daily quiz"), badge, title, date, pitch, endow, cta, how, ad, fine);
   return view;
@@ -381,12 +378,12 @@ function resultsView() {
   const share = el("button", "btn-share", "Share");
   share.type = "button";
   share.id = "share";
-  const ad = el("aside", "ad-slot");
+  const ad = el("aside", "ad-slot slot-results");
   ad.setAttribute("aria-label", "Advertisement");
-  ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Reserved"));
+  ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Ad"));
   const plus = el("a", "btn-ghost", "Skip ads with Spiquizzy Plus");
   plus.href = "/plus/";
-  view.append(title, sub, card, snip, count, share, ad, plus);
+  view.append(title, sub, card, snip, count, share, plus, ad);
   return view;
 }
 
@@ -394,7 +391,6 @@ function leagueView() {
   const view = el("section", "page");
   view.id = "view-league";
   view.hidden = true;
-  view.append(el("div", "example-banner", "Example data — sample rows for layout, not live scores"));
   const heading = el("h1", null, "Weekly league");
   heading.id = "league-title";
   view.append(heading);
@@ -409,11 +405,24 @@ function leagueView() {
   }
   const meta = el("p", "league-meta");
   meta.id = "league-meta";
-  const key = el("p", "zone-key");
-  key.innerHTML = `<span><i class="up"></i> Top 10 promote</span><span><i class="down"></i> Bottom 10 drop down</span>`;
+  const you = el("p", "you-rank");
+  you.id = "you-rank";
+  const guest = el("div", "league-guest");
+  guest.id = "league-guest";
+  guest.hidden = true;
+  guest.innerHTML = `<p>Sign in to get on the board.</p><a class="btn-primary" href="/sign-in/">Sign in</a>`;
+  const empty = el("p", "league-empty");
+  empty.id = "league-empty";
+  empty.hidden = true;
+  empty.textContent = "No players on this board yet.";
   const list = el("ol", "rank-list");
   list.id = "rank-list";
-  view.append(tabs, meta, key, list, el("p", null, "Leagues reset at 00:00 Europe/London each Monday. Sign in to appear on the public board."));
+  const ad = el("aside", "ad-slot slot-league");
+  ad.setAttribute("aria-label", "Advertisement");
+  ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Ad"));
+  const foot = el("p");
+  foot.id = "league-foot";
+  view.append(tabs, meta, you, guest, empty, list, foot, ad);
   return view;
 }
 
@@ -421,7 +430,7 @@ function bankView() {
   const view = el("section", "page");
   view.id = "view-bank";
   view.hidden = true;
-  view.innerHTML = `<h1>Your bank</h1><p class="endow" style="justify-content:flex-start"><img src="${BANK}" width="48" height="48" alt=""> <strong id="bank-total">0</strong> coins</p><p>Coins move into your bank only after you finish all 10 questions. Leave early, or run out, and that day banks 0.</p><ul class="history" id="bank-history"></ul><p><a class="btn-ghost" href="/sign-in/">Sign in to keep your bank</a></p>`;
+  view.innerHTML = `<h1>Your bank</h1><p class="endow" style="justify-content:flex-start"><img src="${BANK}" width="48" height="48" alt=""> <strong id="bank-total">0</strong> coins</p><p>Coins move into your bank only after you finish all 10 questions. Leave early, or run out, and that day banks 0.</p><ul class="history" id="bank-history"></ul><p id="bank-guest"><a class="btn-ghost" href="/sign-in/">Sign in to keep your bank</a></p><p id="bank-signed" hidden>Signed in. This bank is kept on your account.</p><p><button class="btn-keep" type="button" id="sign-out-bank" hidden>Sign out</button></p>`;
   return view;
 }
 
@@ -455,11 +464,18 @@ function settingsView() {
   view.id = "view-settings";
   view.hidden = true;
   view.innerHTML = `<h1>Settings</h1>
+    <form id="name-form" class="name-form">
+      <label for="set-username">Username</label>
+      <input id="set-username" name="username" autocomplete="username" maxlength="16" spellcheck="false">
+      <button class="btn-primary" type="submit">Save username</button>
+      <p id="set-username-note"></p>
+      <button class="btn-keep" type="button" id="sign-out" hidden>Sign out</button>
+    </form>
     <div class="tog"><span>Sound</span><button class="switch" type="button" id="set-sound" aria-label="Sound"></button></div>
     <div class="tog"><span>Reduce motion</span><button class="switch" type="button" id="set-motion" aria-label="Reduce motion"></button></div>
     <div class="tog"><span>Safe and Dropped labels stay on</span><button class="switch" type="button" aria-pressed="true" disabled aria-label="Labels"></button></div>
-    <p><a href="/privacy/">Privacy and cookies</a></p>
-    <p><a href="/plus/">Spiquizzy Plus</a></p>
+    <p class="settings-links"><a href="/privacy/">Privacy and cookies</a></p>
+    <p class="settings-links"><a href="/plus/">Spiquizzy Plus</a></p>
     <p><button class="btn-danger" type="button" id="clear-local">Clear local data</button></p>`;
   return view;
 }
@@ -519,7 +535,8 @@ function playingNow() {
 }
 
 function offerSignIn() {
-  if (SHOT || session?.access_token || playingNow()) return false;
+  const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
+  if (SHOT || session?.access_token || playingNow() || route === "signin" || route === "plus") return false;
   try {
     if (sessionStorage.getItem(PROMPT_KEY)) return false;
   } catch {
@@ -538,15 +555,121 @@ function closeSignPrompt() {
   if (!card || card.hidden) return;
   card.hidden = true;
   const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
-  if (!seenHow() && (route === "home" || route === "howto")) openHow(0);
+  if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
 }
 
-function trapSignPrompt(event) {
-  const card = document.querySelector("#signin-prompt");
+function tabBar() {
+  const nav = el("nav", "tabbar");
+  nav.id = "tabbar";
+  nav.setAttribute("aria-label", "App");
+  const items = [
+    ["play", "Play", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 5v14l11-7z"/></svg>`],
+    ["league", "Leagues", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 20V10M12 20V4M20 20V14"/></svg>`],
+    ["settings", "Profile", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="3"/><path d="M5 19c1.5-3 3.5-4.5 7-4.5S17.5 16 19 19"/></svg>`],
+  ];
+  for (const [dest, label, icon] of items) {
+    const link = el("a", "tab");
+    link.href = dest === "play" ? "/play/" : dest === "league" ? "/leagues/" : "/settings/";
+    link.dataset.nav = dest;
+    link.innerHTML = `${icon}<span>${label}</span>`;
+    nav.append(link);
+  }
+  return nav;
+}
+
+function usernameGate() {
+  const back = el("div", "prompt-back");
+  back.id = "username-gate";
+  back.hidden = true;
+  back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="user-title">
+    <img src="${BANK}" width="48" height="48" alt="">
+    <h2 id="user-title">Pick a username</h2>
+    <p>This is your name on the global board. Letters, numbers and underscores.</p>
+    <form id="user-form">
+      <label for="user-name">Username</label>
+      <input id="user-name" name="username" autocomplete="username" maxlength="16" required spellcheck="false">
+      <button class="btn-primary" type="submit">Save username</button>
+    </form>
+    <p id="user-note"></p>
+    <button class="btn-ghost" type="button" id="user-later">Not now</button>
+  </div>`;
+  return back;
+}
+
+function openUsername() {
+  const card = document.querySelector("#username-gate");
+  if (!card) return;
+  card.hidden = false;
+  document.querySelector("#user-name")?.focus();
+}
+
+function closeUsername() {
+  const card = document.querySelector("#username-gate");
   if (!card || card.hidden) return;
+  card.hidden = true;
+  const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
+  if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
+}
+
+function offerUsername() {
+  if (SHOT || playingNow() || !session?.access_token || !profile || profile.username) return false;
+  try {
+    if (sessionStorage.getItem(NAME_LATER_KEY)) return false;
+  } catch {
+    return false;
+  }
+  openUsername();
+  return true;
+}
+
+function signOut() {
+  clearSession();
+  session = null;
+  profile = null;
+  signInNotice = "";
+  location.reload();
+}
+
+function serverMessage(error) {
+  const text = String(error?.message || "");
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed.message) return String(parsed.message);
+  } catch { /* the body was plain text */ }
+  if (text.includes("taken")) return "That username is taken.";
+  if (text.includes("different username")) return "Pick a different username.";
+  if (text.includes("3 to 16")) return "Use 3 to 16 characters: letters, numbers and underscores.";
+  return "That didn’t save. Try again.";
+}
+
+async function saveUsername(raw, note, done) {
+  const problem = usernameError(raw);
+  if (problem) {
+    note.textContent = problem;
+    return;
+  }
+  if (!session?.access_token) {
+    note.textContent = "Sign in to choose a username.";
+    return;
+  }
+  try {
+    profile = await setUsername(raw.trim(), session);
+    note.textContent = "Saved.";
+    const field = document.querySelector("#set-username");
+    if (field) field.value = profile.username || raw.trim();
+    done?.();
+  } catch (error) {
+    note.textContent = serverMessage(error);
+  }
+}
+
+function trapDialog(event) {
+  const card = [...document.querySelectorAll("#username-gate, #signin-prompt")].find((node) => node && !node.hidden);
+  if (!card) return;
   if (event.key === "Escape") {
     event.preventDefault();
-    closeSignPrompt();
+    if (card.id === "username-gate") closeUsername();
+    else closeSignPrompt();
     return;
   }
   if (event.key !== "Tab") return;
@@ -583,6 +706,7 @@ function show(name) {
     if (node) node.hidden = id !== name;
   }
   document.querySelector("#site-header").hidden = name === "play";
+  paintTabs(name);
   if (name === "home") paintHome();
   if (name === "league") paintLeague("Weekly");
   if (name === "bank") paintBank();
@@ -590,6 +714,18 @@ function show(name) {
   if (name === "settings") paintSettings();
   if (name === "signin") paintSignin();
   window.scrollTo(0, 0);
+}
+
+function paintTabs(name) {
+  const current = name === "home" || name === "play" ? "play"
+    : name === "league" ? "league"
+    : name === "settings" || name === "profile" ? "settings"
+    : "";
+  document.querySelectorAll("#tabbar .tab").forEach((tab) => {
+    if (tab.dataset.nav === current) tab.setAttribute("aria-current", "page");
+    else tab.removeAttribute("aria-current");
+  });
+  document.body.classList.toggle("is-playing", name === "play");
 }
 
 function currentQuestion() {
@@ -1042,7 +1178,8 @@ function beginDrop(correct, keptAmount, lostAmount) {
     document.querySelector("#pending-count").textContent = String(keptAmount);
     document.querySelector("#play-coins")?.setAttribute("aria-label", `${keptAmount} coins in play. Bank ${bank.balance}. Show bank.`);
     view.classList.add("is-next", "is-done");
-    view.classList.remove("is-pressing", "is-suspense", "is-dropping");
+    view.classList.remove("is-pressing", "is-suspense", "is-dropping", "is-pending-tick");
+    if (float) float.textContent = "";
     run.revealReady = true;
     const lock = document.querySelector("#lock");
     lock.textContent = nextLabel();
@@ -1056,7 +1193,7 @@ function beginDrop(correct, keptAmount, lostAmount) {
     return;
   }
   view.classList.add("is-pressing");
-  const timing = { press: 80, suspense: 300, flap: 280, coinStart: 120, safeAt: 700, stampAt: 980, closeAt: 1120, tagAt: 1320, pendingAt: 1500, doneAt: 1750 };
+  const timing = { press: 80, suspense: 300, flap: 280, coinStart: 120, safeAt: 700, stampAt: 980, closeAt: 1120, tagAt: 1320, pendingAt: 1500, doneAt: 1980 };
   view.style.setProperty("--flap-ms", `${timing.flap}ms`);
   later(timing.press, () => view.classList.add("is-suspense"));
   const dropAt = timing.press + timing.suspense;
@@ -1201,8 +1338,8 @@ function showResults() {
   if (cleared) line.classList.add("banked-anim");
   const snip = document.querySelector("#league-snip");
   snip.textContent = session
-    ? "This week in Fusilli League: sign in is on, and live ranks appear once the league tables are applied."
-    : "Sign in to keep this bank and join Fusilli League. Guest scores stay on this device.";
+    ? "Your rank is on the global board."
+    : "You’re unranked. Sign in to get on the board.";
   const link = el("a", "tap-link", "See the league");
   link.href = "/leagues/";
   snip.append(link);
@@ -1261,41 +1398,69 @@ function tickCountdown() {
 function paintLeagueRows(rows) {
   const list = document.querySelector("#rank-list");
   list.replaceChildren();
-  rows.forEach((row) => {
-    const pos = row.rank ?? row[0];
-    const name = row.name ?? row[1];
-    const score = row.coins ?? row[2];
+  const people = Array.isArray(rows) ? rows : [];
+  people.forEach((row) => {
     const item = document.createElement("li");
-    if (pos <= 10) item.classList.add("zone-up");
-    if (pos >= 21) item.classList.add("zone-down");
-    if (row.you || name === "You") item.classList.add("is-you");
-    item.append(el("span", "pos", String(pos)), el("span", null, name), el("span", null, String(score)));
+    if (row.you) item.classList.add("is-you");
+    item.append(
+      el("span", "pos", String(row.rank)),
+      el("span", null, row.name),
+      el("span", null, Number(row.coins).toLocaleString("en-GB")),
+    );
     list.append(item);
   });
 }
 
 async function paintLeague(which) {
-  const banner = document.querySelector("#view-league .example-banner");
   const title = document.querySelector("#league-title");
+  const you = document.querySelector("#you-rank");
+  const guest = document.querySelector("#league-guest");
   if (title) title.textContent = which === "All-time" ? "All-time league" : `${which} league`;
-  document.querySelector("#league-meta").textContent = `${which === "Weekly" ? "Fusilli League" : which} · coins banked this period`;
-  if (which === "Weekly" && !SHOT) {
+  document.querySelector("#league-meta").textContent = "Global board · coins banked";
+  const foot = document.querySelector("#league-foot");
+  if (foot) {
+    foot.textContent = session?.access_token
+      ? "You’re on the global board. Coins banked in the period, ranked against everyone."
+      : "Sign in to appear on the public board.";
+  }
+  if (SHOT === "rank") {
+    if (you) you.textContent = "You: #123 of 4,567";
+    if (guest) guest.hidden = true;
+    paintLeagueRows([]);
+    const empty = document.querySelector("#league-empty");
+    if (empty) empty.hidden = true;
+    return;
+  }
+  let board = null;
+  if (!SHOT) {
     try {
-      const rows = await weeklyLeague(session);
-      if (Array.isArray(rows) && rows.length) {
-        if (banner) banner.hidden = true;
-        paintLeagueRows(rows);
-        return;
-      }
+      board = await leaderboard(PERIODS[which] || "week", session);
     } catch {
-      /* tables are not applied yet */
+      board = null;
     }
   }
-  if (banner) banner.hidden = false;
-  paintLeagueRows(EXAMPLE.map(([rank, name, coins]) => ({ rank, name, coins, you: name === "You" })));
+  const rows = Array.isArray(board?.rows) ? board.rows : [];
+  paintLeagueRows(rows);
+  const empty = document.querySelector("#league-empty");
+  if (empty) empty.hidden = !(board && rows.length === 0);
+  if (!session?.access_token) {
+    if (you) you.textContent = "You’re unranked.";
+    if (guest) guest.hidden = false;
+    return;
+  }
+  if (guest) guest.hidden = true;
+  if (!board) {
+    if (you) you.textContent = "The board isn’t available right now.";
+    return;
+  }
+  if (you) you.textContent = formatYouRank(board.you, board.total);
 }
 
 function paintBank() {
+  const signedIn = Boolean(session?.access_token);
+  document.querySelector("#bank-guest").hidden = signedIn;
+  document.querySelector("#bank-signed").hidden = !signedIn;
+  document.querySelector("#sign-out-bank").hidden = !signedIn;
   document.querySelector("#bank-total").textContent = String(bank.balance);
   const list = document.querySelector("#bank-history");
   list.replaceChildren();
@@ -1309,12 +1474,27 @@ function paintBank() {
 function paintProfile() {
   const played = bank.days.length;
   const best = bank.days.reduce((max, day) => Math.max(max, day.banked), 0);
-  document.querySelector("#profile-copy").textContent = `Played ${played}. Bank ${bank.balance}. Best day ${best} banked. Weekly league rank appears when you are signed in and the tables exist.`;
+  document.querySelector("#profile-copy").textContent = `Played ${played}. Bank ${bank.balance}. Best day ${best} banked. Your global rank is on the league board once you have a username.`;
 }
 
 function paintSettings() {
   document.querySelector("#set-sound").setAttribute("aria-pressed", settings.sound ? "true" : "false");
   document.querySelector("#set-motion").setAttribute("aria-pressed", settings.motion ? "true" : "false");
+  const input = document.querySelector("#set-username");
+  const note = document.querySelector("#set-username-note");
+  const signOutBtn = document.querySelector("#sign-out");
+  const signedIn = Boolean(session?.access_token);
+  if (signOutBtn) signOutBtn.hidden = !signedIn;
+  if (!input || !note) return;
+  if (!signedIn) {
+    input.disabled = true;
+    input.value = "";
+    note.textContent = "Sign in to choose a username.";
+    return;
+  }
+  input.disabled = false;
+  input.value = profile?.username || "";
+  if (!note.textContent) note.textContent = profile?.username ? "" : "3 to 16 characters: letters, numbers and underscores.";
 }
 
 function paintSignin() {
@@ -1399,6 +1579,11 @@ function onClick(event) {
     closeSignPrompt();
     return;
   }
+  if (event.target.id === "user-later") {
+    try { sessionStorage.setItem(NAME_LATER_KEY, "1"); } catch { /* private mode */ }
+    closeUsername();
+    return;
+  }
   if (event.target.id === "howto-next") {
     if (howtoStep < 2) { howtoStep += 1; paintHow(); }
     else {
@@ -1422,7 +1607,11 @@ function onClick(event) {
     document.documentElement.classList.remove("has-consent");
     const route = ROUTES[location.pathname] || document.body.dataset.route || "home";
     if (offerSignIn()) return;
-    if (!seenHow() && (route === "home" || route === "howto")) openHow(0);
+    if (route === "howto" || (!seenHow() && route === "home")) openHow(0);
+    return;
+  }
+  if (event.target.id === "sign-out" || event.target.id === "sign-out-bank") {
+    signOut();
     return;
   }
   if (event.target.id === "clear-local") {
@@ -1570,6 +1759,8 @@ function applyShot() {
     phase: "question",
   };
   if (SHOT === "howto") { show("home"); openHow(0); return; }
+  if (SHOT === "username") { show("home"); openUsername(); return; }
+  if (SHOT === "rank") { show("league"); return; }
   if (SHOT === "league") { show("league"); return; }
   if (SHOT === "results") {
     run.status = "completed";
@@ -1627,6 +1818,19 @@ async function boot() {
         : magicLinkErrorMessage(error?.status, error?.message || "");
     }
   });
+  document.querySelector("#user-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const note = document.querySelector("#user-note");
+    await saveUsername(document.querySelector("#user-name").value, note, () => closeUsername());
+  });
+  document.querySelector("#name-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const note = document.querySelector("#set-username-note");
+    await saveUsername(document.querySelector("#set-username").value, note);
+  });
+  if (session?.access_token && !SHOT) {
+    try { profile = await myProfile(session); } catch { profile = null; }
+  }
   if (SHOT) {
     applyShot();
     return;
@@ -1639,7 +1843,10 @@ async function boot() {
   const waiting = showConsent || playingNow();
   if (!waiting && offerSignIn()) {
     /* how-to waits until the card closes */
-  } else if (!seenHow() && !showConsent && (route === "home" || route === "howto")) openHow(0);
+  } else if (!waiting && offerUsername()) {
+    /* how-to waits until the username step closes */
+  } else if (!showConsent && route === "howto") openHow(0);
+  else if (!seenHow() && !showConsent && route === "home") openHow(0);
   document.querySelector("#play-btn").addEventListener("click", () => { location.href = "/play/"; });
 }
 

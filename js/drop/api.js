@@ -69,6 +69,18 @@ export function weeklyLeague(session) {
   return rpc("dd_weekly_league", {}, session);
 }
 
+export function myProfile(session) {
+  return rpc("dd_my_profile", {}, session);
+}
+
+export function setUsername(name, session) {
+  return rpc("dd_set_username", { p_name: name }, session);
+}
+
+export function leaderboard(period, session) {
+  return rpc("dd_leaderboard", { p_period: period }, session);
+}
+
 export function forfeitRun(session) {
   return rpc("dd_forfeit_run", {}, session);
 }

@@ -1,10 +1,13 @@
 {
-  "name": "Spiquizzy",
-  "short_name": "Spiquizzy",
+  "name": "The Daily Drop",
+  "short_name": "Daily Drop",
+  "description": "10 questions a day. Bet your coins.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0B1426",
-  "theme_color": "#E63326",
+  "orientation": "portrait",
+  "background_color": "#FFF8E7",
+  "theme_color": "#FBBF36",
   "icons": [
     {
       "src": "/favicon-192.png",

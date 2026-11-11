@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Cookies — Spiquizzy</title>
   <link rel="canonical" href="https://spiquizzy.com/cookies/">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -11,6 +11,9 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="theme-color" content="#FBBF36">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Daily Drop">
   <link rel="preload" href="/assets/fonts/ArchivoBlack.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/assets/fonts/Syne.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/assets/fonts/SpaceGrotesk.ttf" as="font" type="font/ttf" crossorigin>
@@ -51,5 +54,11 @@
     document.querySelector("#consent-no").onclick = () => { localStorage.setItem(key, "reject"); hide(); };
   </script>
   <script type="module" src="/js/analytics.js"></script>
+
+  <nav class="tabbar" aria-label="App">
+    <a class="tab" href="/play/"><span>Play</span></a>
+    <a class="tab" href="/leagues/"><span>Leagues</span></a>
+    <a class="tab" href="/settings/"><span>Profile</span></a>
+  </nav>
 </body>
 </html>
