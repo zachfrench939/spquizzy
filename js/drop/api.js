@@ -1,10 +1,11 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "../config.js";
+import { SESSION_KEY, authStorage } from "./auth-storage.js";
 
-const SESSION = "spquizzy.drop.session";
+const SESSION = SESSION_KEY;
 
 export function readSession() {
   try {
-    const raw = localStorage.getItem(SESSION);
+    const raw = authStorage.getItem(SESSION);
     if (!raw) return null;
     const session = JSON.parse(raw);
     if (!session?.access_token) return null;
@@ -16,11 +17,11 @@ export function readSession() {
 }
 
 export function saveSession(session) {
-  localStorage.setItem(SESSION, JSON.stringify(session));
+  authStorage.setItem(SESSION, JSON.stringify(session));
 }
 
 export function clearSession() {
-  localStorage.removeItem(SESSION);
+  authStorage.removeItem(SESSION);
 }
 
 function headers(session) {

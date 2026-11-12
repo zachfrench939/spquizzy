@@ -1,5 +1,7 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
+import { AUTH_COPY, authErrorMessage, isUnconfirmed, resend, resendCooldownLeft, sessionFromAuth, signInWithPassword, signUp, signupScreenState } from "./auth.js";
+import { chooseRemember, readRemember } from "./auth-storage.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import {
@@ -24,12 +26,18 @@ const PROMPT_KEY = "spquizzy.drop.signin-prompt";
 const SIGNED_OUT_KEY = "spquizzy.drop.just-signed-out";
 const NAME_LATER_KEY = "spquizzy.drop.username-later";
 const GUEST_KEY = "spquizzy.drop.guest";
+const PENDING_EMAIL_KEY = "spquizzy.drop.pending-email";
+const RESEND_AT_KEY = "spquizzy.drop.resend-at";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
 const AGE_NEED = "Tick the box to confirm you are 13 or over. Under 13s can play as a guest on this device.";
 const CLEAR_LOCAL_COPY = "Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), and the sign-in token (spquizzy.drop.session). It does not change your page-view choice, and it does not delete an account.";
 
 function ageFields(prefix) {
   return `<p class="age-rule">You must be 13 or over to create an account. Under 13s can play as a guest on this device. <a href="/privacy/">Privacy notice</a></p><label class="age-check" for="${prefix}-age"><input id="${prefix}-age" data-age type="checkbox" required> <span>I am 13 or over</span></label>`;
+}
+
+function rememberFields(id) {
+  return `<label class="age-check" for="${id}"><input id="${id}" data-remember type="checkbox" checked aria-describedby="${id}-hint"> <span>${AUTH_COPY.remember}</span></label><p class="remember-hint" id="${id}-hint">${AUTH_COPY.rememberHint}</p>`;
 }
 
 function consentWord(value) {
@@ -72,6 +80,9 @@ let audioCtx = null;
 let howtoStep = 0;
 let offline = false;
 let profile = null;
+let authMode = "signin";
+let resendTimer = 0;
+let resendBusy = false;
 
 function londonToday(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -479,7 +490,37 @@ function signinView() {
   view.id = "view-signin";
   view.hidden = true;
   const googleRow = GOOGLE_SIGN_IN ? "" : " hidden";
-  view.innerHTML = `<img class="logo" src="${LOGO}" width="48" height="48" alt="Spiquizzy" style="margin:0 auto"><div id="signin-guest"><h1>Keep your bank</h1><p style="font-weight:700;margin:0 0 8px">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p><form class="signin-form" id="magic-form">${ageFields("magic")}<p id="magic-note"></p><label for="magic-email">Email</label><input id="magic-email" type="email" autocomplete="email" required><button class="btn-primary" type="submit">Email me a link</button></form><p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p></div><div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
+  view.innerHTML = `<img class="logo" src="${LOGO}" width="48" height="48" alt="Spiquizzy" style="margin:0 auto">
+    <div id="signin-guest">
+      <h1 id="signin-title" tabindex="-1">${AUTH_COPY.signInTitle}</h1>
+      <p class="signin-pitch">Sign in to keep your bank, join weekly leagues, and play on any device. You can still play today’s drop as a guest.</p>
+      <div class="auth-switch" role="tablist" aria-label="Email sign-in">
+        <button type="button" id="auth-mode-in" role="tab" aria-selected="true" aria-controls="auth-form">Sign in</button>
+        <button type="button" id="auth-mode-up" role="tab" aria-selected="false" aria-controls="auth-form">Create account</button>
+      </div>
+      <form class="signin-form" id="auth-form" novalidate>
+        ${ageFields("auth")}
+        <p id="auth-note"></p>
+        <label for="auth-email">Email</label>
+        <input id="auth-email" name="email" type="email" autocomplete="email" inputmode="email" required>
+        <label for="auth-password">Password</label>
+        <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="6" required>
+        ${rememberFields("auth-remember")}
+        <button class="btn-primary" type="submit" id="auth-submit">${AUTH_COPY.signInSubmit}</button>
+        <button class="btn-ghost" type="button" id="auth-magic">${AUTH_COPY.magicInstead}</button>
+      </form>
+      <p id="google-row"${googleRow}><a class="btn-google" id="google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p>
+    </div>
+    <div id="signin-inbox" hidden>
+      <h1 id="inbox-title" tabindex="-1" aria-describedby="inbox-sent">${AUTH_COPY.inboxHeading}</h1>
+      <p id="inbox-sent"></p>
+      <p id="inbox-hint">${AUTH_COPY.inboxHint}</p>
+      <p id="inbox-status" role="status" aria-live="polite"></p>
+      <button class="btn-primary" type="button" id="inbox-resend">${AUTH_COPY.resend}</button>
+      <button class="btn-ghost" type="button" id="inbox-back">${AUTH_COPY.back}</button>
+      <button class="btn-ghost" type="button" id="inbox-different">${AUTH_COPY.different}</button>
+    </div>
+    <div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
   return view;
 }
 
@@ -574,6 +615,7 @@ function signInPrompt() {
         <p id="prompt-note"></p>
         <label for="prompt-email">Email</label>
         <input id="prompt-email" type="email" autocomplete="email" required>
+        ${rememberFields("prompt-remember")}
         <button class="btn-primary" type="submit">Email me a link</button>
       </form>
       <p id="prompt-google"${GOOGLE_SIGN_IN ? "" : " hidden"}><a class="btn-google" id="prompt-google-link" href="#">${GOOGLE_MARK}<span>Continue with Google</span></a></p>
@@ -766,7 +808,7 @@ function show(name) {
   if (name === "bank") paintBank();
   if (name === "profile") paintProfile();
   if (name === "settings") paintSettings();
-  if (name === "signin") paintSignin();
+  if (name === "signin") paintSignin({ focusInbox: true });
   window.scrollTo(0, 0);
 }
 
@@ -1721,17 +1763,142 @@ async function saveBoardOptOut(button) {
   }
 }
 
-function paintSignin() {
+function authRedirect() {
+  return `${location.origin}/sign-in/`;
+}
+
+function readPendingEmail() {
+  try { return sessionStorage.getItem(PENDING_EMAIL_KEY) || ""; } catch { return ""; }
+}
+
+function writePendingEmail(email) {
+  try {
+    if (email) sessionStorage.setItem(PENDING_EMAIL_KEY, email);
+    else sessionStorage.removeItem(PENDING_EMAIL_KEY);
+  } catch { /* private mode */ }
+}
+
+function readResendAt() {
+  try { return Number(sessionStorage.getItem(RESEND_AT_KEY) || 0); } catch { return 0; }
+}
+
+function writeResendAt(at) {
+  try {
+    if (at) sessionStorage.setItem(RESEND_AT_KEY, String(at));
+    else sessionStorage.removeItem(RESEND_AT_KEY);
+  } catch { /* private mode */ }
+}
+
+function paintRemember() {
+  const on = readRemember();
+  document.querySelectorAll("[data-remember]").forEach((box) => { box.checked = on; });
+}
+
+function rememberChecked(root) {
+  const box = root?.querySelector?.("[data-remember]");
+  return box ? box.checked : true;
+}
+
+function setAuthMode(mode) {
+  authMode = mode === "signup" ? "signup" : "signin";
+  const signup = authMode === "signup";
+  document.querySelector("#auth-mode-in")?.setAttribute("aria-selected", signup ? "false" : "true");
+  document.querySelector("#auth-mode-up")?.setAttribute("aria-selected", signup ? "true" : "false");
+  const title = document.querySelector("#signin-title");
+  if (title) title.textContent = signup ? AUTH_COPY.signUpTitle : AUTH_COPY.signInTitle;
+  const submit = document.querySelector("#auth-submit");
+  if (submit) submit.textContent = signup ? AUTH_COPY.signUpSubmit : AUTH_COPY.signInSubmit;
+  const password = document.querySelector("#auth-password");
+  if (password) password.setAttribute("autocomplete", signup ? "new-password" : "current-password");
+  const magic = document.querySelector("#auth-magic");
+  if (magic) magic.hidden = signup;
+  const note = document.querySelector("#auth-note");
+  if (note) note.textContent = "";
+}
+
+function stopResendTimer() {
+  if (resendTimer) window.clearInterval(resendTimer);
+  resendTimer = 0;
+}
+
+function tickResend() {
+  const button = document.querySelector("#inbox-resend");
+  if (!button) return;
+  const left = resendCooldownLeft(readResendAt());
+  button.disabled = left > 0 || resendBusy;
+  button.setAttribute("aria-busy", resendBusy ? "true" : "false");
+  button.textContent = left > 0 ? AUTH_COPY.resendWait(left) : AUTH_COPY.resend;
+  if (left > 0 && !resendTimer) resendTimer = window.setInterval(tickResend, 250);
+  if (left <= 0 && !resendBusy) stopResendTimer();
+}
+
+function acceptSession(next) {
+  saveSession(next);
+  session = next;
+  signInNotice = "";
+  writePendingEmail("");
+  const headerSign = document.querySelector("#header-signin");
+  if (headerSign) headerSign.hidden = true;
+  paintSignin();
+}
+
+function paintSignin({ focusInbox = false } = {}) {
   const signedIn = Boolean(session?.access_token);
   const guest = document.querySelector("#signin-guest");
   const signed = document.querySelector("#signin-signed");
-  if (guest) guest.hidden = signedIn;
+  const inbox = document.querySelector("#signin-inbox");
+  const pending = signedIn ? "" : readPendingEmail();
+  if (signedIn) writePendingEmail("");
+  if (guest) guest.hidden = signedIn || Boolean(pending);
   if (signed) signed.hidden = !signedIn;
-  const note = document.querySelector("#magic-note");
-  if (note && !signedIn) note.textContent = signInNotice || "";
+  if (inbox) inbox.hidden = !pending;
+  if (pending) {
+    const sent = document.querySelector("#inbox-sent");
+    if (sent) sent.textContent = AUTH_COPY.inboxSent(pending);
+    const live = document.querySelector("#inbox-status");
+    if (live && signInNotice && !live.textContent) live.textContent = signInNotice;
+    tickResend();
+    if (focusInbox) {
+      const heading = document.querySelector("#inbox-title");
+      requestAnimationFrame(() => heading?.focus());
+    }
+    return;
+  }
+  const note = document.querySelector("#auth-note");
+  if (note && signInNotice) note.textContent = signInNotice;
   const row = document.querySelector("#google-row");
   if (row) row.hidden = !GOOGLE_SIGN_IN;
   paintGoogle();
+}
+
+function showInbox(email, { status = "", armCooldown = false } = {}) {
+  writePendingEmail(email);
+  if (armCooldown) writeResendAt(Date.now());
+  const live = document.querySelector("#inbox-status");
+  if (live) live.textContent = status;
+  const sent = document.querySelector("#inbox-sent");
+  if (sent) sent.textContent = "";
+  paintSignin({ focusInbox: true });
+}
+
+function leaveInbox(mode) {
+  writePendingEmail("");
+  signInNotice = "";
+  stopResendTimer();
+  const live = document.querySelector("#inbox-status");
+  if (live) live.textContent = "";
+  const password = document.querySelector("#auth-password");
+  if (password) password.value = "";
+  if (mode === "signup") {
+    const email = document.querySelector("#auth-email");
+    if (email) email.value = "";
+  }
+  setAuthMode(mode);
+  paintSignin();
+  const focusTarget = mode === "signup"
+    ? document.querySelector("#auth-email")
+    : document.querySelector("#signin-title");
+  focusTarget?.focus();
 }
 
 function focusUsernameField() {
@@ -1841,11 +2008,12 @@ function onClick(event) {
     const box = root?.querySelector("[data-age]");
     if (!box?.checked) {
       event.preventDefault();
-      const note = root?.querySelector("#magic-note, #prompt-note");
+      const note = root?.querySelector("#auth-note, #prompt-note");
       if (note) note.textContent = AGE_NEED;
       box?.focus();
       return;
     }
+    chooseRemember(rememberChecked(root));
     google.href = oauthUrl("google");
     return;
   }
@@ -2038,6 +2206,7 @@ function applyShot() {
 
 async function boot() {
   paintGoogle();
+  paintRemember();
   saveSettings();
   const consent = localStorage.getItem(CONSENT_KEY);
   const showConsent = consent !== "accept" && consent !== "reject";
@@ -2046,23 +2215,111 @@ async function boot() {
   document.querySelectorAll("[data-age]").forEach((box) => {
     box.addEventListener("change", paintGoogle);
   });
-  document.querySelector("#magic-form")?.addEventListener("submit", async (event) => {
+  document.querySelector("#auth-mode-in")?.addEventListener("click", () => setAuthMode("signin"));
+  document.querySelector("#auth-mode-up")?.addEventListener("click", () => setAuthMode("signup"));
+  document.querySelector("#inbox-back")?.addEventListener("click", () => leaveInbox("signin"));
+  document.querySelector("#inbox-different")?.addEventListener("click", () => leaveInbox("signup"));
+  document.querySelector("#inbox-resend")?.addEventListener("click", async () => {
+    const email = readPendingEmail();
+    if (!email || resendBusy || resendCooldownLeft(readResendAt()) > 0) return;
+    const live = document.querySelector("#inbox-status");
+    resendBusy = true;
+    tickResend();
+    try {
+      await resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: authRedirect() },
+      });
+      writeResendAt(Date.now());
+      if (live) live.textContent = AUTH_COPY.resent;
+    } catch (error) {
+      if (live) live.textContent = authErrorMessage("resend", error);
+    } finally {
+      resendBusy = false;
+      tickResend();
+    }
+  });
+  document.querySelector("#auth-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const box = document.querySelector("#magic-age");
-    const note = document.querySelector("#magic-note");
+    const box = document.querySelector("#auth-age");
+    const note = document.querySelector("#auth-note");
     if (!box?.checked) {
       if (note) note.textContent = AGE_NEED;
       box?.focus();
       return;
     }
-    const email = document.querySelector("#magic-email").value.trim();
+    const email = document.querySelector("#auth-email").value.trim();
+    const password = document.querySelector("#auth-password").value;
+    if (!email.includes("@")) {
+      if (note) note.textContent = AUTH_COPY.needEmail;
+      document.querySelector("#auth-email")?.focus();
+      return;
+    }
+    if (password.length < 6) {
+      if (note) note.textContent = AUTH_COPY.weakPassword;
+      document.querySelector("#auth-password")?.focus();
+      return;
+    }
+    chooseRemember(rememberChecked(document.querySelector("#auth-form")));
+    const submit = document.querySelector("#auth-submit");
+    if (submit) submit.disabled = true;
     try {
-      await sendMagicLink(email);
-      note.textContent = "Check your email for the sign-in link.";
+      if (authMode === "signup") {
+        const result = await signUp({
+          email,
+          password,
+          options: { emailRedirectTo: authRedirect() },
+        });
+        if (signupScreenState(result) === "signed-in") {
+          acceptSession(sessionFromAuth(result));
+          return;
+        }
+        showInbox(email, { armCooldown: true });
+        return;
+      }
+      const result = await signInWithPassword({ email, password });
+      const next = sessionFromAuth(result);
+      if (!next) throw new Error("No session");
+      acceptSession(next);
     } catch (error) {
-      note.textContent = error?.status
-        ? error.message
-        : magicLinkErrorMessage(error?.status, error?.message || "");
+      if (authMode === "signin" && isUnconfirmed(error)) {
+        showInbox(email, { status: AUTH_COPY.unconfirmed });
+        return;
+      }
+      if (note) note.textContent = authErrorMessage(authMode === "signup" ? "signup" : "signin", error);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+  document.querySelector("#auth-magic")?.addEventListener("click", async () => {
+    const box = document.querySelector("#auth-age");
+    const note = document.querySelector("#auth-note");
+    if (!box?.checked) {
+      if (note) note.textContent = AGE_NEED;
+      box?.focus();
+      return;
+    }
+    const email = document.querySelector("#auth-email").value.trim();
+    if (!email.includes("@")) {
+      if (note) note.textContent = AUTH_COPY.needEmail;
+      document.querySelector("#auth-email")?.focus();
+      return;
+    }
+    chooseRemember(rememberChecked(document.querySelector("#auth-form")));
+    const button = document.querySelector("#auth-magic");
+    if (button) button.disabled = true;
+    try {
+      await sendMagicLink(email, authRedirect());
+      if (note) note.textContent = "Check your email for the sign-in link.";
+    } catch (error) {
+      if (note) {
+        note.textContent = error?.status
+          ? error.message
+          : magicLinkErrorMessage(error?.status, error?.message || "");
+      }
+    } finally {
+      if (button) button.disabled = false;
     }
   });
   document.querySelector("#prompt-form")?.addEventListener("submit", async (event) => {
@@ -2075,6 +2332,7 @@ async function boot() {
       return;
     }
     const email = document.querySelector("#prompt-email").value.trim();
+    chooseRemember(rememberChecked(document.querySelector("#prompt-form")));
     try {
       await sendMagicLink(email);
       note.textContent = "Check your inbox for the link";

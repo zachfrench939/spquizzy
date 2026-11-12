@@ -799,8 +799,26 @@ html.has-consent .prompt-card{max-height:calc(100dvh - 120px);}
 #view-signin h1{margin:4px 0;}
 #view-signin .signin-form{gap:8px;}
 #view-signin .btn-google{margin-top:6px;}
-#magic-note,#prompt-note{min-height:0;margin:0;font-weight:700;font-size:16px;line-height:1.35;}
-#magic-note:empty,#prompt-note:empty{display:none;}
+.signin-pitch{font-weight:700;margin:0 0 8px;font-size:16px;line-height:1.35;}
+#auth-note,#magic-note,#prompt-note,#inbox-status{min-height:0;margin:0;font-weight:700;font-size:16px;line-height:1.35;}
+#auth-note:empty,#magic-note:empty,#prompt-note:empty{display:none;}
+.auth-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:360px;margin:0 auto 8px;}
+.auth-switch button{
+  border:3px solid var(--ink);background:var(--white);min-height:48px;padding:8px 6px;
+  font-weight:700;font-size:16px;box-shadow:var(--shadow-sm);line-height:1.2;
+}
+.auth-switch button[aria-selected="true"]{background:var(--ink);color:var(--cheese);}
+.remember-hint{font-weight:700;font-size:16px;line-height:1.35;margin:0;text-align:left;}
+#auth-magic{width:100%;text-align:center;}
+#signin-inbox{
+  display:grid;gap:12px;max-width:360px;margin:8px auto 0;text-align:left;
+}
+#signin-inbox h1{text-align:center;margin:4px 0 0;}
+#signin-inbox p{font-weight:700;font-size:16px;line-height:1.4;margin:0;}
+#inbox-sent{overflow-wrap:anywhere;}
+#signin-inbox .btn-primary{margin-top:4px;}
+#signin-inbox .btn-ghost{width:100%;display:flex;align-items:center;justify-content:center;text-align:center;}
+#inbox-title:focus,#signin-title:focus{outline:3px solid var(--cheese);outline-offset:4px;}
 .simple-center h1{font-family:var(--title);font-weight:800;font-size:32px;letter-spacing:-0.04em;margin:12px 0;}
 .price{font-family:var(--title);font-weight:800;font-size:28px;margin:8px 0;}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;border:3px solid var(--ink);background:var(--white);padding:12px;margin:0 0 10px;font-weight:700;}
@@ -979,6 +997,8 @@ button,a,.tab,.amount-bar button,.btn-minus{touch-action:manipulation;-webkit-ta
   }
   .page,.simple-center,.doc{padding-bottom:24px;}
   .page h1,.simple-center h1,.doc h1{font-size:32px;}
+  #view-signin.simple-center{padding:4px 16px 16px;}
+  #view-signin h1{font-size:30px;}
   .sheet{padding-bottom:max(18px, env(safe-area-inset-bottom));}
   #view-league{padding-left:12px;padding-right:12px;}
   #view-league .tabs{
