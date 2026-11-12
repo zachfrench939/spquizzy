@@ -1,6 +1,6 @@
 # Sign-up wording — for review
 
-This is the new copy on the sign-in screen. It is not on the privacy notice or the cookie policy yet. Those pages still describe the email magic link from the 11 November 2026 clearance. Nothing here has been merged.
+This is the copy on the sign-in screen, plus the privacy and cookie lines Legal cleared for it. Nothing here has been merged.
 
 The checkbox **Keep me logged in** starts **ticked**. That matches the site today: a sign-in stays in `localStorage` until sign-out or until the token expires. Unticked is the new, shorter choice (this browser tab only).
 
@@ -92,7 +92,7 @@ Ticked: the session stays in `localStorage` under `spquizzy.drop.session`, as it
 
 Unticked: that session is kept in `sessionStorage` instead, so it ends when the tab or the browser session closes. The choice itself is stored as `dd_remember` in `localStorage` (`1` ticked, `0` unticked) so the confirmation link and Google can follow it after the redirect.
 
-Sign out, and Clear local data, remove `spquizzy.drop.session` from both stores.
+Sign out removes `spquizzy.drop.session` from both stores and leaves `dd_remember`. Clear local data removes the session from both stores and also removes `dd_remember`.
 
 Google (**Continue with Google**) reads the same checkbox and stores the choice before the redirect.
 
@@ -124,9 +124,9 @@ Empty email:
 
 > Enter an email address.
 
-Short password:
+Short password (fewer than 8 characters):
 
-> Use at least 6 characters for the password.
+> Use at least 8 characters for the password.
 
 Email and password do not match:
 
@@ -154,11 +154,33 @@ The 13+ message is unchanged:
 
 ---
 
-## Not changed on the live legal pages
+## Privacy notice — Accounts
 
-The privacy notice still says an email sign-in is a one-time link. That is still true for **Email me a link instead** and for the post-results prompt. Create account also asks for a password. Supabase stores the password hash. The page does not store the password.
+Added on `/privacy/`. Apostrophes on the page are curly, matching the rest of that notice.
 
-The cookie policy lists `spquizzy.drop.session` as a local sign-in token. That key is still the session. When the box is unticked it is in `sessionStorage` instead of `localStorage`. `dd_remember` is a new local key for the tick. Neither change is on the cookie page yet.
+> You can create an account with your email address and a password, sign in with a one-time link sent to your email, or use Google. If you use a password, our sign-in provider Supabase stores only a scrambled (hashed) version of it, and we don’t store your password ourselves. We use your email address to send sign-in and verification emails. These are service emails, not marketing.
+
+The older lines (one-time email link, and Google) stay underneath that paragraph.
+
+## Cookie policy
+
+On `/cookies/`. Apostrophes on the page are curly, matching the rest of that page.
+
+`spquizzy.drop.session`:
+
+> Keeps you signed in. If you tick Keep me logged in, it’s kept in your browser’s local storage until you sign out or the sign-in expires. If you untick it, it’s kept in session storage and deleted when you close the tab or browser. Strictly necessary, so no consent is needed.
+
+`dd_remember`:
+
+> Remembers whether you ticked Keep me logged in, so your choice still applies after you click an email link or sign in with Google. Stored in local storage until you use Clear local data. Strictly necessary, so no consent is needed.
+
+Clear local data on that page, and the Settings confirm, also name `dd_remember` and say the session token is removed from local storage and from session storage.
+
+## Settings — Clear local data
+
+The confirm dialog says:
+
+> Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), the sign-in token (spquizzy.drop.session, in local storage and in session storage), and the Keep me logged in choice (dd_remember). It does not change your page-view choice, and it does not delete an account.
 
 ---
 
@@ -169,3 +191,5 @@ The confirmation link and the magic link both return to `https://spiquizzy.com/s
 This screen appears when email confirmation is on and sign-up does not return a session. If confirmation is off, the person is signed in immediately and this screen is not shown.
 
 The words inside the email itself are the Supabase confirmation template, not the lines above.
+
+The page refuses a password shorter than 8 characters. Supabase’s own minimum is a project setting (Authentication → Providers → Email, minimum password length). This change does not set that. If the project is still on the default of 6, it should be raised to 8, or a request that skips this page can still store a shorter password.

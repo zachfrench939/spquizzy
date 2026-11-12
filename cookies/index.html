@@ -30,7 +30,7 @@
   
 <h1>Cookies</h1>
 <p>Last updated 11 November 2026.</p>
-<p>The Daily Drop does not set a cookie, and it does not use an advertising cookie. Sign-in, if you use it, keeps a session token in localStorage on this device. The same facts are in the <a href="/privacy/">privacy notice</a>.</p>
+<p>The Daily Drop does not set a cookie, and it does not use an advertising cookie. Sign-in, if you use it, keeps a session token on this device. The same facts are in the <a href="/privacy/">privacy notice</a>.</p>
 <p>Page views are optional. We send one only after you press Accept. Reject, or leaving the choice unmade, means we do not send one. You can change that choice in <a href="/settings/">Settings</a>. Accept and Reject stay the same size, and neither one blocks Play.</p>
 
 <h2>Saved on this device</h2>
@@ -42,7 +42,8 @@
 <li><code>spquizzy.drop.howto</code> — you have closed How to play. Essential preference.</li>
 <li><code>spquizzy.drop.coach</code> — you have already seen the first-question coach. Essential preference.</li>
 <li><code>spquizzy.drop.settings</code> — sound and reduce motion. Essential preference.</li>
-<li><code>spquizzy.drop.session</code> — the sign-in token, if you signed in. Essential to stay signed in.</li>
+<li><code>spquizzy.drop.session</code> — Keeps you signed in. If you tick Keep me logged in, it’s kept in your browser’s local storage until you sign out or the sign-in expires. If you untick it, it’s kept in session storage and deleted when you close the tab or browser. Strictly necessary, so no consent is needed.</li>
+<li><code>dd_remember</code> — Remembers whether you ticked Keep me logged in, so your choice still applies after you click an email link or sign in with Google. Stored in local storage until you use Clear local data. Strictly necessary, so no consent is needed.</li>
 <li><code>spquizzy.drop.guest</code> — a random guest id for this browser. Essential for guest play. We do receive this id when a guest plays, with the question we served.</li>
 <li><code>spquizzy.drop.events</code> — the last 200 things the game did, on this device only. It is not sent as a page view.</li>
 </ul>
@@ -59,7 +60,7 @@
 <p>A page view is not stored as its own key on this device. After Accept we send the page path, the referring host, <code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, a screen-size bucket (mobile, tablet or desktop), and the event name. A normal visit is “view”. The message has no account id and no guest id. See <a href="/privacy/">Privacy</a> for why, and for how long those rows are kept.</p>
 
 <h2>Clear local data</h2>
-<p>Clear local data, in <a href="/settings/">Settings</a>, removes four keys on this device: <code>spquizzy.drop.run</code>, <code>spquizzy.drop.bank</code>, <code>spquizzy.drop.settings</code>, and <code>spquizzy.drop.session</code>. It does not change <code>spquizzy.consent</code>. Use the page-view buttons in Settings for that. It does not remove the guest id, the event log, the How to play flag, the coach flag, or the tab-only keys. It does not delete an account.</p>
+<p>Clear local data, in <a href="/settings/">Settings</a>, removes <code>spquizzy.drop.run</code>, <code>spquizzy.drop.bank</code>, <code>spquizzy.drop.settings</code>, <code>spquizzy.drop.session</code> (from local storage and from session storage), and <code>dd_remember</code>. It does not change <code>spquizzy.consent</code>. Use the page-view buttons in Settings for that. It does not remove the guest id, the event log, the How to play flag, the coach flag, or the tab-only keys. It does not delete an account.</p>
 <p><a href="/privacy/">Privacy notice</a> · <a href="/terms/">Terms</a></p>
 
   </main>

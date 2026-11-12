@@ -1,6 +1,6 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
-import { AUTH_COPY, authErrorMessage, isUnconfirmed, resend, resendCooldownLeft, sessionFromAuth, signInWithPassword, signUp, signupScreenState } from "./auth.js";
-import { chooseRemember, readRemember } from "./auth-storage.js";
+import { AUTH_COPY, MIN_PASSWORD_LENGTH, authErrorMessage, isUnconfirmed, passwordTooShort, resend, resendCooldownLeft, sessionFromAuth, signInWithPassword, signUp, signupScreenState } from "./auth.js";
+import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
 import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
@@ -30,7 +30,7 @@ const PENDING_EMAIL_KEY = "spquizzy.drop.pending-email";
 const RESEND_AT_KEY = "spquizzy.drop.resend-at";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
 const AGE_NEED = "Tick the box to confirm you are 13 or over. Under 13s can play as a guest on this device.";
-const CLEAR_LOCAL_COPY = "Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), and the sign-in token (spquizzy.drop.session). It does not change your page-view choice, and it does not delete an account.";
+const CLEAR_LOCAL_COPY = "Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), the sign-in token (spquizzy.drop.session, in local storage and in session storage), and the Keep me logged in choice (dd_remember). It does not change your page-view choice, and it does not delete an account.";
 
 function ageFields(prefix) {
   return `<p class="age-rule">You must be 13 or over to create an account. Under 13s can play as a guest on this device. <a href="/privacy/">Privacy notice</a></p><label class="age-check" for="${prefix}-age"><input id="${prefix}-age" data-age type="checkbox" required> <span>I am 13 or over</span></label>`;
@@ -504,7 +504,7 @@ function signinView() {
         <label for="auth-email">Email</label>
         <input id="auth-email" name="email" type="email" autocomplete="email" inputmode="email" required>
         <label for="auth-password">Password</label>
-        <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="6" required>
+        <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="${MIN_PASSWORD_LENGTH}" required>
         ${rememberFields("auth-remember")}
         <button class="btn-primary" type="submit" id="auth-submit">${AUTH_COPY.signInSubmit}</button>
         <button class="btn-ghost" type="button" id="auth-magic">${AUTH_COPY.magicInstead}</button>
@@ -2034,7 +2034,7 @@ function onClick(event) {
       localStorage.removeItem(RUN_KEY);
       localStorage.removeItem(BANK_KEY);
       localStorage.removeItem(SET_KEY);
-      clearSession();
+      clearLocalAuth();
       location.href = "/";
     }
     return;
@@ -2256,7 +2256,7 @@ async function boot() {
       document.querySelector("#auth-email")?.focus();
       return;
     }
-    if (password.length < 6) {
+    if (passwordTooShort(password)) {
       if (note) note.textContent = AUTH_COPY.weakPassword;
       document.querySelector("#auth-password")?.focus();
       return;

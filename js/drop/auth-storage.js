@@ -18,6 +18,12 @@ export function readRemember(localArea = globalThis.localStorage) {
   }
 }
 
+export function clearLocalAuth(localArea = globalThis.localStorage, sessionArea = globalThis.sessionStorage) {
+  try { localArea.removeItem(SESSION_KEY); } catch { /* private mode */ }
+  try { sessionArea.removeItem(SESSION_KEY); } catch { /* private mode */ }
+  try { localArea.removeItem(REMEMBER_KEY); } catch { /* private mode */ }
+}
+
 export function chooseRemember(remember, localArea = globalThis.localStorage, sessionArea = globalThis.sessionStorage) {
   try {
     localArea.setItem(REMEMBER_KEY, remember ? "1" : "0");

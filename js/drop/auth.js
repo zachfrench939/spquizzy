@@ -18,7 +18,7 @@ export const AUTH_COPY = {
   signUpSubmit: "Create account",
   magicInstead: "Email me a link instead",
   needEmail: "Enter an email address.",
-  weakPassword: "Use at least 6 characters for the password.",
+  weakPassword: "Use at least 8 characters for the password.",
   invalidLogin: "That email or password doesn’t match. Try again.",
   alreadyRegistered: "An account with that email already exists. Sign in instead.",
   unconfirmed: "That email still needs verifying. Use Resend email if the link didn’t arrive.",
@@ -29,7 +29,12 @@ export const AUTH_COPY = {
   signinError: "We couldn’t sign you in. Try again. You can still play as a guest.",
 };
 
+export const MIN_PASSWORD_LENGTH = 8;
 export const RESEND_COOLDOWN_MS = 60_000;
+
+export function passwordTooShort(password) {
+  return String(password ?? "").length < MIN_PASSWORD_LENGTH;
+}
 
 export function resendCooldownLeft(startedAt, now = Date.now()) {
   const started = Number(startedAt || 0);

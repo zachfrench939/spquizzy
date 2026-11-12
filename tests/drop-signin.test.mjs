@@ -11,14 +11,16 @@ let nextResponse = new Response("", { status: 200 });
 const { magicLinkErrorMessage, readAuthHash, sendMagicLink, oauthUrl, setBoardOptOut, readSession, saveSession, clearSession } = await import("../js/drop/api.js");
 const {
   AUTH_COPY,
+  MIN_PASSWORD_LENGTH,
   authErrorMessage,
+  passwordTooShort,
   resend,
   resendCooldownLeft,
   sessionFromAuth,
   signUp,
   signupScreenState,
 } = await import("../js/drop/auth.js");
-const { REMEMBER_KEY, SESSION_KEY, chooseRemember, createAuthStorage } = await import("../js/drop/auth-storage.js");
+const { REMEMBER_KEY, SESSION_KEY, chooseRemember, clearLocalAuth, createAuthStorage } = await import("../js/drop/auth-storage.js");
 
 function memoryStore() {
   const data = new Map();
@@ -107,6 +109,25 @@ test("choosing remember before Google clears the store that will not be used", (
   chooseRemember(true, local, session);
   assert.equal(local.getItem(REMEMBER_KEY), "1");
   assert.equal(session.getItem(SESSION_KEY), null);
+});
+
+test("clear local data drops the remember flag and the session in both stores", () => {
+  const local = memoryStore();
+  const session = memoryStore();
+  local.setItem(REMEMBER_KEY, "0");
+  local.setItem(SESSION_KEY, "local-token");
+  session.setItem(SESSION_KEY, "tab-token");
+  clearLocalAuth(local, session);
+  assert.equal(local.getItem(REMEMBER_KEY), null);
+  assert.equal(local.getItem(SESSION_KEY), null);
+  assert.equal(session.getItem(SESSION_KEY), null);
+});
+
+test("a password shorter than 8 characters is rejected on the client", () => {
+  assert.equal(MIN_PASSWORD_LENGTH, 8);
+  assert.equal(AUTH_COPY.weakPassword, "Use at least 8 characters for the password.");
+  assert.equal(passwordTooShort("sevench"), true);
+  assert.equal(passwordTooShort("eightchr"), false);
 });
 
 test("sign-out removes the session from both stores", () => {
