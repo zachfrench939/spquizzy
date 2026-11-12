@@ -999,6 +999,13 @@ button,a,.tab,.amount-bar button,.btn-minus{touch-action:manipulation;-webkit-ta
   .page h1,.simple-center h1,.doc h1{font-size:32px;}
   #view-signin.simple-center{padding:4px 16px 16px;}
   #view-signin h1{font-size:30px;}
+  #view-signin{
+    flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
+  }
+  html.has-consent #view-signin.simple-center{
+    padding-bottom:calc(96px + env(safe-area-inset-bottom));
+    scroll-padding-bottom:96px;
+  }
   .sheet{padding-bottom:max(18px, env(safe-area-inset-bottom));}
   #view-league{padding-left:12px;padding-right:12px;}
   #view-league .tabs{

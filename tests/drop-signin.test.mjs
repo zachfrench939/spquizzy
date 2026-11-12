@@ -13,10 +13,16 @@ const {
   AUTH_COPY,
   MIN_PASSWORD_LENGTH,
   authErrorMessage,
+  isAlreadyRegistered,
+  isInvalidRefresh,
   passwordTooShort,
+  refreshAccessToken,
+  refreshDelayMs,
+  refreshStoredSession,
   resend,
   resendCooldownLeft,
   sessionFromAuth,
+  sessionNeedsRefresh,
   signUp,
   signupScreenState,
 } = await import("../js/drop/auth.js");
@@ -173,16 +179,86 @@ test("signup without a session is the inbox screen, and a session stays signed i
 
 test("the inbox screen copy names the address and the resend wait", () => {
   assert.equal(AUTH_COPY.inboxHeading, "Check your inbox");
-  assert.equal(AUTH_COPY.inboxSent("ada@example.com"), "We’ve sent a verification email to ada@example.com.");
-  assert.equal(AUTH_COPY.inboxHint, "Click the link in that email to verify your address. Check your spam or junk folder if it doesn’t arrive.");
+  assert.equal(
+    AUTH_COPY.inboxNew("ada@example.com"),
+    "If this is a new email address, we’ve sent a verification link to ada@example.com. Click it to finish creating your account. Already have an account? Sign in instead.",
+  );
+  assert.equal(AUTH_COPY.inboxMagic("ada@example.com"), "We’ve sent a sign-in link to ada@example.com.");
+  assert.equal(AUTH_COPY.inboxHint, "Check your spam or junk folder if it doesn’t arrive.");
+  assert.equal(AUTH_COPY.inboxMagicHint, "Click the link in that email to sign in. Check your spam or junk folder if it doesn’t arrive.");
   assert.equal(AUTH_COPY.resend, "Resend email");
   assert.equal(AUTH_COPY.resendWait(60), "Resend email in 60s");
   assert.equal(AUTH_COPY.resent, "Verification email sent again.");
-  assert.equal(AUTH_COPY.back, "Back to sign in");
+  assert.equal(AUTH_COPY.inboxSignIn, "Sign in");
   assert.equal(AUTH_COPY.different, "Use a different email");
   assert.equal(AUTH_COPY.remember, "Keep me logged in");
+  assert.equal(AUTH_COPY.rememberHint, "Untick this on a shared device. You’ll be signed out when you close this tab.");
+  assert.equal(AUTH_COPY.alreadyRegistered, undefined);
   assert.equal(resendCooldownLeft(1_000, 1_000), 60);
   assert.equal(resendCooldownLeft(1_000, 61_000), 0);
+});
+
+test("an already registered address is not named as an existing account", () => {
+  const error = { status: 400, code: "user_already_exists", message: "User already registered" };
+  assert.equal(isAlreadyRegistered(error), true);
+  assert.equal(authErrorMessage("signup", error), "We couldn’t create the account. Try again. You can still play as a guest.");
+  assert.equal(JSON.stringify(AUTH_COPY).includes("already exists"), false);
+});
+
+test("refresh uses the stored refresh token, and only an invalid token clears the session", async () => {
+  const now = 1_700_000_000_000;
+  const fresh = { access_token: "a", refresh_token: "r", expires_at: Math.floor(now / 1000) + 3600 };
+  const soon = { access_token: "a", refresh_token: "r", expires_at: Math.floor(now / 1000) + 30 };
+  const dead = { access_token: "a", refresh_token: "r", expires_at: Math.floor(now / 1000) - 10 };
+  assert.equal(sessionNeedsRefresh(fresh, now), false);
+  assert.equal(sessionNeedsRefresh(soon, now), true);
+  assert.equal(sessionNeedsRefresh(dead, now), true);
+  assert.equal(sessionNeedsRefresh({ access_token: "a", expires_at: dead.expires_at }, now), false);
+  assert.ok(refreshDelayMs(fresh, now) > 60_000);
+  assert.equal(refreshDelayMs(dead, now), 0);
+
+  calls.length = 0;
+  nextResponse = new Response(JSON.stringify({
+    access_token: "new",
+    refresh_token: "ref2",
+    expires_in: 3600,
+    token_type: "bearer",
+  }), { status: 200 });
+  const payload = await refreshAccessToken("ref1");
+  assert.match(calls[0].url, /\/auth\/v1\/token\?grant_type=refresh_token$/);
+  assert.deepEqual(JSON.parse(calls[0].options.body), { refresh_token: "ref1" });
+  assert.equal(sessionFromAuth(payload).access_token, "new");
+  assert.equal(sessionFromAuth(payload).refresh_token, "ref2");
+
+  const local = memoryStore();
+  const tab = memoryStore();
+  globalThis.localStorage = local;
+  globalThis.sessionStorage = tab;
+  const invalid = new Error("Invalid Refresh Token");
+  invalid.status = 400;
+  invalid.code = "invalid_grant";
+  assert.equal(isInvalidRefresh(invalid), true);
+  const cleared = await refreshStoredSession(dead, {
+    refresh: async () => { throw invalid; },
+    save: saveSession,
+    clear: clearSession,
+  });
+  assert.equal(cleared.action, "clear");
+  saveSession({ access_token: "old", refresh_token: "ref", expires_at: 9_999_999_999 });
+  const kept = await refreshStoredSession(
+    { access_token: "old", refresh_token: "ref", expires_at: 9_999_999_999 },
+    {
+      refresh: async () => { throw new TypeError("Failed to fetch"); },
+      save: saveSession,
+      clear: clearSession,
+    },
+  );
+  assert.equal(kept.action, "keep");
+  assert.match(local.getItem(SESSION_KEY), /old/);
+  assert.equal(isInvalidRefresh(kept.error), false);
+  clearSession();
+  delete globalThis.localStorage;
+  delete globalThis.sessionStorage;
 });
 
 test("resend asks Supabase for a signup verification email", async () => {

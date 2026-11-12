@@ -1,6 +1,6 @@
 # Sign-up wording — for review
 
-This is the copy on the sign-in screen, plus the privacy and cookie lines Legal cleared for it. Nothing here has been merged.
+This is the copy on the sign-in screen, plus the privacy and cookie lines Legal cleared for it. Later changes to the inbox screen and the keep-me-logged-in hint are in `docs/signup-fixes-WORDING.md`. Where the two files differ, the fixes file is the current copy.
 
 The checkbox **Keep me logged in** starts **ticked**. That matches the site today: a sign-in stays in `localStorage` until sign-out or until the token expires. Unticked is the new, shorter choice (this browser tab only).
 
