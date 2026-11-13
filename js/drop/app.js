@@ -2,8 +2,12 @@ import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
 import { AUTH_COPY, MIN_PASSWORD_LENGTH, authErrorMessage, isUnconfirmed, passwordTooShort, resend, resendCooldownLeft, sessionFromAuth, signInWithPassword, signUp, signupScreenState } from "./auth.js";
 import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
 import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
+import { BANK_NUDGE_KEY, COPY } from "./copy.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
+import { PRACTICE, gradePractice } from "./practice.js";
+import { playStats } from "./stats.js";
+import { shareTrail, shareTrailLabel } from "./trail.js";
 import {
   START_COINS, LONG_PRESS_MS, addAmount, addRest, allIn, canManualLock, chipState,
   clearDoor, clonePots, freshPots, minusStep, QUESTION_MS, stackCount, timeoutFill, timeoutPots,
@@ -30,7 +34,7 @@ const PENDING_EMAIL_KEY = "spquizzy.drop.pending-email";
 const RESEND_AT_KEY = "spquizzy.drop.resend-at";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
 const AGE_NEED = "Tick the box to confirm you are 13 or over. Under 13s can play as a guest on this device.";
-const CLEAR_LOCAL_COPY = "Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), the sign-in token (spquizzy.drop.session, in local storage and in session storage), and the Keep me logged in choice (dd_remember). It does not change your page-view choice, and it does not delete an account.";
+const CLEAR_LOCAL_COPY = COPY.clearLocal;
 
 function ageFields(prefix) {
   return `<p class="age-rule">You must be 13 or over to create an account. Under 13s can play as a guest on this device. <a href="/privacy/">Privacy notice</a></p><label class="age-check" for="${prefix}-age"><input id="${prefix}-age" data-age type="checkbox" required> <span>I am 13 or over</span></label>`;
@@ -56,6 +60,7 @@ const ROUTES = {
   "/sign-in/": "signin",
   "/plus/": "plus",
   "/settings/": "settings",
+  "/archive/": "archive",
   "/404.html": "missing",
 };
 
@@ -83,6 +88,7 @@ let profile = null;
 let authMode = "signin";
 let resendTimer = 0;
 let resendBusy = false;
+let officialHold = null;
 
 function londonToday(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -138,7 +144,7 @@ function loadRun() {
   }
 }
 function saveRun() {
-  if (run) localStorage.setItem(RUN_KEY, JSON.stringify(run));
+  if (run && !run.practice) localStorage.setItem(RUN_KEY, JSON.stringify(run));
 }
 function seenHow() {
   try { return localStorage.getItem(HOW_KEY) === "1" || Boolean(SHOT); } catch { return true; }
@@ -224,7 +230,7 @@ function shell() {
   quiet.dataset.nav = "signin";
   const nav = el("nav", "header-actions");
   nav.setAttribute("aria-label", "Site");
-  for (const [href, label] of [["/how-to-play/", "How to play"], ["/leagues/", "Leagues"], ["/bank/", "Bank"], ["/sign-in/", "Sign in"], ["/settings/", "Settings"]]) {
+  for (const [href, label] of [["/how-to-play/", "How to play"], ["/leagues/", "Leagues"], ["/bank/", "Bank"], ["/profile/", "Stats"], ["/sign-in/", "Sign in"], ["/settings/", "Settings"]]) {
     const link = el("a", "nav-link", label);
     link.href = href;
     nav.append(link);
@@ -243,7 +249,7 @@ function shell() {
   header.append(brand, quiet, nav);
 
   const main = el("main");
-  main.append(homeView(), playView(), resultsView(), leagueView(), bankView(), profileView(), signinView(), plusView(), settingsView(), missingView());
+  main.append(homeView(), playView(), resultsView(), leagueView(), bankView(), profileView(), signinView(), plusView(), settingsView(), archiveView(), missingView());
   app.append(header, main, tabBar(), howtoSheet(), leaveModal(), signInPrompt(), usernameGate(), consentBar());
   document.addEventListener("keydown", trapDialog);
   app.addEventListener("click", onClick);
@@ -277,9 +283,7 @@ function homeView() {
   const title = el("h1", null, "The Daily Drop");
   const date = el("p", "date-line");
   date.id = "home-date";
-  const pitch = el("p", "pitch", "Start with 100 coins. Put them on the answers you trust. Only the coins on the right answer go through. Finish all 10 questions to bank what’s left.");
-  const endow = el("p", "endow");
-  endow.id = "home-endow";
+  const pitch = el("p", "pitch", COPY.pitch);
   const cta = el("div", "home-cta");
   const play = el("button", "btn-primary", "Play");
   play.type = "button";
@@ -289,6 +293,9 @@ function homeView() {
   const how = el("button", "btn-ghost howto-link", "How to play");
   how.type = "button";
   how.dataset.nav = "howto";
+  const practice = el("button", "btn-ghost howto-link", COPY.practiceCta);
+  practice.type = "button";
+  practice.dataset.nav = "practice";
   const ad = el("aside", "ad-slot slot-home");
   ad.setAttribute("aria-label", "Advertisement");
   ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Ad"));
@@ -297,7 +304,7 @@ function homeView() {
   const privacy = el("a", null, "Privacy");
   privacy.href = "/privacy/";
   fine.append(privacy);
-  view.append(art, el("p", "kicker", "Today’s daily quiz"), badge, title, date, pitch, endow, cta, how, ad, fine);
+  view.append(art, el("p", "kicker", "Today’s daily quiz"), badge, title, date, pitch, cta, how, practice, ad, fine);
   return view;
 }
 
@@ -336,11 +343,15 @@ function playView() {
   const progress = el("div", "q-progress");
   progress.id = "q-progress";
   progress.setAttribute("role", "img");
+  const timerRow = el("div", "q-timer-row");
   const timer = el("div", "q-timer");
   timer.id = "timer-bar";
   timer.setAttribute("role", "timer");
   timer.innerHTML = `<span class="q-timer-fill" id="timer-fill"></span>`;
-  chrome.append(progress, timer);
+  const seconds = el("span", "q-timer-secs", "25s");
+  seconds.id = "timer-secs";
+  timerRow.append(timer, seconds);
+  chrome.append(progress, timerRow);
   const bankHint = el("p", "bank-hint", "Finish all 10 to bank them.");
   bankHint.id = "bank-hint";
   const offlineNote = el("p", "offline-note", "Offline, not ranked");
@@ -351,6 +362,9 @@ function playView() {
   const coach = el("p", "coach", "Pick an answer, put coins on it, then Lock in.");
   coach.id = "coach";
   coach.hidden = true;
+  const practiceBanner = el("p", "practice-banner", COPY.practiceBanner);
+  practiceBanner.id = "practice-banner";
+  practiceBanner.hidden = true;
   const board = el("div", "board");
   board.id = "doors";
   board.setAttribute("aria-label", "Answers");
@@ -376,10 +390,15 @@ function playView() {
   const all = el("button", null, "All");
   all.type = "button";
   all.dataset.all = "1";
+  all.setAttribute("aria-label", COPY.allAria);
   const rest = el("button", null, "Rest");
   rest.type = "button";
   rest.dataset.rest = "1";
+  rest.setAttribute("aria-label", COPY.restAria);
   amounts.append(all, rest);
+  const chipHint = el("p", "chip-hint", COPY.chipHint);
+  chipHint.id = "chip-hint";
+  chipHint.hidden = true;
   const lockRow = el("div", "lock-row");
   const lock = el("button", "btn-lock", "Lock in");
   lock.type = "button";
@@ -392,8 +411,8 @@ function playView() {
   undoBtn.setAttribute("aria-label", "Undo");
   undoBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M8 8H3V3"/><path d="M3.6 8.2A9 9 0 1 1 3 12"/></svg>`;
   lockRow.append(lock, undoBtn);
-  actions.append(meta, amounts, lockRow);
-  stage.append(chrome, bankHint, offlineNote, question, coach, board, tray, fact, hint, actions);
+  actions.append(meta, amounts, chipHint, lockRow);
+  stage.append(chrome, bankHint, offlineNote, question, coach, practiceBanner, board, tray, fact, hint, actions);
   view.append(bar, stage);
   return view;
 }
@@ -407,13 +426,26 @@ function resultsView() {
   const sub = el("p");
   sub.id = "result-sub";
   const card = el("div", "share-card");
+  const brand = el("div", "share-brand");
+  const mark = document.createElement("img");
+  mark.src = LOGO;
+  mark.alt = "";
+  mark.width = 36;
+  mark.height = 36;
   const who = el("div", "who");
   who.id = "share-who";
-  const trail = el("div", "trail");
-  trail.id = "share-grid";
+  brand.append(mark, who);
+  const trail = el("div", "share-trail");
+  trail.id = "share-trail";
   const banked = el("div", "banked-line");
   banked.id = "banked-line";
-  card.append(who, trail, banked);
+  card.append(brand, trail, banked);
+  const fact = el("p", "result-fact");
+  fact.id = "result-fact";
+  fact.hidden = true;
+  const seeYou = el("p", "see-you", COPY.seeYou);
+  seeYou.id = "see-you";
+  seeYou.hidden = true;
   const snip = el("div", "league-snip");
   snip.id = "league-snip";
   const count = el("p", "countdown");
@@ -421,12 +453,27 @@ function resultsView() {
   const share = el("button", "btn-share", "Share");
   share.type = "button";
   share.id = "share";
+  const nudge = el("div", "bank-nudge");
+  nudge.id = "bank-nudge";
+  nudge.hidden = true;
+  const nudgeText = el("p", null, COPY.nudge);
+  const nudgeActions = el("div", "bank-nudge-actions");
+  const nudgeYes = el("a", null, COPY.nudgeYes);
+  nudgeYes.href = "/sign-in/";
+  nudgeYes.id = "bank-nudge-yes";
+  const nudgeNo = el("button", null, COPY.nudgeNo);
+  nudgeNo.type = "button";
+  nudgeNo.id = "bank-nudge-no";
+  nudgeActions.append(nudgeYes, nudgeNo);
+  nudge.append(nudgeText, nudgeActions);
+  const practiceDone = el("a", "btn-primary", COPY.practiceBack);
+  practiceDone.id = "practice-done";
+  practiceDone.href = "/";
+  practiceDone.hidden = true;
   const ad = el("aside", "ad-slot slot-results");
   ad.setAttribute("aria-label", "Advertisement");
   ad.append(el("span", "ad-label", "Advertisement"), el("span", null, "Ad"));
-  const plus = el("a", "btn-ghost", "Skip ads with Spiquizzy Plus");
-  plus.href = "/plus/";
-  view.append(title, sub, card, snip, count, share, plus, ad);
+  view.append(title, sub, card, fact, seeYou, snip, count, share, nudge, practiceDone, ad);
   return view;
 }
 
@@ -457,7 +504,7 @@ function leagueView() {
   const empty = el("p", "league-empty");
   empty.id = "league-empty";
   empty.hidden = true;
-  empty.textContent = "No players on this board yet.";
+  empty.textContent = COPY.leagueEmpty;
   const list = el("ol", "rank-list");
   list.id = "rank-list";
   const ad = el("aside", "ad-slot slot-league");
@@ -473,7 +520,7 @@ function bankView() {
   const view = el("section", "page");
   view.id = "view-bank";
   view.hidden = true;
-  view.innerHTML = `<h1>Your bank</h1><p class="endow" style="justify-content:flex-start"><img src="${BANK}" width="48" height="48" alt=""> <strong id="bank-total">0</strong> coins</p><p>Coins move into your bank only after you finish all 10 questions. Leave early, or run out, and that day banks 0.</p><ul class="history" id="bank-history"></ul><p id="bank-guest"><a class="btn-ghost" href="/sign-in/">Sign in to keep your bank</a></p><p id="bank-signed" hidden>Signed in. This bank is kept on your account.</p><p><button class="btn-keep" type="button" id="sign-out-bank" hidden>Sign out</button></p>`;
+  view.innerHTML = `<h1>Your bank</h1><p class="endow" style="justify-content:flex-start"><img src="${BANK}" width="48" height="48" alt=""> <strong id="bank-total">0</strong> coins</p><div class="stat-grid" id="bank-stats"></div><p>Coins move into your bank only after you finish all 10 questions. Leave early, or run out, and that day banks 0.</p><ul class="history" id="bank-history"></ul><p id="bank-guest"><a class="btn-ghost" href="/sign-in/">Sign in to keep your bank</a></p><p id="bank-signed" hidden>Signed in. This bank is kept on your account.</p><p><button class="btn-keep" type="button" id="sign-out-bank" hidden>Sign out</button></p>`;
   return view;
 }
 
@@ -481,7 +528,7 @@ function profileView() {
   const view = el("section", "page");
   view.id = "view-profile";
   view.hidden = true;
-  view.innerHTML = `<h1>Stats</h1><p id="profile-copy"></p><p>Finish all 10 questions in a day to bank coins.</p>`;
+  view.innerHTML = `<h1>Stats</h1><div class="stat-grid" id="stat-grid"></div><div class="spark" id="stat-spark" hidden></div><p id="stat-note"></p><p class="settings-links"><a href="/settings/">${COPY.settingsLink}</a></p>`;
   return view;
 }
 
@@ -528,7 +575,7 @@ function plusView() {
   const view = el("section", "page");
   view.id = "view-plus";
   view.hidden = true;
-  view.innerHTML = `<h1>Spiquizzy Plus</h1><p>The daily drop stays free forever. Plus is the way to skip ads and, later, to open the archive.</p><p class="price">£3.99 a month</p><button class="btn-primary" type="button" disabled>Coming soon</button><p class="price">£39.99 a year</p><button class="btn-primary" type="button" disabled>Coming soon</button><ul style="font-weight:700;line-height:1.6;margin:16px 0 0 18px"><li>Ad-free play</li><li>Archive of past official days</li><li>Practice drops that do not touch the bank</li></ul><p>Payment is not wired up.</p>`;
+  view.innerHTML = `<h1>Spiquizzy Plus</h1><p>${COPY.plus}</p><p>The daily drop stays free.</p>`;
   return view;
 }
 
@@ -539,14 +586,15 @@ function settingsView() {
   view.innerHTML = `<h1>Settings</h1>
     <form id="name-form" class="name-form">
       <label for="set-username">Username</label>
+      <p class="name-real">${COPY.realName}</p>
       <input id="set-username" name="username" autocomplete="username" maxlength="16" spellcheck="false">
-      <button class="btn-primary" type="submit">Save username</button>
+      <button class="btn-primary" type="submit" id="save-username" hidden>Save username</button>
       <p id="set-username-note"></p>
       <button class="btn-keep" type="button" id="sign-out" hidden>Sign out</button>
     </form>
     <div class="tog"><span>Sound</span><button class="switch" type="button" id="set-sound" aria-label="Sound"></button></div>
     <div class="tog"><span>Reduce motion</span><button class="switch" type="button" id="set-motion" aria-label="Reduce motion"></button></div>
-    <div class="tog"><span>Safe and Dropped labels stay on</span><button class="switch" type="button" aria-pressed="true" disabled aria-label="Labels"></button></div>
+    <div class="tog"><span>${COPY.labels}</span><button class="switch" type="button" aria-pressed="true" disabled aria-label="Labels"></button></div>
     <div class="consent-choice">
       <h2>Page views</h2>
       <p id="consent-status">Page views: not chosen</p>
@@ -571,6 +619,22 @@ function settingsView() {
   return view;
 }
 
+function archiveView() {
+  const view = el("section", "page");
+  view.id = "view-archive";
+  view.hidden = true;
+  const logo = document.createElement("img");
+  logo.className = "logo";
+  logo.src = LOGO;
+  logo.width = 64;
+  logo.height = 64;
+  logo.alt = "Spiquizzy";
+  const back = el("a", "btn-primary", COPY.practiceBack);
+  back.href = "/";
+  view.append(logo, el("h1", null, "Archive"), el("p", null, COPY.archive), el("p", null, COPY.archivePlus), back);
+  return view;
+}
+
 function missingView() {
   const view = el("section", "simple-center");
   view.id = "view-missing";
@@ -585,9 +649,35 @@ function howtoSheet() {
   back.hidden = true;
   back.innerHTML = `<div class="sheet" role="dialog" aria-labelledby="howto-title">
     <h2 id="howto-title">How to play</h2>
-    <div class="panel" data-panel="0"><p>Each day you get <strong>100 coins</strong> and <strong>25 seconds</strong> on every question. Tap an answer, then use +1, +10, +50, All or Rest. You can also drag tens from the tray. You must place every coin, and leave at least one answer empty. − takes 10 back; hold it to clear the card. Run out of time? Leftover coins go on your biggest pick.</p><div class="panel-art" id="howto-art"></div></div>
-    <div class="panel" data-panel="1" hidden><p><strong>Lock in.</strong> Trapdoors under the wrong answers open and those coins fall. The right answer gets a tick and +N Safe. Each wrong answer that had coins shows −N.</p><div class="panel-art"><span class="sticker ink">+N Safe</span><span class="sticker" style="background:#111;color:#FFF8E7">−N</span></div></div>
-    <div class="panel" data-panel="2" hidden><p><strong>Finish all 10 questions to bank what’s left.</strong> If you leave early, or you run out of coins, you bank <strong>0</strong> for the day. Coins in play are not yours until the last question is done.</p><div class="panel-art"><img src="${BANK}" width="48" height="48" alt=""><strong>Banked only after Q10</strong></div></div>
+    <div class="panel" data-panel="0"><p>${COPY.how1}</p>
+      <div class="howto-scene">
+        <div class="mini-board" aria-hidden="true">
+          <div class="mini-door is-on t0"><span class="mini-sel">Selected</span><span class="mini-name">Monaco</span><b>40</b></div>
+          <div class="mini-door t1"><span class="mini-name">San Marino</span><b>0</b></div>
+          <div class="mini-door t2"><span class="mini-name">Liechtenstein</span><b>30</b></div>
+          <div class="mini-door t3"><span class="mini-name">Vatican City</span><b>0</b></div>
+        </div>
+        <div class="mini-chips" aria-hidden="true"><span>+1</span><span>+10</span><span>+50</span><span>All</span><span>Rest</span></div>
+        <p class="mini-note">${COPY.chipHint}</p>
+      </div>
+    </div>
+    <div class="panel" data-panel="1" hidden><p>${COPY.how2}</p>
+      <div class="howto-scene">
+        <div class="mini-board is-reveal" aria-hidden="true">
+          <div class="mini-door is-open t0"><span class="mini-flap"><span class="mini-name">Monaco</span></span><span class="mini-pit"></span></div>
+          <div class="mini-door is-safe t1"><span class="mini-name">San Marino</span><b>40</b><span class="mini-stamp">+40 Safe</span></div>
+          <div class="mini-door is-open t2"><span class="mini-flap"><span class="mini-name">Liechtenstein</span></span><span class="mini-pit"></span></div>
+          <div class="mini-door is-open is-bare t3"><span class="mini-flap"><span class="mini-name">Vatican City</span></span><span class="mini-pit"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" data-panel="2" hidden><p>${COPY.how3}</p>
+      <div class="howto-scene howto-bank">
+        <img src="${BANK}" width="64" height="64" alt="">
+        <strong>Banked after all 10</strong>
+        <button class="btn-ghost" type="button" data-nav="practice">${COPY.practiceTry}</button>
+      </div>
+    </div>
     <div class="dots" id="howto-dots"><span class="on"></span><span></span><span></span></div>
     <div class="sheet-nav"><button class="btn-ghost" type="button" id="howto-prev" hidden>Back</button><button class="btn-keep" type="button" id="howto-next">Next</button></div>
   </div>`;
@@ -661,11 +751,11 @@ function tabBar() {
   const items = [
     ["play", "Play", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 5v14l11-7z"/></svg>`],
     ["league", "Leagues", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 20V10M12 20V4M20 20V14"/></svg>`],
-    ["settings", "Profile", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="3"/><path d="M5 19c1.5-3 3.5-4.5 7-4.5S17.5 16 19 19"/></svg>`],
+    ["profile", "Stats", `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="3"/><path d="M5 19c1.5-3 3.5-4.5 7-4.5S17.5 16 19 19"/></svg>`],
   ];
   for (const [dest, label, icon] of items) {
     const link = el("a", "tab");
-    link.href = dest === "play" ? "/play/" : dest === "league" ? "/leagues/" : "/settings/";
+    link.href = dest === "play" ? "/play/" : dest === "league" ? "/leagues/" : "/profile/";
     link.dataset.nav = dest;
     link.innerHTML = `${icon}<span>${label}</span>`;
     nav.append(link);
@@ -683,6 +773,7 @@ function usernameGate() {
     <p>This is your name on the global board. Letters, numbers and underscores.</p>
     <form id="user-form">
       <label for="user-name">Username</label>
+      <p class="name-real">${COPY.realName}</p>
       <input id="user-name" name="username" autocomplete="username" maxlength="16" required spellcheck="false">
       <button class="btn-primary" type="submit">Save username</button>
     </form>
@@ -788,14 +879,17 @@ function consentBar() {
 }
 
 function paintHowArt() {
-  const art = document.querySelector("#howto-art");
-  const stack = el("div", "hero-stack");
-  for (let i = 0; i < 5; i += 1) stack.append(coinImg(28));
-  art.append(stack, el("strong", null, "100"));
+  document.querySelectorAll("[data-panel='0'] .mini-door.is-on, [data-panel='0'] .mini-door.t2").forEach((door) => {
+    if (door.querySelector("img")) return;
+    const coins = el("span", "mini-coins");
+    const count = door.classList.contains("is-on") ? 2 : 1;
+    for (let i = 0; i < count; i += 1) coins.append(coinImg(18));
+    door.append(coins);
+  });
 }
 
 function show(name) {
-  for (const id of ["home", "play", "results", "league", "bank", "profile", "signin", "plus", "settings", "missing"]) {
+  for (const id of ["home", "play", "results", "league", "bank", "profile", "signin", "plus", "settings", "archive", "missing"]) {
     const node = document.querySelector(`#view-${id}`);
     if (node) node.hidden = id !== name;
   }
@@ -815,7 +909,7 @@ function show(name) {
 function paintTabs(name) {
   const current = name === "home" || name === "play" ? "play"
     : name === "league" ? "league"
-    : name === "settings" || name === "profile" ? "settings"
+    : name === "profile" ? "profile"
     : "";
   document.querySelectorAll("#tabbar .tab").forEach((tab) => {
     if (tab.dataset.nav === current) tab.setAttribute("aria-current", "page");
@@ -825,6 +919,7 @@ function paintTabs(name) {
 }
 
 function currentQuestion() {
+  if (run?.practice) return { q: PRACTICE.q, answers: PRACTICE.answers };
   let index = dropNumber(londonToday()) - 1;
   if (SHOT && (!pack || index < 0 || index >= pack.days.length)) index = 0;
   if (!pack || index < 0 || index >= pack.days.length) return null;
@@ -837,16 +932,9 @@ function paintHome() {
   const days = pack?.days?.length || pack?.packDays || 0;
   document.querySelector("#drop-badge").textContent = number >= 1 && number <= days ? `Drop no. ${number}` : "Daily drop";
   document.querySelector("#home-date").textContent = formatLong(today);
-  const ended = run && run.date === today && run.status !== "in_progress";
+  const ended = run && !run.practice && run.date === today && run.status !== "in_progress";
   const button = document.querySelector("#play-btn");
-  button.textContent = ended ? "See results" : (run && run.status === "in_progress" ? "Resume" : "Play");
-  const stack = document.createElement("img");
-  stack.src = BANK;
-  stack.alt = "";
-  stack.width = 28;
-  stack.height = 28;
-  const endow = document.querySelector("#home-endow");
-  endow.replaceChildren(stack, document.createTextNode(` 100 coins today + bank of ${bank.balance}`));
+  button.textContent = ended ? "See results" : (run && !run.practice && run.status === "in_progress" ? "Resume" : "Play");
 }
 
 function startOrResume() {
@@ -864,7 +952,7 @@ function startOrResume() {
       status: "in_progress",
       q: 0,
       pots: freshPots(pack?.startCoins || START_COINS),
-      selected: 0,
+      selected: null,
       history: [pack?.startCoins || START_COINS],
       undo: [],
       banked: 0,
@@ -891,8 +979,9 @@ function renderQuestion() {
   if (!item) return;
   clearDrop();
   document.querySelector("#view-play")?.classList.remove("has-timeout-note");
-  if (run.selected == null) run.selected = 0;
   document.querySelector("#q-text").textContent = item.q;
+  const banner = document.querySelector("#practice-banner");
+  if (banner) banner.hidden = !run.practice;
   document.querySelector("#bank-hint").hidden = run.q !== 0;
   showFunFact("");
   document.querySelector("#offline-note").hidden = !offline || Boolean(SHOT);
@@ -905,9 +994,14 @@ function renderQuestion() {
   saveRun();
   renderStake();
   const left = Math.max(0, QUESTION_MS - (Date.now() - run.servedAt));
-  if (SHOT === "play" || SHOT === "falling" || SHOT === "next" || SHOT === "drop") startTimer(11000, true);
+  if (SHOT === "play" || SHOT === "picked" || SHOT === "falling" || SHOT === "next" || SHOT === "drop") startTimer(11000, true);
   else if (left <= 0) onTimeout();
   else startTimer(left, false);
+  if (run.practice || SHOT) {
+    const note = document.querySelector("#offline-note");
+    if (note && run.practice) note.hidden = true;
+    return;
+  }
   if (session && !SHOT) {
     serveQuestion(run.q, session).then((payload) => {
       offline = false;
@@ -1008,9 +1102,11 @@ function renderStake() {
       coin.append(coinImg(26));
       plate.append(coin);
     }
-    door.classList.toggle("is-picked", run.phase !== "reveal" && index === run.selected);
+    door.classList.toggle("is-picked", run.phase !== "reveal" && run.selected != null && index === run.selected);
     const minus = door.querySelector(".btn-minus");
-    minus.disabled = amount === 0 || run.phase === "reveal";
+    const hideMinus = amount === 0 || run.phase === "reveal";
+    minus.hidden = hideMinus;
+    minus.disabled = hideMinus;
     const lost = door.querySelector(".lost-tag");
     lost.textContent = amount ? `−${amount}` : "";
   });
@@ -1028,12 +1124,15 @@ function renderStake() {
     tray.append(token);
   });
   tray.classList.toggle("is-empty", pots.tray === 0);
+  const picked = run.selected != null && run.phase !== "reveal";
   const chips = chipState(pots, run.selected ?? 0);
   document.querySelectorAll(".amount-bar button").forEach((button) => {
-    if (button.dataset.add) button.disabled = !chips[Number(button.dataset.add)] || run.phase === "reveal";
-    else if (button.dataset.all != null) button.disabled = !chips.all || run.phase === "reveal";
-    else button.disabled = !chips.rest || run.phase === "reveal";
+    if (button.dataset.add) button.disabled = !picked || !chips[Number(button.dataset.add)];
+    else if (button.dataset.all != null) button.disabled = !picked || !chips.all;
+    else button.disabled = !picked || !chips.rest;
   });
+  const chipHint = document.querySelector("#chip-hint");
+  if (chipHint) chipHint.hidden = !(run.q === 0 && run.phase !== "reveal");
   const lock = document.querySelector("#lock");
   paintAdding();
   paintCoach();
@@ -1093,12 +1192,24 @@ function paintAdding() {
     note.hidden = !showNote;
     note.textContent = showNote ? run.timeoutNote : "";
   }
-  const index = run.selected ?? 0;
-  const letter = LETTERS[index] || "A";
-  const name = currentQuestion()?.answers?.[index] || "";
   const chip = document.querySelector("#adding-letter");
   const label = document.querySelector("#adding-name");
-  if (chip) chip.textContent = letter;
+  const to = adding.querySelector(".to");
+  if (run.selected == null) {
+    if (to) to.textContent = COPY.pickAnswer;
+    if (chip) chip.hidden = true;
+    if (label) label.textContent = "";
+    if (bar) bar.setAttribute("aria-label", COPY.pickAnswer);
+    return;
+  }
+  if (to) to.textContent = "Adding to";
+  const index = run.selected;
+  const letter = LETTERS[index] || "A";
+  const name = currentQuestion()?.answers?.[index] || "";
+  if (chip) {
+    chip.hidden = false;
+    chip.textContent = letter;
+  }
   if (label) label.textContent = name;
   if (bar) bar.setAttribute("aria-label", `Add coins to ${letter}, ${name}`);
 }
@@ -1147,6 +1258,8 @@ function startTimer(left, frozen) {
     fill.style.width = `${(remain / QUESTION_MS) * 100}%`;
     bar.classList.toggle("is-low", remain <= 5000);
     const seconds = Math.ceil(remain / 1000);
+    const label = document.querySelector("#timer-secs");
+    if (label) label.textContent = `${seconds}s`;
     bar.setAttribute("aria-label", `${seconds} seconds left of 25`);
     if (!frozen && remain <= 0) {
       stopTimer();
@@ -1170,6 +1283,25 @@ function startTimer(left, frozen) {
 function stopTimer() {
   if (timerId) window.clearInterval(timerId);
   timerId = 0;
+}
+
+function dropSound() {
+  try {
+    const ctx = audioCtx || (audioCtx = new AudioContext());
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(180, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(48, ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.21);
+  } catch {
+    /* sound can be blocked */
+  }
 }
 
 function tick() {
@@ -1256,7 +1388,9 @@ async function lockQuestion(timeout, emptyBust = false) {
   let correct = 0;
   let server = null;
   try {
-    if (SHOT === "falling" || SHOT === "next" || SHOT === "drop" || SHOT === "timeout") {
+    if (run.practice) {
+      correct = gradePractice(dist).correct;
+    } else if (SHOT === "falling" || SHOT === "next" || SHOT === "drop" || SHOT === "timeout") {
       correct = 2;
     } else if (session) {
       server = await lockIn(run.q, dist, timeout, session);
@@ -1287,7 +1421,9 @@ async function lockQuestion(timeout, emptyBust = false) {
   const keptAmount = dist[correct] || 0;
   const lostAmount = before - keptAmount;
   const wiped = emptyBust || keptAmount === 0;
-  const funFact = typeof server?.funFact === "string" ? server.funFact.trim() : "";
+  const funFact = run.practice
+    ? PRACTICE.fact
+    : (typeof server?.funFact === "string" ? server.funFact.trim() : "");
   run.reveal = { correct, keptAmount, lostAmount, wiped, timeout, before, funFact };
   saveRun();
   beginDrop(correct, keptAmount, lostAmount);
@@ -1297,12 +1433,14 @@ function showFunFact(text) {
   const node = document.querySelector("#fun-fact");
   if (!node) return;
   node.hidden = false;
-  node.textContent = typeof text === "string" ? text.trim() : "";
+  const clean = typeof text === "string" ? text.trim() : "";
+  node.textContent = clean;
+  if (run && clean) run.lastFact = clean;
 }
 
 function beginDrop(correct, keptAmount, lostAmount) {
   const view = document.querySelector("#view-play");
-  if (run.q === 0) {
+  if (run.q === 0 && !run.practice) {
     try { localStorage.setItem(COACH_KEY, "1"); } catch { /* private mode */ }
     view?.classList.remove("is-coach", "is-ready");
     const coach = document.querySelector("#coach");
@@ -1313,9 +1451,18 @@ function beginDrop(correct, keptAmount, lostAmount) {
     door.classList.remove("is-picked");
     if (index === correct) {
       door.classList.add("is-correct");
-      door.querySelector(".safe-stamp").textContent = `+${keptAmount} Safe`;
-    } else door.classList.add("is-wrong");
+      const stamp = door.querySelector(".safe-stamp");
+      if (keptAmount > 0) stamp.textContent = `+${keptAmount} Safe`;
+      else {
+        stamp.textContent = COPY.safeEmpty;
+        stamp.classList.add("is-empty-pot");
+      }
+    } else {
+      door.classList.add("is-wrong");
+      if (!(run.pots.doors[index] > 0)) door.classList.add("is-bare");
+    }
   });
+  if (settings.sound && !reduced()) dropSound();
   document.querySelector("#undo").disabled = true;
   const bankHint = document.querySelector("#bank-hint");
   if (bankHint) bankHint.hidden = true;
@@ -1413,8 +1560,12 @@ function finishReveal() {
   run.phase = "question";
   run.revealReady = false;
   run.servedAt = null;
-  run.selected = 0;
+  run.selected = null;
   armed = null;
+  if (run.practice) {
+    closeRun(kept ? "completed" : "busted", 0);
+    return;
+  }
   if (!kept) {
     closeRun(run.q >= 9 ? "completed" : "busted", 0);
     return;
@@ -1433,8 +1584,12 @@ function finishReveal() {
 
 function closeRun(status, banked) {
   run.status = status;
-  run.banked = banked;
+  run.banked = run.practice ? 0 : banked;
   run.phase = "done";
+  if (run.practice) {
+    showResults();
+    return;
+  }
   rememberDay(run.date, status === "completed" ? banked : 0, status);
   saveRun();
   logEvent(status === "completed" ? "run_completed" : "run_busted", { banked });
@@ -1442,6 +1597,10 @@ function closeRun(status, banked) {
 }
 
 function forfeit() {
+  if (run?.practice) {
+    endPractice();
+    return;
+  }
   run.status = "forfeited";
   run.banked = 0;
   run.phase = "done";
@@ -1452,14 +1611,48 @@ function forfeit() {
   showResults();
 }
 
+function nudgeSeenToday() {
+  try { return localStorage.getItem(BANK_NUDGE_KEY) === londonToday(); } catch { return true; }
+}
+
+function markNudge() {
+  try { localStorage.setItem(BANK_NUDGE_KEY, londonToday()); } catch { /* private mode */ }
+}
+
+function paintShareCard() {
+  const cells = shareTrail(run);
+  const graphic = document.querySelector("#share-trail");
+  if (!graphic) return;
+  graphic.replaceChildren();
+  graphic.setAttribute("role", "img");
+  graphic.setAttribute("aria-label", shareTrailLabel(cells));
+  cells.forEach((cell) => {
+    const node = el("span", `share-cell is-${cell.state}`);
+    if (cell.state === "safe") {
+      const fill = el("span", "share-fill");
+      const height = Math.max(12, Math.round((cell.coins / (pack?.startCoins || START_COINS)) * 100));
+      fill.style.height = `${Math.min(100, height)}%`;
+      node.append(fill);
+    } else if (cell.state === "dropped") {
+      node.append(el("span", "share-fill"));
+    }
+    graphic.append(node);
+  });
+}
+
 function showResults() {
   show("results");
-  const cleared = run.status === "completed" && run.banked > 0;
-  const wiped = run.status === "completed" && run.banked === 0;
-  const left = run.status === "forfeited";
+  const practice = Boolean(run.practice);
+  const cleared = !practice && run.status === "completed" && run.banked > 0;
+  const wiped = !practice && run.status === "completed" && run.banked === 0;
+  const left = !practice && run.status === "forfeited";
+  const zero = !practice && !cleared;
   const title = document.querySelector("#result-title");
   const sub = document.querySelector("#result-sub");
-  if (cleared) {
+  if (practice) {
+    title.textContent = COPY.practiceTitle;
+    sub.textContent = COPY.practiceSub;
+  } else if (cleared) {
     title.textContent = "Banked!";
     sub.textContent = "You finished all 10 questions.";
   } else if (wiped) {
@@ -1472,43 +1665,95 @@ function showResults() {
     title.textContent = "Dropped!";
     sub.textContent = "Finish all 10 to bank your coins — so this day banks 0.";
   }
-  document.querySelector("#share-who").textContent = `Spiquizzy #${run.dropNumber}`;
-  const mid = Math.ceil(run.history.length / 2);
-  let trail = `🪙 ${run.history.slice(0, mid).join(" → ")}`;
-  if (run.history.length > mid) trail += `\n→ ${run.history.slice(mid).join(" → ")}`;
-  if (!cleared && !wiped && !left) trail += ` 💀 Q${run.q + 1}`;
-  trail += `\nbanked ${run.banked || 0}`;
-  document.querySelector("#share-grid").textContent = trail;
+  document.querySelector("#share-who").textContent = practice ? "Practice" : `Spiquizzy #${run.dropNumber}`;
+  paintShareCard();
   const line = document.querySelector("#banked-line");
   line.replaceChildren();
+  line.classList.toggle("banked-anim", cleared);
   const icon = document.createElement("img");
   icon.src = BANK;
   icon.alt = "";
   icon.width = 36;
   icon.height = 36;
-  line.append(icon, document.createTextNode(" Banked "), el("span", "count", String(run.banked || 0)));
-  line.append(el("span", "running", `Bank ${bank.balance}`));
-  if (cleared) line.classList.add("banked-anim");
+  if (practice) {
+    line.append(icon, document.createTextNode(" Not added to your bank"));
+  } else {
+    line.append(icon, document.createTextNode(" Banked "), el("span", "count", String(run.banked || 0)));
+    line.append(el("span", "running", `Bank ${bank.balance}`));
+  }
+  const fact = document.querySelector("#result-fact");
+  const factText = (run.reveal?.funFact || run.lastFact || "").trim();
+  if (fact) {
+    fact.hidden = !factText;
+    fact.textContent = factText;
+  }
+  const seeYou = document.querySelector("#see-you");
+  if (seeYou) seeYou.hidden = practice || !zero;
   const snip = document.querySelector("#league-snip");
-  snip.textContent = !session
-    ? "You’re unranked. Sign in to get on the board."
-    : profile?.opted_out_of_boards === true
-      ? "You’re hidden from the leagues board."
-      : "Your rank is on the global board.";
-  const link = el("a", "tap-link", "See the league");
-  link.href = "/leagues/";
-  snip.append(link);
-  tickCountdown();
-  if (!session?.access_token) offerSignIn();
+  snip.replaceChildren();
+  if (practice) {
+    snip.hidden = true;
+  } else {
+    snip.hidden = false;
+    snip.textContent = !session
+      ? COPY.leagueGuest
+      : profile?.opted_out_of_boards === true
+        ? "You’re hidden from the leagues board."
+        : "Your rank is on the global board.";
+  }
+  const done = document.querySelector("#practice-done");
+  if (done) done.hidden = !practice;
+  const countdown = document.querySelector("#countdown");
+  if (countdown) countdown.hidden = practice;
+  if (!practice) tickCountdown();
+  const nudge = document.querySelector("#bank-nudge");
+  const guest = !practice && !session?.access_token;
+  const shotNudge = SHOT === "nudge" || SHOT === "results" || SHOT === "bust";
+  const showNudge = guest && (shotNudge || (!SHOT && !nudgeSeenToday()));
+  if (nudge) {
+    nudge.hidden = !showNudge;
+    if (showNudge && !SHOT) markNudge();
+  }
+  const prompt = document.querySelector("#signin-prompt");
+  if (prompt) prompt.hidden = true;
 }
 
 function shareText() {
+  const cells = shareTrail(run);
+  const marks = cells.map((cell) => (cell.state === "safe" ? "🟢" : cell.state === "dropped" ? "🟥" : "⬜")).join("");
   const mid = Math.ceil(run.history.length / 2);
-  let body = `🪙 ${run.history.slice(0, mid).join(" → ")}`;
+  let body = `${marks}\n🪙 ${run.history.slice(0, mid).join(" → ")}`;
   if (run.history.length > mid) body += `\n→ ${run.history.slice(mid).join(" → ")}`;
-  if (run.status === "busted") body += ` 💀 Q${run.q + 1}`;
-  body += `\nbanked ${run.banked || 0}`;
-  return `Spiquizzy #${run.dropNumber}\n${body}\nspiquizzy.com`;
+  if (!run.practice && run.status === "busted") body += ` 💀 Q${run.q + 1}`;
+  body += `\nbanked ${run.practice ? 0 : (run.banked || 0)}`;
+  const title = run.practice ? "Spiquizzy practice" : `Spiquizzy #${run.dropNumber}`;
+  return `${title}\n${body}\nspiquizzy.com`;
+}
+
+function startPractice() {
+  if (!run?.practice) officialHold = run;
+  run = {
+    practice: true,
+    date: londonToday(),
+    dropNumber: 0,
+    status: "in_progress",
+    q: 0,
+    pots: freshPots(pack?.startCoins || START_COINS),
+    selected: null,
+    history: [pack?.startCoins || START_COINS],
+    undo: [],
+    banked: 0,
+    servedAt: Date.now(),
+    phase: "question",
+  };
+  show("play");
+  renderQuestion();
+}
+
+function endPractice() {
+  run = officialHold && !officialHold.practice ? officialHold : null;
+  officialHold = null;
+  show("home");
 }
 
 async function share() {
@@ -1576,13 +1821,16 @@ async function paintLeague(which) {
   const foot = document.querySelector("#league-foot");
   const needsName = Boolean(session?.access_token && profile && !profile.username);
   setLeagueFoot(foot, needsName);
-  if (SHOT === "rank") {
-    if (you) you.textContent = "You: #123 of 4,567";
+  if (SHOT === "rank" || SHOT === "league") {
+    if (you) you.hidden = true;
     if (guest) guest.hidden = true;
     paintLeagueRows([]);
     const empty = document.querySelector("#league-empty");
-    if (empty) empty.hidden = true;
-    setLeagueFoot(foot, false);
+    if (empty) {
+      empty.hidden = false;
+      empty.textContent = COPY.leagueEmpty;
+    }
+    if (foot) foot.textContent = "";
     return;
   }
   let board = null;
@@ -1596,17 +1844,37 @@ async function paintLeague(which) {
   const rows = Array.isArray(board?.rows) ? board.rows : [];
   paintLeagueRows(rows);
   const empty = document.querySelector("#league-empty");
-  if (empty) empty.hidden = !(board && rows.length === 0);
+  if (empty) {
+    empty.hidden = !(board && rows.length === 0);
+    empty.textContent = session?.access_token ? COPY.leagueEmptySigned : COPY.leagueEmpty;
+  }
   const missingName = Boolean(session?.access_token && (board?.you?.needsUsername || (profile && !profile.username)));
   setLeagueFoot(foot, missingName);
   if (!session?.access_token) {
+    if (guest) guest.hidden = true;
+    if (foot) foot.textContent = "";
+    if (!board) {
+      if (empty) empty.hidden = true;
+      if (you) {
+        you.hidden = false;
+        you.classList.remove("is-link");
+        you.replaceChildren(document.createTextNode(COPY.boardUnavailable));
+      }
+      return;
+    }
+    const noRows = rows.length === 0;
+    if (empty) {
+      empty.hidden = !noRows;
+      empty.textContent = COPY.leagueEmpty;
+    }
     if (you) {
       you.classList.remove("is-link");
-      you.replaceChildren(document.createTextNode("You’re unranked."));
+      you.hidden = noRows;
+      if (!noRows) you.replaceChildren(document.createTextNode(COPY.leagueGuest));
     }
-    if (guest) guest.hidden = false;
     return;
   }
+  if (you) you.hidden = false;
   if (guest) guest.hidden = true;
   if (profile?.opted_out_of_boards === true) {
     if (you) {
@@ -1649,12 +1917,49 @@ function showPickUsername(you) {
   you.append(link);
 }
 
+function statGrid(stats, id) {
+  const grid = el("div", "stat-grid");
+  if (id) grid.id = id;
+  for (const [value, label, hint] of [
+    [stats.daysPlayed, COPY.daysPlayed, ""],
+    [stats.streak, COPY.streak, COPY.streakHint],
+    [stats.bestBanked, COPY.bestBanked, ""],
+  ]) {
+    const cell = el("p");
+    cell.append(el("strong", null, String(value)), el("span", null, label));
+    if (hint) cell.append(el("small", null, hint));
+    grid.append(cell);
+  }
+  return grid;
+}
+
+function paintSpark(stats) {
+  const spark = document.querySelector("#stat-spark");
+  if (!spark) return;
+  spark.replaceChildren();
+  if (!stats.spark.length) {
+    spark.hidden = true;
+    return;
+  }
+  spark.hidden = false;
+  const peak = Math.max(100, ...stats.spark.map((day) => day.banked));
+  stats.spark.forEach((day) => {
+    const bar = el("i");
+    const height = day.banked <= 0 ? 8 : Math.max(8, Math.round((day.banked / peak) * 100));
+    bar.style.height = `${height}%`;
+    bar.title = `${day.date}: ${day.banked}`;
+    spark.append(bar);
+  });
+}
+
 function paintBank() {
   const signedIn = Boolean(session?.access_token);
   document.querySelector("#bank-guest").hidden = signedIn;
   document.querySelector("#bank-signed").hidden = !signedIn;
   document.querySelector("#sign-out-bank").hidden = !signedIn;
   document.querySelector("#bank-total").textContent = String(bank.balance);
+  const slot = document.querySelector("#bank-stats");
+  if (slot) slot.replaceWith(statGrid(playStats(bank.days, londonToday()), "bank-stats"));
   const list = document.querySelector("#bank-history");
   list.replaceChildren();
   bank.days.slice().reverse().forEach((day) => {
@@ -1665,9 +1970,12 @@ function paintBank() {
 }
 
 function paintProfile() {
-  const played = bank.days.length;
-  const best = bank.days.reduce((max, day) => Math.max(max, day.banked), 0);
-  document.querySelector("#profile-copy").textContent = `Played ${played}. Bank ${bank.balance}. Best day ${best} banked. Your global rank is on the league board once you have a username.`;
+  const stats = playStats(bank.days, londonToday());
+  const slot = document.querySelector("#stat-grid");
+  if (slot) slot.replaceWith(statGrid(stats, "stat-grid"));
+  paintSpark(stats);
+  const note = document.querySelector("#stat-note");
+  if (note) note.textContent = stats.daysPlayed ? COPY.statsFrom : COPY.statsEmpty;
 }
 
 function paintConsentChoice() {
@@ -1724,6 +2032,8 @@ function paintSettings() {
   const signedIn = Boolean(session?.access_token);
   if (signOutBtn) signOutBtn.hidden = !signedIn;
   if (!input || !note) return;
+  const saveBtn = document.querySelector("#save-username");
+  if (saveBtn) saveBtn.hidden = !signedIn;
   if (!signedIn) {
     input.disabled = true;
     input.value = "";
@@ -1968,12 +2278,19 @@ function onClick(event) {
   }
   const chip = event.target.closest(".amount-bar button");
   if (chip && run && run.phase !== "reveal" && !chip.disabled) {
-    const door = run.selected ?? 0;
+    if (run.selected == null) return;
+    const door = run.selected;
     let next = run.pots;
     if (chip.dataset.add) next = addAmount(run.pots, door, Number(chip.dataset.add));
     else if (chip.dataset.all != null) next = allIn(run.pots, door);
     else next = addRest(run.pots, door);
     applyPots(next);
+    return;
+  }
+  if (event.target.id === "bank-nudge-no") {
+    markNudge();
+    const nudge = document.querySelector("#bank-nudge");
+    if (nudge) nudge.hidden = true;
     return;
   }
   if (event.target.id === "prompt-later") {
@@ -2034,6 +2351,7 @@ function onClick(event) {
       localStorage.removeItem(RUN_KEY);
       localStorage.removeItem(BANK_KEY);
       localStorage.removeItem(SET_KEY);
+      localStorage.removeItem(BANK_NUDGE_KEY);
       clearLocalAuth();
       location.href = "/";
     }
@@ -2079,6 +2397,18 @@ function onClick(event) {
   if (action.type === "howto") {
     event.preventDefault();
     openHow(0);
+    return;
+  }
+  if (action.type === "practice") {
+    event.preventDefault();
+    const sheet = document.querySelector("#howto");
+    if (sheet) sheet.hidden = true;
+    startPractice();
+    return;
+  }
+  if (run?.practice && action.type === "leave") {
+    event.preventDefault();
+    endPractice();
     return;
   }
   if (action.type === "leave") {
@@ -2178,6 +2508,31 @@ function applyShot() {
     phase: "question",
   };
   if (SHOT === "howto") { show("home"); openHow(0); return; }
+  if (SHOT === "howto2") { show("home"); openHow(1); return; }
+  if (SHOT === "howto3") { show("home"); openHow(2); return; }
+  if (SHOT === "archive") { show("archive"); return; }
+  if (SHOT === "plus") { show("plus"); return; }
+  if (SHOT === "stats") { bank = loadBank(); show("profile"); return; }
+  if (SHOT === "picked") {
+    run.q = 0;
+    run.selected = 0;
+    run.pots = { tray: 30, doors: [40, 0, 30, 0] };
+    run.history = [100];
+    show("play");
+    renderQuestion();
+    return;
+  }
+  if (SHOT === "bust" || SHOT === "nudge") {
+    run.status = "busted";
+    run.banked = 0;
+    run.q = 2;
+    run.history = [100, 80, 40, 0];
+    run.reveal = { funFact: "Camels store fat, not water, in their humps." };
+    bank.balance = 0;
+    bank.days = [];
+    showResults();
+    return;
+  }
   if (SHOT === "username") { show("home"); openUsername(); return; }
   if (SHOT === "rank") { show("league"); return; }
   if (SHOT === "league") { show("league"); return; }
