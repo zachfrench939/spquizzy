@@ -3,15 +3,17 @@ import { SUPABASE_KEY, SUPABASE_URL } from "../config.js";
 /** User-facing auth copy. docs/signup-WORDING.md quotes these strings. */
 export const AUTH_COPY = {
   inboxHeading: "Check your inbox",
-  inboxSent: (email) => `We’ve sent a verification email to ${email}.`,
-  inboxHint: "Click the link in that email to verify your address. Check your spam or junk folder if it doesn’t arrive.",
+  inboxNew: (email) => `If this is a new email address, we’ve sent a verification link to ${email}. Click it to finish creating your account. Already have an account? Sign in instead.`,
+  inboxMagic: (email) => `We’ve sent a sign-in link to ${email}.`,
+  inboxHint: "Check your spam or junk folder if it doesn’t arrive.",
+  inboxMagicHint: "Click the link in that email to sign in. Check your spam or junk folder if it doesn’t arrive.",
   resend: "Resend email",
   resendWait: (seconds) => `Resend email in ${seconds}s`,
   resent: "Verification email sent again.",
-  back: "Back to sign in",
+  inboxSignIn: "Sign in",
   different: "Use a different email",
   remember: "Keep me logged in",
-  rememberHint: "Untick this on a shared device. You’ll be signed out when the browser closes.",
+  rememberHint: "Untick this on a shared device. You’ll be signed out when you close this tab.",
   signInTitle: "Keep your bank",
   signUpTitle: "Create an account",
   signInSubmit: "Sign in",
@@ -20,7 +22,6 @@ export const AUTH_COPY = {
   needEmail: "Enter an email address.",
   weakPassword: "Use at least 8 characters for the password.",
   invalidLogin: "That email or password doesn’t match. Try again.",
-  alreadyRegistered: "An account with that email already exists. Sign in instead.",
   unconfirmed: "That email still needs verifying. Use Resend email if the link didn’t arrive.",
   resendError: "We couldn’t resend the verification email. Wait a moment and try again.",
   resendRate: "Too many emails just now. Wait a minute, then try Resend email.",
@@ -31,9 +32,68 @@ export const AUTH_COPY = {
 
 export const MIN_PASSWORD_LENGTH = 8;
 export const RESEND_COOLDOWN_MS = 60_000;
+/** Refresh this long before the access token expires. */
+export const REFRESH_SKEW_MS = 60_000;
 
 export function passwordTooShort(password) {
   return String(password ?? "").length < MIN_PASSWORD_LENGTH;
+}
+
+export function sessionNeedsRefresh(session, now = Date.now(), skewMs = REFRESH_SKEW_MS) {
+  if (!session?.refresh_token) return false;
+  const at = Number(session.expires_at);
+  if (!Number.isFinite(at) || at <= 0) return false;
+  return at * 1000 - now <= skewMs;
+}
+
+export function refreshDelayMs(session, now = Date.now(), skewMs = REFRESH_SKEW_MS) {
+  const at = Number(session?.expires_at);
+  if (!Number.isFinite(at) || at <= 0) return null;
+  return Math.max(0, at * 1000 - now - skewMs);
+}
+
+export function isInvalidRefresh(error) {
+  const status = Number(error?.status || 0);
+  const code = String(error?.code || "").toLowerCase();
+  const text = String(error?.message || "").toLowerCase();
+  if (status === 401 || status === 403) return true;
+  if (code.includes("invalid_grant") || code.includes("refresh_token") || code.includes("session_not_found") || code.includes("bad_jwt")) return true;
+  if (text.includes("invalid refresh") || text.includes("refresh token not found") || text.includes("invalid refresh token")) return true;
+  if (status === 400 && (code.includes("invalid") || text.includes("refresh") || text.includes("grant"))) return true;
+  return false;
+}
+
+export function isAlreadyRegistered(error) {
+  const code = String(error?.code || "").toLowerCase();
+  const text = String(error?.message || "").toLowerCase();
+  return code === "user_already_exists"
+    || code === "email_exists"
+    || text.includes("already registered")
+    || text.includes("already been registered");
+}
+
+/**
+ * Refresh a stored session. Invalid tokens clear it. A network failure keeps it.
+ * `save` and `clear` are the storage adapter writes.
+ */
+export async function refreshStoredSession(stored, { refresh, save, clear }) {
+  try {
+    const next = sessionFromAuth(await refresh(stored?.refresh_token));
+    if (!next?.access_token) {
+      const error = new Error("No session");
+      error.status = 401;
+      throw error;
+    }
+    if (!next.refresh_token && stored?.refresh_token) next.refresh_token = stored.refresh_token;
+    save(next);
+    return { action: "save", session: next };
+  } catch (error) {
+    if (isInvalidRefresh(error)) {
+      clear();
+      return { action: "clear", error };
+    }
+    return { action: "keep", error };
+  }
 }
 
 export function resendCooldownLeft(startedAt, now = Date.now()) {
@@ -87,14 +147,6 @@ export function authErrorMessage(kind, error) {
   if (code === "invalid_credentials" || lower.includes("invalid login") || lower.includes("invalid email or password")) {
     return AUTH_COPY.invalidLogin;
   }
-  if (
-    code === "user_already_exists"
-    || code === "email_exists"
-    || lower.includes("already registered")
-    || lower.includes("already been registered")
-  ) {
-    return AUTH_COPY.alreadyRegistered;
-  }
   if (code === "weak_password" || lower.includes("weak password") || /at least \d+/.test(lower)) {
     return AUTH_COPY.weakPassword;
   }
@@ -143,6 +195,11 @@ export function signUp({ email, password, options } = {}) {
 /** Same call as supabase.auth.signInWithPassword({ email, password }). */
 export function signInWithPassword({ email, password } = {}) {
   return postAuth("token?grant_type=password", { email, password });
+}
+
+/** POST /auth/v1/token?grant_type=refresh_token */
+export function refreshAccessToken(refreshToken) {
+  return postAuth("token?grant_type=refresh_token", { refresh_token: refreshToken });
 }
 
 /** Same call as supabase.auth.resend({ type: 'signup', email, options }). */

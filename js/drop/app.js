@@ -1,7 +1,7 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
-import { AUTH_COPY, MIN_PASSWORD_LENGTH, authErrorMessage, isUnconfirmed, passwordTooShort, resend, resendCooldownLeft, sessionFromAuth, signInWithPassword, signUp, signupScreenState } from "./auth.js";
+import { AUTH_COPY, MIN_PASSWORD_LENGTH, REFRESH_SKEW_MS, authErrorMessage, isAlreadyRegistered, isUnconfirmed, passwordTooShort, refreshAccessToken, refreshDelayMs, refreshStoredSession, resend, resendCooldownLeft, sessionFromAuth, sessionNeedsRefresh, signInWithPassword, signUp, signupScreenState } from "./auth.js";
 import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
+import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import {
@@ -27,6 +27,7 @@ const SIGNED_OUT_KEY = "spquizzy.drop.just-signed-out";
 const NAME_LATER_KEY = "spquizzy.drop.username-later";
 const GUEST_KEY = "spquizzy.drop.guest";
 const PENDING_EMAIL_KEY = "spquizzy.drop.pending-email";
+const PENDING_KIND_KEY = "spquizzy.drop.pending-kind";
 const RESEND_AT_KEY = "spquizzy.drop.resend-at";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
 const AGE_NEED = "Tick the box to confirm you are 13 or over. Under 13s can play as a guest on this device.";
@@ -83,6 +84,8 @@ let profile = null;
 let authMode = "signin";
 let resendTimer = 0;
 let resendBusy = false;
+let refreshTimer = 0;
+let refreshInFlight = null;
 
 function londonToday(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -517,7 +520,7 @@ function signinView() {
       <p id="inbox-hint">${AUTH_COPY.inboxHint}</p>
       <p id="inbox-status" role="status" aria-live="polite"></p>
       <button class="btn-primary" type="button" id="inbox-resend">${AUTH_COPY.resend}</button>
-      <button class="btn-ghost" type="button" id="inbox-back">${AUTH_COPY.back}</button>
+      <button class="btn-ghost" type="button" id="inbox-back">${AUTH_COPY.inboxSignIn}</button>
       <button class="btn-ghost" type="button" id="inbox-different">${AUTH_COPY.different}</button>
     </div>
     <div id="signin-signed" hidden><h1>You’re signed in.</h1><a class="btn-primary" href="/">Back to today’s drop</a><button class="btn-keep" type="button" id="sign-out-page">Sign out</button></div>`;
@@ -783,7 +786,7 @@ function trapDialog(event) {
 function consentBar() {
   const bar = el("aside", "consent");
   bar.id = "consent";
-  bar.innerHTML = `<p>We only count page views if you Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
+  bar.innerHTML = `<p>We only count page views if you Accept. Under 13? Ask a parent or carer before you Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
   return bar;
 }
 
@@ -1771,10 +1774,19 @@ function readPendingEmail() {
   try { return sessionStorage.getItem(PENDING_EMAIL_KEY) || ""; } catch { return ""; }
 }
 
-function writePendingEmail(email) {
+function readPendingKind() {
+  try { return sessionStorage.getItem(PENDING_KIND_KEY) === "magic" ? "magic" : "signup"; } catch { return "signup"; }
+}
+
+function writePendingEmail(email, kind = "signup") {
   try {
-    if (email) sessionStorage.setItem(PENDING_EMAIL_KEY, email);
-    else sessionStorage.removeItem(PENDING_EMAIL_KEY);
+    if (email) {
+      sessionStorage.setItem(PENDING_EMAIL_KEY, email);
+      sessionStorage.setItem(PENDING_KIND_KEY, kind === "magic" ? "magic" : "signup");
+    } else {
+      sessionStorage.removeItem(PENDING_EMAIL_KEY);
+      sessionStorage.removeItem(PENDING_KIND_KEY);
+    }
   } catch { /* private mode */ }
 }
 
@@ -1840,6 +1852,59 @@ function acceptSession(next) {
   const headerSign = document.querySelector("#header-signin");
   if (headerSign) headerSign.hidden = true;
   paintSignin();
+  scheduleRefresh(next);
+}
+
+function syncSignedOut() {
+  session = null;
+  const headerSign = document.querySelector("#header-signin");
+  if (headerSign) headerSign.hidden = false;
+  paintSignin();
+}
+
+function scheduleRefresh(current) {
+  if (refreshTimer) window.clearTimeout(refreshTimer);
+  refreshTimer = 0;
+  const delay = refreshDelayMs(current);
+  if (delay == null || !current?.refresh_token) return;
+  refreshTimer = window.setTimeout(() => {
+    void maintainSession();
+  }, Math.min(delay, 2_147_000_000));
+}
+
+async function maintainSession() {
+  if (refreshInFlight) return refreshInFlight;
+  const stored = readStoredSession();
+  if (!stored?.refresh_token) {
+    session = readSession();
+    return session;
+  }
+  if (!sessionNeedsRefresh(stored, Date.now(), REFRESH_SKEW_MS)) {
+    session = readSession();
+    if (session) scheduleRefresh(session);
+    return session;
+  }
+  refreshInFlight = refreshStoredSession(stored, {
+    refresh: refreshAccessToken,
+    save: saveSession,
+    clear: clearSession,
+  }).then((outcome) => {
+    if (outcome.action === "save") {
+      session = outcome.session;
+      scheduleRefresh(session);
+      const headerSign = document.querySelector("#header-signin");
+      if (headerSign) headerSign.hidden = true;
+    } else if (outcome.action === "clear") {
+      syncSignedOut();
+    } else {
+      session = readSession();
+      if (session) scheduleRefresh(session);
+    }
+    return session;
+  }).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }
 
 function paintSignin({ focusInbox = false } = {}) {
@@ -1853,8 +1918,11 @@ function paintSignin({ focusInbox = false } = {}) {
   if (signed) signed.hidden = !signedIn;
   if (inbox) inbox.hidden = !pending;
   if (pending) {
+    const kind = readPendingKind();
     const sent = document.querySelector("#inbox-sent");
-    if (sent) sent.textContent = AUTH_COPY.inboxSent(pending);
+    if (sent) sent.textContent = kind === "magic" ? AUTH_COPY.inboxMagic(pending) : AUTH_COPY.inboxNew(pending);
+    const hint = document.querySelector("#inbox-hint");
+    if (hint) hint.textContent = kind === "magic" ? AUTH_COPY.inboxMagicHint : AUTH_COPY.inboxHint;
     const live = document.querySelector("#inbox-status");
     if (live && signInNotice && !live.textContent) live.textContent = signInNotice;
     tickResend();
@@ -1871,8 +1939,8 @@ function paintSignin({ focusInbox = false } = {}) {
   paintGoogle();
 }
 
-function showInbox(email, { status = "", armCooldown = false } = {}) {
-  writePendingEmail(email);
+function showInbox(email, { status = "", armCooldown = false, kind = "signup" } = {}) {
+  writePendingEmail(email, kind);
   if (armCooldown) writeResendAt(Date.now());
   const live = document.querySelector("#inbox-status");
   if (live) live.textContent = status;
@@ -2215,6 +2283,22 @@ async function boot() {
   document.querySelectorAll("[data-age]").forEach((box) => {
     box.addEventListener("change", paintGoogle);
   });
+  const scrollSignInButton = () => {
+    requestAnimationFrame(() => {
+      document.querySelector("#auth-submit")?.scrollIntoView({ block: "center", inline: "nearest" });
+    });
+  };
+  document.querySelector("#auth-email")?.addEventListener("focus", scrollSignInButton);
+  document.querySelector("#auth-password")?.addEventListener("focus", scrollSignInButton);
+  window.visualViewport?.addEventListener("resize", () => {
+    const id = document.activeElement?.id;
+    if (id !== "auth-password" && id !== "auth-email") return;
+    document.querySelector("#auth-submit")?.scrollIntoView({ block: "center", inline: "nearest" });
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") void maintainSession();
+  });
+  window.addEventListener("focus", () => { void maintainSession(); });
   document.querySelector("#auth-mode-in")?.addEventListener("click", () => setAuthMode("signin"));
   document.querySelector("#auth-mode-up")?.addEventListener("click", () => setAuthMode("signup"));
   document.querySelector("#inbox-back")?.addEventListener("click", () => leaveInbox("signin"));
@@ -2226,11 +2310,14 @@ async function boot() {
     resendBusy = true;
     tickResend();
     try {
-      await resend({
-        type: "signup",
-        email,
-        options: { emailRedirectTo: authRedirect() },
-      });
+      if (readPendingKind() === "magic") await sendMagicLink(email, authRedirect());
+      else {
+        await resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: authRedirect() },
+        });
+      }
       writeResendAt(Date.now());
       if (live) live.textContent = AUTH_COPY.resent;
     } catch (error) {
@@ -2275,7 +2362,7 @@ async function boot() {
           acceptSession(sessionFromAuth(result));
           return;
         }
-        showInbox(email, { armCooldown: true });
+        showInbox(email, { armCooldown: true, kind: "signup" });
         return;
       }
       const result = await signInWithPassword({ email, password });
@@ -2283,8 +2370,12 @@ async function boot() {
       if (!next) throw new Error("No session");
       acceptSession(next);
     } catch (error) {
+      if (authMode === "signup" && isAlreadyRegistered(error)) {
+        showInbox(email, { kind: "signup" });
+        return;
+      }
       if (authMode === "signin" && isUnconfirmed(error)) {
-        showInbox(email, { status: AUTH_COPY.unconfirmed });
+        showInbox(email, { status: AUTH_COPY.unconfirmed, kind: "signup" });
         return;
       }
       if (note) note.textContent = authErrorMessage(authMode === "signup" ? "signup" : "signin", error);
@@ -2311,7 +2402,7 @@ async function boot() {
     if (button) button.disabled = true;
     try {
       await sendMagicLink(email, authRedirect());
-      if (note) note.textContent = "Check your email for the sign-in link.";
+      showInbox(email, { armCooldown: true, kind: "magic" });
     } catch (error) {
       if (note) {
         note.textContent = error?.status
@@ -2335,7 +2426,9 @@ async function boot() {
     chooseRemember(rememberChecked(document.querySelector("#prompt-form")));
     try {
       await sendMagicLink(email);
-      note.textContent = "Check your inbox for the link";
+      writePendingEmail(email, "magic");
+      writeResendAt(Date.now());
+      location.assign("/sign-in/");
     } catch (error) {
       note.textContent = error?.status
         ? error.message
@@ -2352,6 +2445,7 @@ async function boot() {
     const note = document.querySelector("#set-username-note");
     await saveUsername(document.querySelector("#set-username").value, note);
   });
+  if (!SHOT) await maintainSession();
   pack = await (await fetch("/data/questions.public.json")).json();
   if (session?.access_token && !SHOT) {
     try { profile = await myProfile(session); } catch { profile = null; }

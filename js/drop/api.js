@@ -3,17 +3,23 @@ import { SESSION_KEY, authStorage } from "./auth-storage.js";
 
 const SESSION = SESSION_KEY;
 
-export function readSession() {
+export function readStoredSession() {
   try {
     const raw = authStorage.getItem(SESSION);
     if (!raw) return null;
     const session = JSON.parse(raw);
-    if (!session?.access_token) return null;
-    if (session.expires_at && session.expires_at * 1000 < Date.now()) return null;
+    if (!session?.access_token && !session?.refresh_token) return null;
     return session;
   } catch {
     return null;
   }
+}
+
+export function readSession() {
+  const session = readStoredSession();
+  if (!session?.access_token) return null;
+  if (session.expires_at && session.expires_at * 1000 < Date.now()) return null;
+  return session;
 }
 
 export function saveSession(session) {
