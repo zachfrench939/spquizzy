@@ -9,11 +9,13 @@ export const NAV_HREF = {
   signin: "/sign-in/",
   plus: "/plus/",
   settings: "/settings/",
+  archive: "/archive/",
   missing: "/404.html",
 };
 
 export function navAction(dest, { inPlay = false } = {}) {
   if (dest === "howto") return { type: "howto" };
+  if (dest === "practice") return { type: "practice" };
   if ((dest === "home" || dest === "/") && inPlay) return { type: "leave" };
   const href = NAV_HREF[dest];
   if (href) return { type: "go", href };

@@ -13,6 +13,8 @@ test("header and home buttons navigate", () => {
   assert.deepEqual(navAction("signin"), { type: "go", href: "/sign-in/" });
   assert.deepEqual(navAction("plus"), { type: "go", href: "/plus/" });
   assert.deepEqual(navAction("missing"), { type: "go", href: "/404.html" });
+  assert.deepEqual(navAction("archive"), { type: "go", href: "/archive/" });
+  assert.deepEqual(navAction("practice"), { type: "practice" });
 });
 
 test("leaving an open run asks before going home", () => {
