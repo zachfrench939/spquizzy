@@ -2,7 +2,7 @@ import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
 import { AUTH_COPY, MIN_PASSWORD_LENGTH, authErrorMessage, isUnconfirmed, passwordTooShort, resend, resendCooldownLeft, sessionFromAuth, signInWithPassword, signUp, signupScreenState } from "./auth.js";
 import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
 import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
-import { BANK_NUDGE_KEY, COPY } from "./copy.js";
+import { BANK_NUDGE_KEY, COPY, clearDropLocal } from "./copy.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import { PRACTICE, gradePractice } from "./practice.js";
@@ -2348,10 +2348,7 @@ function onClick(event) {
   }
   if (event.target.id === "clear-local") {
     if (confirm(CLEAR_LOCAL_COPY)) {
-      localStorage.removeItem(RUN_KEY);
-      localStorage.removeItem(BANK_KEY);
-      localStorage.removeItem(SET_KEY);
-      localStorage.removeItem(BANK_NUDGE_KEY);
+      clearDropLocal(localStorage);
       clearLocalAuth();
       location.href = "/";
     }

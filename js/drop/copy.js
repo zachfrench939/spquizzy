@@ -2,6 +2,18 @@
 
 export const BANK_NUDGE_KEY = "spquizzy.drop.bank-nudge";
 
+export const DROP_LOCAL_KEYS = [
+  "spquizzy.drop.run",
+  "spquizzy.drop.bank",
+  "spquizzy.drop.settings",
+  BANK_NUDGE_KEY,
+];
+
+/** Keys Clear local data removes from this device, apart from the sign-in token and dd_remember. */
+export function clearDropLocal(storage) {
+  for (const key of DROP_LOCAL_KEYS) storage.removeItem(key);
+}
+
 export const COPY = {
   pitch: "Put your coins on the answers you trust. Finish all 10 to bank what’s left.",
   ogLine: "10 questions a day. Put your coins on the answers you trust.",
@@ -12,9 +24,9 @@ export const COPY = {
   plus: "Spiquizzy Plus is coming soon.",
   archive: "The archive of past official days isn’t open yet.",
   archivePlus: "Spiquizzy Plus is coming soon.",
-  leagueEmpty: "No scores on this board yet. Finish today’s drop and sign in to be first.",
+  leagueEmpty: "No scores on this board yet. Finish today’s drop, and if you’re 13 or over, sign in to be first.",
   leagueEmptySigned: "No scores on this board yet. Finish today’s drop to be first.",
-  leagueGuest: "Sign in to appear on this week’s board.",
+  leagueGuest: "Players 13 and over can sign in to appear on this week’s board.",
   realName: "Don’t use your real name.",
   seeYou: "See you at midnight UK time.",
   safeEmpty: "Safe, no coins on it",
@@ -25,7 +37,7 @@ export const COPY = {
   allAria: "All, everything onto this answer",
   restAria: "Rest, what’s left in the tray",
   labels: "Keep the Safe and Dropped stickers on screen after you lock in.",
-  clearLocal: "Clear local data removes today’s drop, your guest bank, and your sound and motion settings from this device. It also signs you out here, and clears the note about saving your bank. It does not change your page-view choice, and it does not delete an account.",
+  clearLocal: "Clear local data removes today’s drop, your guest bank, your sound and motion settings and your keep me logged in choice from this device. It also signs you out here, and clears the note about saving your bank. It does not change your page-view choice, and it does not delete an account.",
   practiceCta: "Practice question",
   practiceTry: "Try a practice question",
   practiceTitle: "Practice complete",

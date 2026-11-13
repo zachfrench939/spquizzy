@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { BANK_NUDGE_KEY, COPY } from "../js/drop/copy.js";
+import { BANK_NUDGE_KEY, COPY, clearDropLocal } from "../js/drop/copy.js";
+import { clearLocalAuth } from "../js/drop/auth-storage.js";
 import { gradePractice, PRACTICE } from "../js/drop/practice.js";
 import { playStats } from "../js/drop/stats.js";
 import { shareTrail, shareTrailLabel } from "../js/drop/trail.js";
@@ -81,6 +82,41 @@ test("practice is graded on this device and does not describe a network call", (
   assert.equal(source.includes("fetch"), false);
   assert.equal(source.includes("guest"), false);
   assert.equal(source.includes("localStorage"), false);
+});
+
+test("clear local data removes the bank-nudge key and the keep-me-logged-in choice", () => {
+  const data = new Map();
+  const storage = {
+    getItem: (key) => (data.has(key) ? data.get(key) : null),
+    setItem: (key, value) => data.set(key, String(value)),
+    removeItem: (key) => data.delete(key),
+  };
+  storage.setItem(BANK_NUDGE_KEY, "2026-11-13");
+  storage.setItem("spquizzy.drop.run", "{}");
+  storage.setItem("spquizzy.drop.bank", "{}");
+  storage.setItem("spquizzy.drop.settings", "{}");
+  storage.setItem("dd_remember", "1");
+  storage.setItem("spquizzy.drop.session", "token");
+  clearDropLocal(storage);
+  clearLocalAuth(storage, storage);
+  assert.equal(storage.getItem(BANK_NUDGE_KEY), null);
+  assert.equal(storage.getItem("spquizzy.drop.run"), null);
+  assert.equal(storage.getItem("spquizzy.drop.bank"), null);
+  assert.equal(storage.getItem("spquizzy.drop.settings"), null);
+  assert.equal(storage.getItem("dd_remember"), null);
+  assert.equal(storage.getItem("spquizzy.drop.session"), null);
+  const cookies = readFileSync(new URL("../cookies/index.html", import.meta.url), "utf8");
+  assert.equal(cookies.includes("spquizzy.drop.bank-nudge</code> — Remembers the date we last showed the note about saving your bank, so you see it at most once a day. Stays on this device and is never sent to us. Removed by Clear local data. Needed for the site to work, so no consent is needed."), true);
+  assert.equal(cookies.includes(COPY.clearLocal), true);
+});
+
+test("the streak is only a stored count", () => {
+  const files = ["../js/drop/copy.js", "../js/drop/stats.js", "../js/drop/app.js", "../docs/round9-WORDING.md"];
+  const banned = ["lose your streak", "streak reward", "streak freeze", "streak notification"];
+  for (const file of files) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8").toLowerCase();
+    for (const phrase of banned) assert.equal(source.includes(phrase), false, `${file} ${phrase}`);
+  }
 });
 
 test("the wording doc quotes the cleared lines and the new storage key", () => {

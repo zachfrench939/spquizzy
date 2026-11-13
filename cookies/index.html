@@ -46,7 +46,7 @@
 <li><code>dd_remember</code> — Remembers whether you ticked Keep me logged in, so your choice still applies after you click an email link or sign in with Google. Stored in local storage until you use Clear local data. Strictly necessary, so no consent is needed.</li>
 <li><code>spquizzy.drop.guest</code> — a random guest id for this browser. Essential for guest play. We do receive this id when a guest plays, with the question we served.</li>
 <li><code>spquizzy.drop.events</code> — the last 200 things the game did, on this device only. It is not sent as a page view.</li>
-<li><code>spquizzy.drop.bank-nudge</code> — the UK date the note about saving your bank was shown, so it appears at most once that day. On this device only. It is not sent anywhere.</li>
+<li><code>spquizzy.drop.bank-nudge</code> — Remembers the date we last showed the note about saving your bank, so you see it at most once a day. Stays on this device and is never sent to us. Removed by Clear local data. Needed for the site to work, so no consent is needed.</li>
 </ul>
 
 <h2>This tab only</h2>
@@ -61,7 +61,7 @@
 <p>A page view is not stored as its own key on this device. After Accept we send the page path, the referring host, <code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, a screen-size bucket (mobile, tablet or desktop), and the event name. A normal visit is “view”. The message has no account id and no guest id. See <a href="/privacy/">Privacy</a> for why, and for how long those rows are kept.</p>
 
 <h2>Clear local data</h2>
-<p>Clear local data, in <a href="/settings/">Settings</a>, removes <code>spquizzy.drop.run</code>, <code>spquizzy.drop.bank</code>, <code>spquizzy.drop.settings</code>, <code>spquizzy.drop.bank-nudge</code>, <code>spquizzy.drop.session</code> (from local storage and from session storage), and <code>dd_remember</code>. It does not change <code>spquizzy.consent</code>. Use the page-view buttons in Settings for that. It does not remove the guest id, the event log, the How to play flag, the coach flag, or the tab-only keys. It does not delete an account.</p>
+<p>Clear local data removes today’s drop, your guest bank, your sound and motion settings and your keep me logged in choice from this device. It also signs you out here, and clears the note about saving your bank. It does not change your page-view choice, and it does not delete an account.</p>
 <p><a href="/privacy/">Privacy notice</a> · <a href="/terms/">Terms</a></p>
 
   </main>

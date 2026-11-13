@@ -8,7 +8,9 @@ Nothing here adds analytics, ads, a cookie, or a Supabase table.
 
 `spquizzy.drop.bank-nudge`
 
-The UK date (Europe/London, `YYYY-MM-DD`) the post-game note was shown. The note appears at most once that day. It stays on this device and is not sent. Clear local data removes it. Practice does not write it.
+> spquizzy.drop.bank-nudge — Remembers the date we last showed the note about saving your bank, so you see it at most once a day. Stays on this device and is never sent to us. Removed by Clear local data. Needed for the site to work, so no consent is needed.
+
+The value is the UK date (Europe/London, `YYYY-MM-DD`). Practice does not write it.
 
 No other new key. Practice is kept in memory for that visit only. Stats are computed from the existing guest bank (`spquizzy.drop.bank`), which already stores each finished day. They are never seeded.
 
@@ -116,11 +118,11 @@ Prices, buy buttons, and any line about skipping ads are removed.
 
 One line on a result, for a guest:
 
-> Sign in to appear on this week’s board.
+> Players 13 and over can sign in to appear on this week’s board.
 
 Empty board, guest:
 
-> No scores on this board yet. Finish today’s drop and sign in to be first.
+> No scores on this board yet. Finish today’s drop, and if you’re 13 or over, sign in to be first.
 
 Empty board, already signed in:
 
@@ -144,7 +146,7 @@ The tab is Stats and opens this view. Settings is a link on the view.
 
 > Best banked
 
-A finished drop is a day stored with status completed, including a day that banked 0. A bust or a leave counts as a day played and breaks the streak. If today is not finished yet and yesterday was, the streak still includes yesterday. The sparkline is the last ten stored days, and only those days.
+A finished drop is a day stored with status completed, including a day that banked 0. A bust or a leave counts as a day played and breaks the streak. If today is not finished yet and yesterday was, the streak still includes yesterday. The sparkline is the last ten stored days, and only those days. The streak is only that number. There is no prompt about losing it, no notification, and no reward.
 
 When nothing is stored, the three numbers are 0 and the note is:
 
@@ -176,7 +178,7 @@ The sticker switch:
 
 Clear local data:
 
-> Clear local data removes today’s drop, your guest bank, and your sound and motion settings from this device. It also signs you out here, and clears the note about saving your bank. It does not change your page-view choice, and it does not delete an account.
+> Clear local data removes today’s drop, your guest bank, your sound and motion settings and your keep me logged in choice from this device. It also signs you out here, and clears the note about saving your bank. It does not change your page-view choice, and it does not delete an account.
 
 ## Left as they were
 
