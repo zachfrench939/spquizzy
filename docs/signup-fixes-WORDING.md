@@ -52,6 +52,8 @@ The old line “An account with that email already exists. Sign in instead.” i
 
 Shown after **Email me a link instead**, and after the results-card prompt sends a link. The prompt opens this same screen on the sign-in page. It no longer uses “Check your email for the sign-in link.” or “Check your inbox for the link”.
 
+The magic-link request sends `create_user: true` to Supabase (`POST /auth/v1/otp`). That creates an account when the address is new, so the page does not use the “if there’s an account” wording.
+
 Heading:
 
 > Check your inbox
@@ -65,6 +67,16 @@ Next line:
 > Click the link in that email to sign in. Check your spam or junk folder if it doesn’t arrive.
 
 **Resend email** sends the sign-in link again. **Sign in** and **Use a different email** are the same buttons as above.
+
+---
+
+## Cookie banner
+
+Added to the existing banner, on the app and on Privacy, Cookies and Terms. The rest of the banner is unchanged.
+
+> We only count page views if you Accept. If you’re under 13, please ask a parent or carer before choosing Accept.
+
+The Cookie policy link, and Reject and Accept, stay as they were.
 
 ---
 

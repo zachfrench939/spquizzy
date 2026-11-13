@@ -786,7 +786,7 @@ function trapDialog(event) {
 function consentBar() {
   const bar = el("aside", "consent");
   bar.id = "consent";
-  bar.innerHTML = `<p>We only count page views if you Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
+  bar.innerHTML = `<p>We only count page views if you Accept. If you’re under 13, please ask a parent or carer before choosing Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
   return bar;
 }
 
@@ -2283,13 +2283,16 @@ async function boot() {
   document.querySelectorAll("[data-age]").forEach((box) => {
     box.addEventListener("change", paintGoogle);
   });
-  document.querySelector("#auth-password")?.addEventListener("focus", () => {
+  const scrollSignInButton = () => {
     requestAnimationFrame(() => {
       document.querySelector("#auth-submit")?.scrollIntoView({ block: "center", inline: "nearest" });
     });
-  });
+  };
+  document.querySelector("#auth-email")?.addEventListener("focus", scrollSignInButton);
+  document.querySelector("#auth-password")?.addEventListener("focus", scrollSignInButton);
   window.visualViewport?.addEventListener("resize", () => {
-    if (document.activeElement?.id !== "auth-password") return;
+    const id = document.activeElement?.id;
+    if (id !== "auth-password" && id !== "auth-email") return;
     document.querySelector("#auth-submit")?.scrollIntoView({ block: "center", inline: "nearest" });
   });
   document.addEventListener("visibilitychange", () => {
