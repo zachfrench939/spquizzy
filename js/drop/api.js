@@ -88,6 +88,10 @@ export function setBoardOptOut(hide, session) {
   return rpc("dd_set_board_opt_out", { p_hide: hide }, session);
 }
 
+export function confirmAge(session) {
+  return rpc("dd_confirm_age", {}, session);
+}
+
 export function leaderboard(period, session) {
   return rpc("dd_leaderboard", { p_period: period }, session);
 }
