@@ -11,21 +11,48 @@ export const AGE_COPY = {
   saveError: "That didn’t save. Try again, or sign out and play as a guest.",
 };
 
-export const AGE_GATE_KEY = "spquizzy.drop.needs-age-gate";
-export const AGE_TICKED_KEY = "spquizzy.drop.age-ticked";
+/** Stored on the sign-up user so the first verified sign-in can stamp age_confirmed_at. */
+export const AGE_META_KEY = "age_13_plus";
 
 /** The 13+ tick is only for creating an account, not for a returning sign-in. */
 export function showAgeTick(mode) {
   return mode === "signup";
 }
 
+/** Sent as sign-up user metadata when the required tick is on. */
+export function signupAgeMetadata() {
+  return { [AGE_META_KEY]: true };
+}
+
+export function decodeJwtPayload(token) {
+  try {
+    const part = String(token || "").split(".")[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function metaSaysYes(meta) {
+  if (!meta || typeof meta !== "object") return false;
+  const value = meta[AGE_META_KEY];
+  return value === true || value === "true";
+}
+
+/** True when this sign-up recorded the required 13+ tick. */
+export function claimsAgeTick(session) {
+  if (metaSaysYes(session?.user?.user_metadata)) return true;
+  return metaSaysYes(decodeJwtPayload(session?.access_token)?.user_metadata);
+}
+
 /**
- * Google and magic-link arrivals wait on the gate when the profile has the
- * new column and it is still empty. A missing column means the migration
- * is not applied yet, so the app does not block.
+ * Any signed-in session with an empty age_confirmed_at waits on the gate.
+ * A missing column means the migration is not applied yet, so the app does not block.
  */
-export function needsAgeGate(profile, pending) {
-  if (!pending) return false;
+export function needsAgeGate(profile) {
   if (!profile || !Object.prototype.hasOwnProperty.call(profile, "age_confirmed_at")) return false;
   return profile.age_confirmed_at == null;
 }

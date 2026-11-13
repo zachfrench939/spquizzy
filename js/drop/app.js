@@ -1,8 +1,8 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
 import { AUTH_COPY, MIN_PASSWORD_LENGTH, REFRESH_SKEW_MS, authErrorMessage, isAlreadyRegistered, isUnconfirmed, passwordTooShort, refreshAccessToken, refreshDelayMs, refreshStoredSession, resend, resendCooldownLeft, sessionFromAuth, sessionNeedsRefresh, signInWithPassword, signUp, signupScreenState } from "./auth.js";
 import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
-import { AGE_COPY, AGE_GATE_KEY, AGE_TICKED_KEY, needsAgeGate, showAgeTick } from "./age.js";
-import { captureHashSession, clearSession, confirmAge, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
+import { AGE_COPY, claimsAgeTick, needsAgeGate, showAgeTick, signupAgeMetadata } from "./age.js";
+import { captureHashSession, clearSession, confirmAge, deleteUnconfirmedAccount, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import {
@@ -799,38 +799,13 @@ function ageGate() {
   back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
     <h2 id="age-gate-title" tabindex="-1">${AGE_COPY.gateTitle}</h2>
     <p>${AGE_COPY.gateBody}</p>
-    <label class="age-check" for="age-gate-box"><input id="age-gate-box" type="checkbox"> <span>${AGE_COPY.tick}</span></label>
     <p id="age-gate-note"></p>
-    <button class="btn-primary" type="button" id="age-gate-yes">${AGE_COPY.confirm}</button>
-    <button class="btn-ghost" type="button" id="age-gate-no">${AGE_COPY.decline}</button>
+    <div class="age-gate-actions" role="group" aria-label="Age confirmation">
+      <button class="age-choice" type="button" id="age-gate-yes">${AGE_COPY.confirm}</button>
+      <button class="age-choice" type="button" id="age-gate-no">${AGE_COPY.decline}</button>
+    </div>
   </div>`;
   return back;
-}
-
-function markAgeGate() {
-  try { localStorage.setItem(AGE_GATE_KEY, "1"); } catch { /* private mode */ }
-}
-
-function clearAgeGate() {
-  try { localStorage.removeItem(AGE_GATE_KEY); } catch { /* private mode */ }
-}
-
-function ageGatePending() {
-  try { return localStorage.getItem(AGE_GATE_KEY) === "1"; } catch { return false; }
-}
-
-function markAgeTicked() {
-  try { sessionStorage.setItem(AGE_TICKED_KEY, "1"); } catch { /* private mode */ }
-}
-
-function takeAgeTicked() {
-  try {
-    const on = sessionStorage.getItem(AGE_TICKED_KEY) === "1";
-    sessionStorage.removeItem(AGE_TICKED_KEY);
-    return on;
-  } catch {
-    return false;
-  }
 }
 
 function openAgeGate() {
@@ -849,12 +824,15 @@ function closeAgeGate() {
 async function stampAge() {
   const saved = await confirmAge(session);
   profile = { ...(profile || {}), ...saved };
-  clearAgeGate();
   closeAgeGate();
 }
 
-function declineAge() {
-  clearAgeGate();
+async function declineAge() {
+  try {
+    await deleteUnconfirmedAccount(session);
+  } catch {
+    /* An existing account, or a function that is not applied yet, still signs out. */
+  }
   try { sessionStorage.setItem(AGE_DECLINE_KEY, "1"); } catch { /* private mode */ }
   signOut();
 }
@@ -2162,19 +2140,12 @@ function onClick(event) {
   const google = event.target.closest("a.btn-google");
   if (google) {
     const root = google.closest("#signin-guest, #signin-prompt");
-    markAgeGate();
     chooseRemember(rememberChecked(root));
     google.href = oauthUrl("google");
     return;
   }
   if (event.target.id === "age-gate-yes") {
-    const box = document.querySelector("#age-gate-box");
     const note = document.querySelector("#age-gate-note");
-    if (!box?.checked) {
-      if (note) note.textContent = AGE_NEED;
-      box?.focus();
-      return;
-    }
     stampAge().catch(() => {
       if (note) note.textContent = AGE_COPY.saveError;
     });
@@ -2358,6 +2329,7 @@ function applyShot() {
     return;
   }
   if (SHOT === "404") { show("missing"); return; }
+  if (SHOT === "age") { show("home"); openAgeGate(); return; }
   show("play");
   renderQuestion();
   if (SHOT === "leave") document.querySelector("#leave-modal").hidden = false;
@@ -2457,21 +2429,19 @@ async function boot() {
         const result = await signUp({
           email,
           password,
-          options: { emailRedirectTo: authRedirect() },
+          options: { emailRedirectTo: authRedirect(), data: signupAgeMetadata() },
         });
         if (signupScreenState(result) === "signed-in") {
           acceptSession(sessionFromAuth(result));
           try { await stampAge(); } catch { /* the age column is not applied yet */ }
           return;
         }
-        markAgeTicked();
         showInbox(email, { armCooldown: true, kind: "signup" });
         return;
       }
       const result = await signInWithPassword({ email, password });
       const next = sessionFromAuth(result);
       if (!next) throw new Error("No session");
-      clearAgeGate();
       acceptSession(next);
     } catch (error) {
       if (authMode === "signup" && isAlreadyRegistered(error)) {
@@ -2496,7 +2466,6 @@ async function boot() {
       return;
     }
     chooseRemember(rememberChecked(document.querySelector("#auth-form")));
-    markAgeGate();
     const button = document.querySelector("#auth-magic");
     if (button) button.disabled = true;
     try {
@@ -2517,7 +2486,6 @@ async function boot() {
     const note = document.querySelector("#prompt-note");
     const email = document.querySelector("#prompt-email").value.trim();
     chooseRemember(rememberChecked(document.querySelector("#prompt-form")));
-    markAgeGate();
     try {
       await sendMagicLink(email);
       writePendingEmail(email, "magic");
@@ -2544,10 +2512,10 @@ async function boot() {
   if (session?.access_token && !SHOT) {
     try { profile = await myProfile(session); } catch { profile = null; }
   }
-  if (session?.access_token && takeAgeTicked()) {
-    try { await stampAge(); } catch { markAgeGate(); }
+  if (session?.access_token && needsAgeGate(profile) && claimsAgeTick(session)) {
+    try { await stampAge(); } catch { /* stay on the gate */ }
   }
-  const gating = Boolean(session?.access_token) && needsAgeGate(profile, ageGatePending());
+  const gating = Boolean(session?.access_token) && needsAgeGate(profile);
   if (SHOT) {
     applyShot();
     return;

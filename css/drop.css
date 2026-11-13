@@ -814,7 +814,15 @@ html.has-consent .prompt-card{max-height:calc(100dvh - 120px);}
 #age-gate .prompt-card{display:grid;gap:12px;text-align:left;}
 #age-gate h2{font-family:var(--title);font-weight:800;font-size:28px;letter-spacing:-0.04em;margin:0;}
 #age-gate p{font-weight:700;font-size:16px;line-height:1.4;margin:0;}
-#age-gate .btn-primary,#age-gate .btn-ghost{width:100%;}
+#age-gate .age-gate-actions{display:grid;gap:12px;}
+#age-gate .age-choice{
+  width:100%;min-height:52px;height:auto;padding:12px 14px;
+  background:var(--white);color:var(--ink);
+  border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
+  font-family:var(--body);font-weight:700;font-size:16px;line-height:1.25;
+  text-transform:none;letter-spacing:0;text-decoration:none;
+}
+#age-gate .age-choice:focus-visible{outline:3px solid var(--cheese);outline-offset:3px;}
 #auth-magic{width:100%;text-align:center;}
 #signin-inbox{
   display:grid;gap:12px;max-width:360px;margin:8px auto 0;text-align:left;

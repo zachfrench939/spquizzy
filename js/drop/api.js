@@ -92,6 +92,10 @@ export function confirmAge(session) {
   return rpc("dd_confirm_age", {}, session);
 }
 
+export function deleteUnconfirmedAccount(session) {
+  return rpc("dd_delete_my_unconfirmed_account", {}, session);
+}
+
 export function leaderboard(period, session) {
   return rpc("dd_leaderboard", { p_period: period }, session);
 }
