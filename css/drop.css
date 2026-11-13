@@ -835,15 +835,15 @@ html.has-consent .prompt-card{max-height:calc(100dvh - 120px);}
   margin:0;padding:6px 8px;min-height:0;
   background:var(--cream);color:var(--ink);
   border:0;border-top:2px solid var(--ink);box-shadow:none;
-  font-weight:700;font-size:14px;line-height:1.2;
+  font-weight:700;font-size:13px;line-height:1.2;
 }
-.consent p{margin:0;font-weight:700;font-size:14px;line-height:1.2;flex:1 1 auto;min-width:0;}
-.consent a{display:inline;min-height:0;font-weight:700;font-size:14px;color:var(--ink);}
-.consent .pair{display:flex;gap:6px;flex:0 0 auto;}
+.consent p{margin:0;font-weight:700;font-size:13px;line-height:1.2;flex:1 1 auto;min-width:0;}
+.consent a{display:inline;min-height:0;font-weight:700;font-size:13px;color:var(--ink);}
+.consent .pair{display:flex;gap:6px;flex:0 0 auto;align-items:center;}
 .consent .pair button{
-  flex:0 0 76px;width:76px;min-width:48px;height:48px;min-height:48px;padding:0 8px;
+  flex:0 0 72px;width:72px;min-width:72px;height:44px;min-height:44px;padding:0 6px;
   border:2px solid var(--ink);background:var(--white);color:var(--ink);
-  font-family:var(--body);font-weight:700;font-size:14px;line-height:1;
+  font-family:var(--body);font-weight:700;font-size:13px;line-height:1;
   text-transform:none;box-shadow:none;letter-spacing:0;
 }
 html.has-consent{scroll-padding-bottom:96px;}
@@ -1023,30 +1023,38 @@ button,a,.tab,.amount-bar button,.btn-minus{touch-action:manipulation;-webkit-ta
   .board{gap:8px;padding-top:8px;}
   .play-stage{padding-top:4px;}
 }
-/* Short phones: the cookie strip is 64px. Fit the sign-in controls above it
-   on first paint by tightening the card, not by adding scroll room. */
+/* Short phones: keep the cookie strip near 64–80px and the sign-in controls
+   above it on first paint, by tightening the card rather than adding scroll room. */
 @media (max-width:899px) and (max-height:720px){
-  #view-signin.simple-center{padding:0 12px 8px;}
-  #view-signin .logo{width:36px;height:36px;}
-  #view-signin h1{font-size:24px;line-height:1.05;margin:0;}
-  #view-signin .signin-pitch{font-size:15px;line-height:1.2;margin:2px 0 4px;}
-  #view-signin .auth-switch{gap:6px;margin:0 auto 4px;}
+  .app-header{min-height:48px;padding-top:4px;padding-bottom:4px;}
+  #view-signin.simple-center{padding:0 12px 4px;}
+  #view-signin .logo{width:24px;height:24px;}
+  #view-signin h1{font-size:22px;line-height:1;margin:0;}
+  #view-signin .signin-pitch{font-size:14px;line-height:1.15;margin:0;}
+  #view-signin .auth-switch{gap:6px;margin:0 auto 2px;}
   #view-signin .auth-switch button{min-height:40px;padding:2px 6px;font-size:15px;}
-  #view-signin .signin-form{gap:2px;}
-  #view-signin .age-rule{font-size:14px;line-height:1.2;}
-  #view-signin .age-check{min-height:36px;gap:8px;padding:0;font-size:15px;line-height:1.2;}
-  #view-signin .signin-form label{font-size:14px;line-height:1.15;}
-  #view-signin .signin-form input{height:40px;}
-  #view-signin .remember-hint{font-size:14px;line-height:1.2;}
+  #view-signin .signin-form{gap:1px;}
+  #view-signin .age-rule{font-size:13px;line-height:1.15;}
+  #view-signin .signin-form label.age-check{min-height:44px;gap:8px;padding:8px 0;font-size:15px;line-height:1.2;}
+  #view-signin .signin-form label{font-size:13px;line-height:1.1;}
+  #view-signin .signin-form input{height:36px;}
+  #view-signin .remember-hint{font-size:13px;line-height:1.15;}
   #view-signin .btn-primary{height:44px;font-size:16px;}
-  #view-signin .btn-google{height:44px;min-height:44px;margin-top:4px;}
-  #view-signin #auth-magic{min-height:40px;padding:4px 8px;}
+  #view-signin .btn-google{height:44px;min-height:44px;margin-top:0;}
+  #view-signin #auth-magic{min-height:44px;padding:4px 8px;font-size:15px;}
 }
 @media (max-width:899px) and (min-height:721px) and (max-height:900px){
-  html.has-consent #view-signin .signin-form{gap:6px;}
-  html.has-consent #view-signin .btn-primary{height:52px;}
-  html.has-consent #view-signin .signin-pitch{margin-bottom:4px;}
+  html.has-consent #view-signin .logo{width:40px;height:40px;}
+  html.has-consent #view-signin h1{font-size:26px;line-height:1.05;margin:2px 0 0;}
+  html.has-consent #view-signin .signin-pitch{font-size:15px;line-height:1.25;margin:0 0 4px;}
   html.has-consent #view-signin .auth-switch{margin-bottom:4px;}
+  html.has-consent #view-signin .auth-switch button{min-height:44px;}
+  html.has-consent #view-signin .signin-form{gap:4px;}
+  html.has-consent #view-signin .age-rule{font-size:15px;line-height:1.25;}
+  html.has-consent #view-signin .signin-form label.age-check{min-height:44px;}
+  html.has-consent #view-signin .btn-primary{height:48px;}
+  html.has-consent #view-signin .btn-google{height:44px;min-height:44px;margin-top:4px;}
+  html.has-consent #view-signin #auth-magic{min-height:44px;}
 }
 @media (min-width:900px){
   .tabbar{display:none;}
@@ -1059,9 +1067,13 @@ button,a,.tab,.amount-bar button,.btn-minus{touch-action:manipulation;-webkit-ta
   html.has-consent #view-signin .signin-form{gap:4px;}
 }
 @media (min-width:900px) and (max-height:860px){
-  html.has-consent #view-signin .logo{width:36px;height:36px;}
-  html.has-consent #view-signin h1{font-size:28px;line-height:1.05;}
-  html.has-consent #view-signin .signin-pitch{line-height:1.2;}
-  html.has-consent #view-signin .age-rule{line-height:1.25;}
-  html.has-consent #view-signin .btn-primary{height:48px;}
+  html.has-consent #view-signin .logo{width:32px;height:32px;}
+  html.has-consent #view-signin h1{font-size:26px;line-height:1;margin:0;}
+  html.has-consent #view-signin .signin-pitch{font-size:15px;line-height:1.2;margin:0 0 2px;}
+  html.has-consent #view-signin .signin-form{gap:2px;}
+  html.has-consent #view-signin .age-rule{font-size:15px;line-height:1.2;}
+  html.has-consent #view-signin .signin-form label.age-check{min-height:44px;}
+  html.has-consent #view-signin .btn-primary{height:44px;}
+  html.has-consent #view-signin .btn-google{height:44px;min-height:44px;margin-top:4px;}
+  html.has-consent #view-signin #auth-magic{min-height:44px;padding:4px 8px;}
 }

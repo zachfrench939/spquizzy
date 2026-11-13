@@ -74,7 +74,7 @@ Next line:
 
 Added to the existing banner, on the app and on Privacy, Cookies and Terms. The rest of the banner is unchanged.
 
-> We only count page views if you Accept. If you’re under 13, please ask a parent or carer before choosing Accept.
+> We only count page views if you Accept. Under 13? Ask a parent or carer before you Accept.
 
 The Cookie policy link, and Reject and Accept, stay as they were.
 

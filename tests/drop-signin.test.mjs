@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 
 const calls = [];
 globalThis.fetch = async (url, options) => {
@@ -295,6 +296,27 @@ test("resend and sign-up failures stay friendly", () => {
   assert.equal(authErrorMessage("signup", rate), "Too many emails just now. Wait a minute, then try again.");
   assert.equal(authErrorMessage("resend", { status: 500, message: "nope" }), "We couldn’t resend the verification email. Wait a moment and try again.");
   assert.equal(authErrorMessage("signin", { code: "email_not_confirmed", message: "Email not confirmed" }), AUTH_COPY.unconfirmed);
+});
+
+test("the cookie strip uses the shorter under-13 sentence", () => {
+  const sentence = "Under 13? Ask a parent or carer before you Accept.";
+  const removed = "If you’re under 13, please ask a parent or carer before choosing Accept.";
+  const files = [
+    "js/drop/app.js",
+    "cookies/index.html",
+    "privacy/index.html",
+    "terms/index.html",
+    "docs/signup-fixes-WORDING.md",
+  ];
+  for (const file of files) {
+    const text = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    assert.equal(text.includes(sentence), true, file);
+    assert.equal(text.includes(removed), false, file);
+  }
+  const analytics = readFileSync(new URL("../js/analytics.js", import.meta.url), "utf8");
+  assert.match(analytics, /consent !== "accept"/);
+  const css = readFileSync(new URL("../css/drop.css", import.meta.url), "utf8");
+  assert.doesNotMatch(css, /#consent-yes|#consent-no/);
 });
 
 test("an expired link hash is a friendly message, and a token hash is a session", () => {

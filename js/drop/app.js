@@ -786,7 +786,7 @@ function trapDialog(event) {
 function consentBar() {
   const bar = el("aside", "consent");
   bar.id = "consent";
-  bar.innerHTML = `<p>We only count page views if you Accept. If you’re under 13, please ask a parent or carer before choosing Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
+  bar.innerHTML = `<p>We only count page views if you Accept. Under 13? Ask a parent or carer before you Accept. <a href="/cookies/">Cookie policy</a></p><div class="pair"><button type="button" id="consent-no">Reject</button><button type="button" id="consent-yes">Accept</button></div>`;
   return bar;
 }
 
