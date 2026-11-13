@@ -1,7 +1,8 @@
 import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
 import { AUTH_COPY, MIN_PASSWORD_LENGTH, REFRESH_SKEW_MS, authErrorMessage, isAlreadyRegistered, isUnconfirmed, passwordTooShort, refreshAccessToken, refreshDelayMs, refreshStoredSession, resend, resendCooldownLeft, sessionFromAuth, sessionNeedsRefresh, signInWithPassword, signUp, signupScreenState } from "./auth.js";
 import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
-import { captureHashSession, clearSession, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
+import { AGE_COPY, claimsAgeTick, needsAgeGate, showAgeTick, signupAgeMetadata } from "./age.js";
+import { captureHashSession, clearSession, confirmAge, deleteUnconfirmedAccount, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, markFreshSpiquizzyAccount, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import {
@@ -30,7 +31,8 @@ const PENDING_EMAIL_KEY = "spquizzy.drop.pending-email";
 const PENDING_KIND_KEY = "spquizzy.drop.pending-kind";
 const RESEND_AT_KEY = "spquizzy.drop.resend-at";
 const PERIODS = { Weekly: "week", Monthly: "month", Yearly: "year", "All-time": "all" };
-const AGE_NEED = "Tick the box to confirm you are 13 or over. Under 13s can play as a guest on this device.";
+const AGE_NEED = AGE_COPY.need;
+const AGE_DECLINE_KEY = "spquizzy.drop.age-declined";
 const CLEAR_LOCAL_COPY = "Clear local data removes, on this device only: today’s drop (spquizzy.drop.run), your guest bank (spquizzy.drop.bank), sound and motion settings (spquizzy.drop.settings), the sign-in token (spquizzy.drop.session, in local storage and in session storage), and the Keep me logged in choice (dd_remember). It does not change your page-view choice, and it does not delete an account.";
 
 function ageFields(prefix) {
@@ -247,7 +249,7 @@ function shell() {
 
   const main = el("main");
   main.append(homeView(), playView(), resultsView(), leagueView(), bankView(), profileView(), signinView(), plusView(), settingsView(), missingView());
-  app.append(header, main, tabBar(), howtoSheet(), leaveModal(), signInPrompt(), usernameGate(), consentBar());
+  app.append(header, ageDeclineNote(), main, tabBar(), howtoSheet(), leaveModal(), signInPrompt(), usernameGate(), ageGate(), consentBar());
   document.addEventListener("keydown", trapDialog);
   app.addEventListener("click", onClick);
   const stage = document.querySelector("#play-stage");
@@ -502,7 +504,7 @@ function signinView() {
         <button type="button" id="auth-mode-up" role="tab" aria-selected="false" aria-controls="auth-form">Create account</button>
       </div>
       <form class="signin-form" id="auth-form" novalidate>
-        ${ageFields("auth")}
+        <div id="auth-age-block" hidden>${ageFields("auth")}</div>
         <p id="auth-note"></p>
         <label for="auth-email">Email</label>
         <input id="auth-email" name="email" type="email" autocomplete="email" inputmode="email" required>
@@ -614,7 +616,6 @@ function signInPrompt() {
       <h2 id="prompt-title">Sign in to keep your progress</h2>
       <p>Save your bank, join weekly leagues, play on any device.</p>
       <form id="prompt-form">
-        ${ageFields("prompt")}
         <p id="prompt-note"></p>
         <label for="prompt-email">Email</label>
         <input id="prompt-email" type="email" autocomplete="email" required>
@@ -781,6 +782,73 @@ function trapDialog(event) {
     event.preventDefault();
     first.focus();
   }
+}
+
+function ageDeclineNote() {
+  const note = el("p", "age-declined");
+  note.id = "age-declined";
+  note.hidden = true;
+  note.setAttribute("role", "status");
+  return note;
+}
+
+function ageGate() {
+  const back = el("div", "prompt-back age-gate");
+  back.id = "age-gate";
+  back.hidden = true;
+  back.innerHTML = `<div class="prompt-card" role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
+    <h2 id="age-gate-title" tabindex="-1">${AGE_COPY.gateTitle}</h2>
+    <p>${AGE_COPY.gateBody}</p>
+    <p id="age-gate-note"></p>
+    <div class="age-gate-actions" role="group" aria-label="Age confirmation">
+      <button class="age-choice" type="button" id="age-gate-yes">${AGE_COPY.confirm}</button>
+      <button class="age-choice" type="button" id="age-gate-no">${AGE_COPY.decline}</button>
+    </div>
+  </div>`;
+  return back;
+}
+
+function openAgeGate() {
+  const gate = document.querySelector("#age-gate");
+  if (!gate) return;
+  gate.hidden = false;
+  const heading = document.querySelector("#age-gate-title");
+  requestAnimationFrame(() => heading?.focus());
+}
+
+function closeAgeGate() {
+  const gate = document.querySelector("#age-gate");
+  if (gate) gate.hidden = true;
+}
+
+async function stampAge() {
+  const saved = await confirmAge(session);
+  profile = { ...(profile || {}), ...saved };
+  closeAgeGate();
+}
+
+async function declineAge() {
+  try {
+    await markFreshSpiquizzyAccount(session);
+    await deleteUnconfirmedAccount(session);
+  } catch {
+    /* An existing account, or a function that is not applied yet, still signs out. */
+  }
+  try { sessionStorage.setItem(AGE_DECLINE_KEY, "1"); } catch { /* private mode */ }
+  signOut();
+}
+
+function showAgeDecline() {
+  let declined = false;
+  try {
+    declined = sessionStorage.getItem(AGE_DECLINE_KEY) === "1";
+    if (declined) sessionStorage.removeItem(AGE_DECLINE_KEY);
+  } catch { /* private mode */ }
+  if (!declined) return;
+  const note = document.querySelector("#age-declined");
+  if (!note) return;
+  note.hidden = false;
+  note.textContent = AGE_COPY.declined;
 }
 
 function consentBar() {
@@ -1742,9 +1810,7 @@ function paintGoogle() {
   if (!GOOGLE_SIGN_IN) return;
   const href = oauthUrl("google");
   document.querySelectorAll("a.btn-google").forEach((link) => {
-    const box = link.closest("#signin-guest, #signin-prompt")?.querySelector("[data-age]");
-    const open = Boolean(box?.checked);
-    link.href = open ? href : "#";
+    link.href = href;
   });
 }
 
@@ -1824,6 +1890,8 @@ function setAuthMode(mode) {
   if (password) password.setAttribute("autocomplete", signup ? "new-password" : "current-password");
   const magic = document.querySelector("#auth-magic");
   if (magic) magic.hidden = signup;
+  const age = document.querySelector("#auth-age-block");
+  if (age) age.hidden = !showAgeTick(authMode);
   const note = document.querySelector("#auth-note");
   if (note) note.textContent = "";
 }
@@ -2073,16 +2141,19 @@ function onClick(event) {
   const google = event.target.closest("a.btn-google");
   if (google) {
     const root = google.closest("#signin-guest, #signin-prompt");
-    const box = root?.querySelector("[data-age]");
-    if (!box?.checked) {
-      event.preventDefault();
-      const note = root?.querySelector("#auth-note, #prompt-note");
-      if (note) note.textContent = AGE_NEED;
-      box?.focus();
-      return;
-    }
     chooseRemember(rememberChecked(root));
     google.href = oauthUrl("google");
+    return;
+  }
+  if (event.target.id === "age-gate-yes") {
+    const note = document.querySelector("#age-gate-note");
+    stampAge().catch(() => {
+      if (note) note.textContent = AGE_COPY.saveError;
+    });
+    return;
+  }
+  if (event.target.id === "age-gate-no") {
+    declineAge();
     return;
   }
   if (event.target.id === "consent-yes" || event.target.id === "consent-no") {
@@ -2259,6 +2330,7 @@ function applyShot() {
     return;
   }
   if (SHOT === "404") { show("missing"); return; }
+  if (SHOT === "age") { show("home"); openAgeGate(); return; }
   show("play");
   renderQuestion();
   if (SHOT === "leave") document.querySelector("#leave-modal").hidden = false;
@@ -2329,12 +2401,14 @@ async function boot() {
   });
   document.querySelector("#auth-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const box = document.querySelector("#auth-age");
     const note = document.querySelector("#auth-note");
-    if (!box?.checked) {
-      if (note) note.textContent = AGE_NEED;
-      box?.focus();
-      return;
+    if (showAgeTick(authMode)) {
+      const box = document.querySelector("#auth-age");
+      if (!box?.checked) {
+        if (note) note.textContent = AGE_NEED;
+        box?.focus();
+        return;
+      }
     }
     const email = document.querySelector("#auth-email").value.trim();
     const password = document.querySelector("#auth-password").value;
@@ -2356,10 +2430,11 @@ async function boot() {
         const result = await signUp({
           email,
           password,
-          options: { emailRedirectTo: authRedirect() },
+          options: { emailRedirectTo: authRedirect(), data: signupAgeMetadata() },
         });
         if (signupScreenState(result) === "signed-in") {
           acceptSession(sessionFromAuth(result));
+          try { await stampAge(); } catch { /* the age column is not applied yet */ }
           return;
         }
         showInbox(email, { armCooldown: true, kind: "signup" });
@@ -2384,13 +2459,7 @@ async function boot() {
     }
   });
   document.querySelector("#auth-magic")?.addEventListener("click", async () => {
-    const box = document.querySelector("#auth-age");
     const note = document.querySelector("#auth-note");
-    if (!box?.checked) {
-      if (note) note.textContent = AGE_NEED;
-      box?.focus();
-      return;
-    }
     const email = document.querySelector("#auth-email").value.trim();
     if (!email.includes("@")) {
       if (note) note.textContent = AUTH_COPY.needEmail;
@@ -2415,13 +2484,7 @@ async function boot() {
   });
   document.querySelector("#prompt-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const box = document.querySelector("#prompt-age");
     const note = document.querySelector("#prompt-note");
-    if (!box?.checked) {
-      if (note) note.textContent = AGE_NEED;
-      box?.focus();
-      return;
-    }
     const email = document.querySelector("#prompt-email").value.trim();
     chooseRemember(rememberChecked(document.querySelector("#prompt-form")));
     try {
@@ -2448,8 +2511,13 @@ async function boot() {
   if (!SHOT) await maintainSession();
   pack = await (await fetch("/data/questions.public.json")).json();
   if (session?.access_token && !SHOT) {
+    try { await markFreshSpiquizzyAccount(session); } catch { /* an older account is left unmarked */ }
     try { profile = await myProfile(session); } catch { profile = null; }
   }
+  if (session?.access_token && needsAgeGate(profile) && claimsAgeTick(session)) {
+    try { await stampAge(); } catch { /* stay on the gate */ }
+  }
+  const gating = Boolean(session?.access_token) && needsAgeGate(profile);
   if (SHOT) {
     applyShot();
     return;
@@ -2459,8 +2527,11 @@ async function boot() {
   if (route === "play") startOrResume();
   else if (route === "howto") show("home");
   else show(route === "missing" ? "missing" : route);
+  showAgeDecline();
   const waiting = showConsent || playingNow();
-  if (!waiting && offerUsername()) {
+  if (gating) {
+    openAgeGate();
+  } else if (!waiting && offerUsername()) {
     /* username step waits for a signed-in player */
   } else if (!showConsent && route === "howto") openHow(0);
   document.querySelector("#play-btn").addEventListener("click", () => { location.href = "/play/"; });

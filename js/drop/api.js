@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "../config.js";
+import { isFreshAccount } from "./age.js";
 import { SESSION_KEY, authStorage } from "./auth-storage.js";
 
 const SESSION = SESSION_KEY;
@@ -88,6 +89,58 @@ export function setBoardOptOut(hide, session) {
   return rpc("dd_set_board_opt_out", { p_hide: hide }, session);
 }
 
+export function confirmAge(session) {
+  return rpc("dd_confirm_age", {}, session);
+}
+
+export function deleteUnconfirmedAccount(session) {
+  return rpc("dd_delete_my_unconfirmed_account", {}, session);
+}
+
+function metadataMarksSpiquizzy(meta) {
+  if (!meta || typeof meta !== "object") return false;
+  return meta.app === "spiquizzy" || meta.age_13_plus === true || meta.age_13_plus === "true";
+}
+
+/**
+ * Google sign-up cannot put user metadata on the authorize URL.
+ * Stamp app=spiquizzy only when this auth user was created in the last 15 minutes
+ * and does not already carry a Spiquizzy marker. An older account is left alone.
+ */
+const APP_MARKED_KEY = "spquizzy.drop.app-marked";
+
+function rememberAppCheck() {
+  try { sessionStorage.setItem(APP_MARKED_KEY, "1"); } catch { /* private mode */ }
+}
+
+export async function markFreshSpiquizzyAccount(session, now = Date.now()) {
+  if (!session?.access_token) return false;
+  try {
+    if (sessionStorage.getItem(APP_MARKED_KEY) === "1") return false;
+  } catch { /* private mode */ }
+  if (metadataMarksSpiquizzy(session.user?.user_metadata)) {
+    rememberAppCheck();
+    return false;
+  }
+  let user = session.user;
+  if (!user?.created_at) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: headers(session) });
+    if (!res.ok) return false;
+    user = await res.json();
+  }
+  if (metadataMarksSpiquizzy(user?.user_metadata) || !isFreshAccount(user?.created_at, now)) {
+    rememberAppCheck();
+    return false;
+  }
+  const saved = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: "PUT",
+    headers: headers(session),
+    body: JSON.stringify({ data: { app: "spiquizzy" } }),
+  });
+  if (saved.ok) rememberAppCheck();
+  return saved.ok;
+}
+
 export function leaderboard(period, session) {
   return rpc("dd_leaderboard", { p_period: period }, session);
 }
@@ -133,7 +186,7 @@ export async function sendMagicLink(email, redirectTo = `${location.origin}/sign
   const res = await fetch(`${SUPABASE_URL}/auth/v1/otp?redirect_to=${redirect}`, {
     method: "POST",
     headers: headers(null),
-    body: JSON.stringify({ email, create_user: true }),
+    body: JSON.stringify({ email, create_user: true, data: { app: "spiquizzy" } }),
   });
   if (!res.ok) {
     const text = await res.text();
