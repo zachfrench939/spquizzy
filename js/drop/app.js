@@ -2,7 +2,7 @@ import { GOOGLE_SIGN_IN, LAUNCH_DATE } from "../config.js";
 import { AUTH_COPY, MIN_PASSWORD_LENGTH, REFRESH_SKEW_MS, authErrorMessage, isAlreadyRegistered, isUnconfirmed, passwordTooShort, refreshAccessToken, refreshDelayMs, refreshStoredSession, resend, resendCooldownLeft, sessionFromAuth, sessionNeedsRefresh, signInWithPassword, signUp, signupScreenState } from "./auth.js";
 import { chooseRemember, clearLocalAuth, readRemember } from "./auth-storage.js";
 import { AGE_COPY, claimsAgeTick, needsAgeGate, showAgeTick, signupAgeMetadata } from "./age.js";
-import { captureHashSession, clearSession, confirmAge, deleteUnconfirmedAccount, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
+import { captureHashSession, clearSession, confirmAge, deleteUnconfirmedAccount, forfeitRun, gradeQuestion, leaderboard, lockIn, magicLinkErrorMessage, markFreshSpiquizzyAccount, myProfile, oauthUrl, readSession, readStoredSession, saveSession, sendMagicLink, serveGuest, serveQuestion, setBoardOptOut, setUsername } from "./api.js";
 import { navAction } from "./nav.js";
 import { formatYouRank, usernameError } from "./names.js";
 import {
@@ -829,6 +829,7 @@ async function stampAge() {
 
 async function declineAge() {
   try {
+    await markFreshSpiquizzyAccount(session);
     await deleteUnconfirmedAccount(session);
   } catch {
     /* An existing account, or a function that is not applied yet, still signs out. */
@@ -2510,6 +2511,7 @@ async function boot() {
   if (!SHOT) await maintainSession();
   pack = await (await fetch("/data/questions.public.json")).json();
   if (session?.access_token && !SHOT) {
+    try { await markFreshSpiquizzyAccount(session); } catch { /* an older account is left unmarked */ }
     try { profile = await myProfile(session); } catch { profile = null; }
   }
   if (session?.access_token && needsAgeGate(profile) && claimsAgeTick(session)) {

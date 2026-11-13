@@ -54,7 +54,7 @@ After **No, sign me out**:
 
 > You were signed out. Accounts are for players aged 13 and over. You can still play as a guest.
 
-**No, sign me out** also calls `dd_delete_my_unconfirmed_account`. That deletes the signed-in account only when it was created after the release cutoff and `age_confirmed_at` is still empty. An older account is signed out and is not deleted.
+**No, sign me out** also calls `dd_delete_my_unconfirmed_account`. That runs only when a `dd_profiles` row exists, `age_confirmed_at` is empty, the account was created after the release cutoff, and the sign-up metadata says `age_13_plus` or `app` is `spiquizzy`. If no other public table points at that person, the auth user is deleted. If one does, only the Spiquizzy rows are deleted and that person’s sessions are revoked. An older account, or an account with no Spiquizzy profile, is signed out and is not deleted.
 
 ---
 

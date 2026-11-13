@@ -8,8 +8,8 @@ globalThis.fetch = async (url, options) => {
   return new Response('{"age_confirmed_at":"2026-11-14T12:00:00Z"}', { status: 200 });
 };
 
-const { AGE_COPY, claimsAgeTick, needsAgeGate, showAgeTick, signupAgeMetadata, decodeJwtPayload } = await import("../js/drop/age.js");
-const { confirmAge, deleteUnconfirmedAccount } = await import("../js/drop/api.js");
+const { AGE_COPY, claimsAgeTick, isFreshAccount, needsAgeGate, showAgeTick, signupAgeMetadata, decodeJwtPayload } = await import("../js/drop/age.js");
+const { confirmAge, deleteUnconfirmedAccount, markFreshSpiquizzyAccount, sendMagicLink } = await import("../js/drop/api.js");
 const { signUp } = await import("../js/drop/auth.js");
 
 function jwt(payload) {
@@ -30,8 +30,10 @@ test("the gate waits on any session whose confirmation is still empty", () => {
   assert.equal(needsAgeGate(null), false);
 });
 
-test("create account records the tick in sign-up metadata", () => {
-  assert.deepEqual(signupAgeMetadata(), { age_13_plus: true });
+test("create account records the tick and the Spiquizzy marker", () => {
+  assert.deepEqual(signupAgeMetadata(), { age_13_plus: true, app: "spiquizzy" });
+  assert.equal(isFreshAccount(new Date().toISOString()), true);
+  assert.equal(isFreshAccount("2020-01-01T00:00:00Z"), false);
 });
 
 test("a verified sign-in can see the tick from the user or the access token", () => {
@@ -60,6 +62,39 @@ test("signing up posts the 13+ tick in user metadata", async () => {
   });
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.data.age_13_plus, true);
+  assert.equal(body.data.app, "spiquizzy");
+});
+
+test("a magic-link sign-up carries the Spiquizzy marker", async () => {
+  calls.length = 0;
+  await sendMagicLink("ada@example.com", "https://spiquizzy.com/sign-in/");
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.create_user, true);
+  assert.equal(body.data.app, "spiquizzy");
+  assert.equal(body.options, undefined);
+});
+
+test("only a brand-new unmarked account is stamped as Spiquizzy", async () => {
+  const seen = [];
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    seen.push({ url: String(url), method: options?.method || "GET" });
+    if (options?.method === "PUT") return new Response("{}", { status: 200 });
+    return new Response(JSON.stringify({ created_at: new Date().toISOString(), user_metadata: {} }), { status: 200 });
+  };
+  assert.equal(await markFreshSpiquizzyAccount({ access_token: "token" }), true);
+  assert.equal(seen.some((call) => call.method === "PUT"), true);
+
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    created_at: "2020-01-01T00:00:00.000Z",
+    user_metadata: {},
+  }), { status: 200 });
+  assert.equal(await markFreshSpiquizzyAccount({ access_token: "token" }), false);
+  assert.equal(await markFreshSpiquizzyAccount({
+    access_token: "token",
+    user: { created_at: new Date().toISOString(), user_metadata: { app: "spiquizzy" } },
+  }), false);
+  globalThis.fetch = previous;
 });
 
 test("declining deletes only through the self-delete function", async () => {
@@ -86,25 +121,39 @@ test("the delete migration is marked not to apply and skips existing accounts", 
   const sql = readFileSync(new URL("../supabase/migrations/20261114000200_dd_age_unconfirmed_delete.sql", import.meta.url), "utf8");
   assert.match(sql, /DO NOT APPLY/);
   assert.match(sql, /interval '24 hours'/);
-  assert.match(sql, /age_confirmed_at is not null/);
+  assert.match(sql, /join public\.dd_profiles p on p\.id = u\.id/);
+  assert.match(sql, /p\.age_confirmed_at is null/);
+  assert.doesNotMatch(sql, /not exists \([\s\S]*age_confirmed_at is not null/);
+  assert.match(sql, /raw_user_meta_data->>'age_13_plus'/);
+  assert.match(sql, /raw_user_meta_data->>'app'/);
+  assert.match(sql, /spiquizzy/);
   assert.match(sql, /created_at >= ship_cutoff/);
   assert.match(sql, /dd_age_ship_cutoff\(\)/);
+  assert.match(sql, /dry_run boolean default true/);
+  assert.match(sql, /would_delete_auth/);
+  assert.match(sql, /dd_rows_only/);
+  assert.match(sql, /not like 'dd\\_%'/);
+  assert.match(sql, /delete from auth\.refresh_tokens where user_id = p_uid/);
+  assert.match(sql, /delete from auth\.sessions where user_id = p_uid/);
   assert.match(sql, /delete from public\.dd_profiles/);
   assert.match(sql, /delete from public\.dd_banks/);
   assert.match(sql, /delete from public\.dd_daily_runs/);
   assert.match(sql, /delete from public\.dd_stakes/);
   assert.match(sql, /delete from public\.dd_league_members/);
-  assert.match(sql, /delete from auth\.users/);
+  assert.match(sql, /delete from auth\.users where id = p_uid/);
+  assert.match(sql, /dd_delete_my_unconfirmed_account[\s\S]*dd_is_unconfirmed_spiquizzy\(uid\)/);
+  assert.match(sql, /dd_apply_unconfirmed_delete\(uid, false\)/);
   assert.doesNotMatch(sql, /daily_scores|spiquizzy_scores|spiquizzy_pageviews/);
-  assert.match(sql, /raise log 'dd_delete_unconfirmed_accounts accounts=%/);
+  assert.match(sql, /raise log 'dd_delete_unconfirmed_accounts dry_run=% would_delete_auth=% dd_rows_only=%'/);
   assert.doesNotMatch(sql, /raise log[^;]*email/i);
   assert.match(sql, /0 \* \* \* \*/);
   assert.match(sql, /--\s+select cron\.schedule/);
+  assert.match(sql, /dd_delete_unconfirmed_accounts\(false\)/);
   assert.match(sql, /security definer/);
   assert.match(sql, /uid uuid := auth\.uid\(\)/);
   assert.match(sql, /created < public\.dd_age_ship_cutoff\(\)/);
   assert.match(sql, /grant execute on function public\.dd_delete_my_unconfirmed_account\(\) to authenticated/);
-  assert.match(sql, /revoke all on function public\.dd_delete_unconfirmed_accounts\(\) from authenticated/);
+  assert.match(sql, /revoke all on function public\.dd_delete_unconfirmed_accounts\(boolean\) from authenticated/);
   const confirm = readFileSync(new URL("../supabase/migrations/20261114000100_dd_age_confirmed.sql", import.meta.url), "utf8");
   assert.match(confirm, /auth\.uid\(\) = id/);
   assert.match(confirm, /grant update \(age_confirmed_at\)/);

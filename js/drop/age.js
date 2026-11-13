@@ -21,7 +21,13 @@ export function showAgeTick(mode) {
 
 /** Sent as sign-up user metadata when the required tick is on. */
 export function signupAgeMetadata() {
-  return { [AGE_META_KEY]: true };
+  return { [AGE_META_KEY]: true, app: "spiquizzy" };
+}
+
+/** A brand-new auth user, so a Google sign-up can be marked without touching an older Wick account. */
+export function isFreshAccount(createdAt, now = Date.now()) {
+  const created = Date.parse(createdAt || "");
+  return Number.isFinite(created) && now >= created && now - created <= 15 * 60 * 1000;
 }
 
 export function decodeJwtPayload(token) {
